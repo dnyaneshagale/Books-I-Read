@@ -1,24 +1,34 @@
 services:
   - type: web
     name: books-i-read-backend
-    runtime: java
-    buildCommand: cd backend && ./mvnw clean package -DskipTests
-    startCommand: cd backend && java -Dserver.port=$PORT -jar target/*.jar
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: books-i-read-db
-          property: connectionString
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
       - key: JWT_EXPIRATION
         value: 86400000
       - key: HIBERNATE_DDL_AUTO
         value: update
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: SHOW_SQL
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: APP_LOG_LEVEL
+        value: INFO
+      - key: SPRING_LOG_LEVEL
+        value: WARN
+      - key: SQL_LOG_LEVEL
+        value: WARN
 
-databases:
-  - name: books-i-read-db
-    databaseName: booksiread_db
-    user: booksiread_user
