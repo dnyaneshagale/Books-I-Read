@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: books-i-read-backend
+    runtime: java
+    buildCommand: cd backend && ./mvnw clean package -DskipTests
+    startCommand: cd backend && java -Dserver.port=$PORT -jar target/*.jar
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: books-i-read-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: 86400000
+      - key: HIBERNATE_DDL_AUTO
+        value: update
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+databases:
+  - name: books-i-read-db
+    databaseName: booksiread_db
+    user: booksiread_user
