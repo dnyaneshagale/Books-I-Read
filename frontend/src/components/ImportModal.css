@@ -1,0 +1,331 @@
+/* ============================================
+   ImportModal Styles
+   ============================================ */
+
+.import-modal {
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.import-modal-body {
+  padding: var(--spacing-lg);
+}
+
+/* Instructions */
+.import-instructions {
+  background-color: var(--color-bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.import-instructions h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+}
+
+.import-instructions ol {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.import-instructions ol li {
+  margin-bottom: var(--spacing-sm);
+}
+
+.import-instructions a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.import-instructions a:hover {
+  text-decoration: underline;
+}
+
+/* File Upload */
+.file-upload-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.file-upload-label {
+  display: block;
+  cursor: pointer;
+}
+
+.file-upload-box {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  text-align: center;
+  background-color: var(--color-bg);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.file-upload-box:hover {
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-hover);
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.upload-icon {
+  font-size: 48px;
+}
+
+.upload-text {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.upload-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.file-icon {
+  font-size: 48px;
+}
+
+.file-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.file-size {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Preview Section */
+.preview-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.preview-section h3 {
+  font-size: var(--font-size-base);
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--color-text-primary);
+}
+
+.preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.preview-item {
+  background-color: var(--color-bg-secondary);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+.preview-title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.preview-author {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.preview-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+}
+
+.preview-badge {
+  padding: 2px 8px;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 12px;
+  font-weight: var(--font-weight-medium);
+}
+
+.preview-rating {
+  color: #fbbf24;
+}
+
+.preview-tags {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Import Actions */
+.import-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-bg-hover);
+  border-color: var(--color-primary);
+}
+
+/* Import Results */
+.import-results {
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.results-icon {
+  font-size: 64px;
+  margin-bottom: var(--spacing-md);
+}
+
+.import-results h3 {
+  font-size: var(--font-size-xl);
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--color-text-primary);
+}
+
+.results-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.stat-item {
+  background-color: var(--color-bg-secondary);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.stat-item.success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+}
+
+.stat-item.error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.stat-number {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .import-modal {
+    max-width: calc(100vw - var(--spacing-lg));
+    margin: var(--spacing-sm);
+    padding: var(--spacing-lg);
+  }
+
+  .import-modal h2 {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .import-info p {
+    font-size: var(--font-size-sm);
+  }
+
+  .upload-area {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+
+  .upload-icon {
+    font-size: 48px;
+  }
+
+  .upload-text {
+    font-size: var(--font-size-sm);
+  }
+
+  .upload-hint {
+    font-size: 12px;
+  }
+
+  .import-actions {
+    flex-direction: column-reverse;
+    gap: var(--spacing-sm);
+  }
+
+  .import-actions button {
+    width: 100%;
+    padding: 14px 18px;
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (max-width: 400px) {
+  .import-modal {
+    padding: var(--spacing-md);
+  }
+
+  .import-modal h2 {
+    font-size: var(--font-size-lg);
+  }
+
+  .upload-area {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .upload-icon {
+    font-size: 40px;

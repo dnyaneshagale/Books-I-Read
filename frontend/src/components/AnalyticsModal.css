@@ -1,0 +1,286 @@
+/* ============================================
+   Analytics Modal Styles
+   ============================================ */
+
+.analytics-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-xl);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.analytics-modal-content {
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
+  max-width: 1100px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-border);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.analytics-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.analytics-modal-header h2 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.btn-close-analytics {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  color: var(--color-text-secondary);
+}
+
+.btn-close-analytics:hover {
+  background: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
+  transform: scale(1.05);
+}
+
+.analytics-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-xl);
+}
+
+/* Reuse existing analytics card styles */
+.analytics-modal-grid .analytics-card {
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  color: var(--color-text-primary);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-left: 5px solid var(--color-primary);
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.analytics-modal-grid .analytics-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--color-primary), var(--color-primary-light));
+  transition: width var(--transition-base);
+}
+
+.analytics-modal-grid .analytics-card:hover::before {
+  width: 8px;
+}
+
+.analytics-modal-grid .analytics-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-border);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(1) {
+  border-left-color: var(--color-primary);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(1)::before {
+  background: linear-gradient(to bottom, var(--color-primary), var(--color-primary-light));
+}
+
+.analytics-modal-grid .analytics-card:nth-child(2) {
+  border-left-color: var(--color-accent);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(2)::before {
+  background: linear-gradient(to bottom, var(--color-accent), #3b82f6);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(3) {
+  border-left-color: var(--color-accent);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(3)::before {
+  background: linear-gradient(to bottom, var(--color-accent), #3b82f6);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(4) {
+  border-left-color: var(--color-success);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(4)::before {
+  background: linear-gradient(to bottom, var(--color-success), #22c55e);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(5) {
+  border-left-color: var(--color-primary);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(5)::before {
+  background: linear-gradient(to bottom, var(--color-primary), var(--color-primary-light));
+}
+
+.analytics-modal-grid .analytics-card:nth-child(6) {
+  border-left-color: var(--color-warning);
+}
+
+.analytics-modal-grid .analytics-card:nth-child(6)::before {
+  background: linear-gradient(to bottom, var(--color-warning), #fbbf24);
+}
+
+.analytics-modal-grid .analytics-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.analytics-modal-grid .analytics-icon {
+  font-size: 28px;
+  opacity: 0.8;
+}
+
+.analytics-modal-grid .analytics-card:nth-child(1) .analytics-icon { color: var(--color-primary); }
+.analytics-modal-grid .analytics-card:nth-child(2) .analytics-icon { color: var(--color-accent); }
+.analytics-modal-grid .analytics-card:nth-child(3) .analytics-icon { color: var(--color-accent); }
+.analytics-modal-grid .analytics-card:nth-child(4) .analytics-icon { color: var(--color-success); }
+.analytics-modal-grid .analytics-card:nth-child(5) .analytics-icon { color: var(--color-primary); }
+.analytics-modal-grid .analytics-card:nth-child(6) .analytics-icon { color: var(--color-warning); }
+
+.analytics-modal-grid .analytics-title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-secondary);
+}
+
+.analytics-modal-grid .analytics-value {
+  font-size: 48px;
+  font-weight: var(--font-weight-black);
+  margin-bottom: var(--spacing-md);
+  line-height: 1;
+  letter-spacing: -1px;
+  color: var(--color-text-primary);
+}
+
+.analytics-modal-grid .analytics-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .analytics-modal-overlay {
+    padding: var(--spacing-sm);
+  }
+
+  .analytics-modal-content {
+    padding: var(--spacing-lg);
+    max-height: 90vh;
+  }
+
+  .analytics-modal-header {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .analytics-modal-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .close-analytics-modal {
+    font-size: 28px;
+    padding: 8px;
+  }
+
+  .analytics-modal-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .analytics-modal-grid .analytics-card {
+    min-height: 130px;
+    padding: var(--spacing-md);
+  }
+
+  .analytics-modal-grid .analytics-value {
+    font-size: 36px;
+  }
+
+  .analytics-modal-grid .analytics-icon {
+    font-size: 24px;
+  }
+
+  .analytics-modal-grid .analytics-title {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 400px) {
+  .analytics-modal-content {
+    padding: var(--spacing-md);
+  }
+
+  .analytics-modal-header h2 {
+    font-size: var(--font-size-lg);
+  }
+
+  .analytics-modal-grid .analytics-value {
+    font-size: 32px;
+  }
+
+  .analytics-modal-grid .analytics-card {
+    min-height: 120px;
+  }
+}
