@@ -1,4 +1,4 @@
-package com.booksiread.backend.service;
+package com.booksiread.backend.service.impl;
 
 import com.booksiread.backend.dto.AuthResponse;
 import com.booksiread.backend.dto.LoginRequest;
@@ -7,6 +7,7 @@ import com.booksiread.backend.entity.User;
 import com.booksiread.backend.exception.ValidationException;
 import com.booksiread.backend.repository.UserRepository;
 import com.booksiread.backend.security.JwtUtil;
+import com.booksiread.backend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;

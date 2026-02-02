@@ -10,6 +10,7 @@ import com.booksiread.backend.model.ReadingActivity;
 import com.booksiread.backend.repository.BookRepository;
 import com.booksiread.backend.repository.ReadingActivityRepository;
 import com.booksiread.backend.security.CustomUserDetailsService;
+import com.booksiread.backend.service.AiNotesService;
 import com.booksiread.backend.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -44,6 +45,7 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final CustomUserDetailsService userDetailsService;
     private final ReadingActivityRepository readingActivityRepository;
+    private final AiNotesService aiNotesService;
     
     // IST timezone for activity tracking
     private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
@@ -51,10 +53,12 @@ public class BookServiceImpl implements BookService {
     @Autowired
     public BookServiceImpl(BookRepository bookRepository, 
                           CustomUserDetailsService userDetailsService,
-                          ReadingActivityRepository readingActivityRepository) {
+                          ReadingActivityRepository readingActivityRepository,
+                          AiNotesService aiNotesService) {
         this.bookRepository = bookRepository;
         this.userDetailsService = userDetailsService;
         this.readingActivityRepository = readingActivityRepository;
+        this.aiNotesService = aiNotesService;
     }
 
     /**
@@ -102,8 +106,17 @@ public class BookServiceImpl implements BookService {
             book.setTags(request.getTags());
         }
 
-        // Save to database
-        Book savedBook = bookRepository.save(book);
+        // ========== AI Notes Generation ==========
+        // Set initial AI status to PENDING
+        book.setAiStatus(Book.AiStatus.PENDING);
+
+        // Save to database and flush to ensure transaction commits
+        Book savedBook = bookRepository.saveAndFlush(book);
+
+        // Trigger async AI notes generation AFTER book is committed
+        // Extension: Add configuration flag to enable/disable AI generation
+        // Extension: Add user preference check before generating
+        aiNotesService.generateNotesAsync(savedBook.getId());
 
         // Convert Entity to Response DTO
         return BookResponse.fromEntity(savedBook);

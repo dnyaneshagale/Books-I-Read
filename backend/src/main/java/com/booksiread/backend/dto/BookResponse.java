@@ -2,7 +2,9 @@ package com.booksiread.backend.dto;
 
 import com.booksiread.backend.entity.Book;
 import com.booksiread.backend.entity.Book.ReadingStatus;
+import com.booksiread.backend.entity.Book.AiStatus;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -10,6 +12,7 @@ import java.util.List;
  * 
  * Includes computed fields:
  * - progress: reading progress percentage
+ * - AI-generated notes fields
  */
 public class BookResponse {
 
@@ -25,6 +28,13 @@ public class BookResponse {
     private Integer rating;
     private String review;
     private List<String> tags;
+    
+    // AI-generated fields
+    private String aiSummary;
+    private String aiHighlights;
+    private String aiOverallOpinion;
+    private LocalDateTime aiGeneratedAt;
+    private AiStatus aiStatus;
 
     // Constructors
     public BookResponse() {
@@ -33,7 +43,8 @@ public class BookResponse {
     public BookResponse(Long id, String title, String author, Integer totalPages, 
                        Integer pagesRead, Double progress, ReadingStatus status,
                        LocalDate startDate, LocalDate completeDate, Integer rating, String review,
-                       List<String> tags) {
+                       List<String> tags, String aiSummary, String aiHighlights, 
+                       String aiOverallOpinion, LocalDateTime aiGeneratedAt, AiStatus aiStatus) {
         this.id = id;
         this.title = title;
         this.author = author;
@@ -46,6 +57,11 @@ public class BookResponse {
         this.rating = rating;
         this.review = review;
         this.tags = tags;
+        this.aiSummary = aiSummary;
+        this.aiHighlights = aiHighlights;
+        this.aiOverallOpinion = aiOverallOpinion;
+        this.aiGeneratedAt = aiGeneratedAt;
+        this.aiStatus = aiStatus;
     }
 
     /**
@@ -67,7 +83,12 @@ public class BookResponse {
             book.getCompleteDate(),
             book.getRating(),
             book.getReview(),
-            book.getTags()
+            book.getTags(),
+            book.getAiSummary(),
+            book.getAiHighlights(),
+            book.getAiOverallOpinion(),
+            book.getAiGeneratedAt(),
+            book.getAiStatus()
         );
     }
 
@@ -174,5 +195,47 @@ public class BookResponse {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    // ========== AI Fields Getters and Setters ==========
+    
+    public String getAiSummary() {
+        return aiSummary;
+    }
+
+    public void setAiSummary(String aiSummary) {
+        this.aiSummary = aiSummary;
+    }
+
+    public String getAiHighlights() {
+        return aiHighlights;
+    }
+
+    public void setAiHighlights(String aiHighlights) {
+        this.aiHighlights = aiHighlights;
+    }
+
+    public String getAiOverallOpinion() {
+        return aiOverallOpinion;
+    }
+
+    public void setAiOverallOpinion(String aiOverallOpinion) {
+        this.aiOverallOpinion = aiOverallOpinion;
+    }
+
+    public LocalDateTime getAiGeneratedAt() {
+        return aiGeneratedAt;
+    }
+
+    public void setAiGeneratedAt(LocalDateTime aiGeneratedAt) {
+        this.aiGeneratedAt = aiGeneratedAt;
+    }
+
+    public AiStatus getAiStatus() {
+        return aiStatus;
+    }
+
+    public void setAiStatus(AiStatus aiStatus) {
+        this.aiStatus = aiStatus;
     }
 }

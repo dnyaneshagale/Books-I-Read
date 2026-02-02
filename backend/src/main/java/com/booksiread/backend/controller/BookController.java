@@ -2,6 +2,7 @@ package com.booksiread.backend.controller;
 
 import com.booksiread.backend.dto.BookRequest;
 import com.booksiread.backend.dto.BookResponse;
+import com.booksiread.backend.service.AiNotesService;
 import com.booksiread.backend.service.BookService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +28,12 @@ import java.util.List;
 public class BookController {
 
     private final BookService bookService;
+    private final AiNotesService aiNotesService;
 
     @Autowired
-    public BookController(BookService bookService) {
+    public BookController(BookService bookService, AiNotesService aiNotesService) {
         this.bookService = bookService;
+        this.aiNotesService = aiNotesService;
     }
 
     /**
@@ -101,6 +104,25 @@ public class BookController {
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
         bookService.deleteBook(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * POST /api/books/{id}/regenerate-notes - Regenerate AI notes for a book
+     * 
+     * Useful when:
+     * - AI generation initially failed
+     * - User wants updated notes
+     * - Book details were corrected
+     * 
+     * @param id - book ID
+     * @return 202 Accepted (async processing)
+     * 
+     * Extension: Add cooldown period to prevent abuse (e.g., max 1 regeneration per hour)
+     */
+    @PostMapping("/{id}/regenerate-notes")
+    public ResponseEntity<String> regenerateAiNotes(@PathVariable Long id) {
+        aiNotesService.regenerateNotes(id);
+        return ResponseEntity.accepted().body("AI notes regeneration started");
     }
 
     /**

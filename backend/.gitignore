@@ -36,3 +36,8 @@ build/
 .env
 .env.local
 .env.production
+.env.development
+
+### Application Properties with Secrets ###
+application-local.properties
+application-dev.properties

@@ -71,10 +71,35 @@ public class Book {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // ========== AI-Generated Fields ==========
+    // Extension Notes: Consider moving to separate AiNotes entity for cleaner separation
+    
+    @Column(name = "ai_summary", columnDefinition = "TEXT")
+    private String aiSummary;
+
+    @Column(name = "ai_highlights", columnDefinition = "TEXT")
+    private String aiHighlights; // Stored as JSON string or newline-separated bullets
+
+    @Column(name = "ai_overall_opinion", columnDefinition = "TEXT")
+    private String aiOverallOpinion;
+
+    @Column(name = "ai_generated_at")
+    private LocalDateTime aiGeneratedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ai_status", length = 20)
+    private AiStatus aiStatus = AiStatus.PENDING;
+
     public enum ReadingStatus {
         WANT_TO_READ,
         READING,
         FINISHED
+    }
+
+    public enum AiStatus {
+        PENDING,    // AI generation in progress
+        COMPLETED,  // AI notes successfully generated
+        FAILED      // AI generation failed
     }
 
     // Lifecycle callbacks
@@ -235,5 +260,47 @@ public class Book {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    // ========== AI Fields Getters and Setters ==========
+    
+    public String getAiSummary() {
+        return aiSummary;
+    }
+
+    public void setAiSummary(String aiSummary) {
+        this.aiSummary = aiSummary;
+    }
+
+    public String getAiHighlights() {
+        return aiHighlights;
+    }
+
+    public void setAiHighlights(String aiHighlights) {
+        this.aiHighlights = aiHighlights;
+    }
+
+    public String getAiOverallOpinion() {
+        return aiOverallOpinion;
+    }
+
+    public void setAiOverallOpinion(String aiOverallOpinion) {
+        this.aiOverallOpinion = aiOverallOpinion;
+    }
+
+    public LocalDateTime getAiGeneratedAt() {
+        return aiGeneratedAt;
+    }
+
+    public void setAiGeneratedAt(LocalDateTime aiGeneratedAt) {
+        this.aiGeneratedAt = aiGeneratedAt;
+    }
+
+    public AiStatus getAiStatus() {
+        return aiStatus;
+    }
+
+    public void setAiStatus(AiStatus aiStatus) {
+        this.aiStatus = aiStatus;
     }
 }
