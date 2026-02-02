@@ -4,9 +4,9 @@ import toast from 'react-hot-toast';
 import './UpdateProgressModal.css';
 
 /**
- * UpdateProgressModal Component
+ * UpdateProgressModal Component - Compact Version
  * 
- * Modal for updating book reading progress, status, rating, and review
+ * Modal for updating book reading progress with context-aware fields
  */
 function UpdateProgressModal({ book, onClose, onUpdated }) {
   const [pagesRead, setPagesRead] = useState(book.pagesRead);
@@ -61,9 +61,8 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
 
       await bookApi.updateBook(book.id, updatedData);
       
-      // Show different messages based on completion
       if (status === 'FINISHED' && book.status !== 'FINISHED') {
-        toast.success('🎉 Book marked as finished! Congratulations!');
+        toast.success('🎉 Book marked as finished!');
       } else {
         toast.success('📈 Book updated successfully!');
       }
@@ -96,23 +95,17 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
   const handleStatusChange = (newStatus) => {
     setStatus(newStatus);
     
-    // Auto-set dates based on status
     if (newStatus === 'READING') {
-      // Set start date if not already set
       if (!startDate) {
         setStartDate(new Date().toISOString().split('T')[0]);
       }
-      // Clear complete date if coming from FINISHED
       setCompleteDate('');
     } else if (newStatus === 'FINISHED') {
-      // Set complete date if not already set
       if (!completeDate) {
         setCompleteDate(new Date().toISOString().split('T')[0]);
       }
-      // Set pages to max when marking as finished
       setPagesRead(book.totalPages);
     } else if (newStatus === 'WANT_TO_READ') {
-      // Clear both dates when setting to Want to Read
       setStartDate('');
       setCompleteDate('');
     }
@@ -137,7 +130,6 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  // Close on escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -151,186 +143,184 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content update-modal-large" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content update-modal-compact" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Update Book</h2>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
 
-        <div className="book-info">
+        <div className="book-info-compact">
           <h3>{book.title}</h3>
           <p className="author-text">by {book.author}</p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-row">
-            {/* Status Selection */}
-            <div className="form-group">
-              <label>Reading Status</label>
-              <div className="status-buttons">
-                <button
-                  type="button"
-                  className={`status-btn ${status === 'WANT_TO_READ' ? 'active' : ''}`}
-                  onClick={() => handleStatusChange('WANT_TO_READ')}
-                >
-                  Want to Read
-                </button>
-                <button
-                  type="button"
-                  className={`status-btn ${status === 'READING' ? 'active' : ''}`}
-                  onClick={() => handleStatusChange('READING')}
-                >
-                  Reading
-                </button>
-                <button
-                  type="button"
-                  className={`status-btn ${status === 'FINISHED' ? 'active' : ''}`}
-                  onClick={() => handleStatusChange('FINISHED')}
-                >
-                  Finished
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Progress Section - Simplified and Visual */}
-          <div className="progress-update-section">
-            <div className="progress-header">
-              <label>Reading Progress</label>
-              <div className="progress-display">
-                <span className="pages-current">{pagesRead}</span>
-                <span className="pages-separator">/</span>
-                <span className="pages-total">{book.totalPages}</span>
-                <span className="pages-label">pages</span>
-              </div>
-            </div>
-            
-            {/* Visual Slider */}
-            <div className="slider-container">
-              <input
-                type="range"
-                id="pagesSlider"
-                value={pagesRead}
-                onChange={(e) => {
-                  setPagesRead(parseInt(e.target.value));
-                  setError('');
-                }}
-                min="0"
-                max={book.totalPages}
-                className="pages-slider"
-                style={{
-                  background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${progress}%, #e2e8f0 ${progress}%, #e2e8f0 100%)`
-                }}
-              />
-              <div className="progress-percentage">{progress}%</div>
-            </div>
-
-            {/* Direct Input for Precise Control */}
-            <div className="pages-input-row">
-              <label htmlFor="pagesRead" className="sr-only">Pages Read</label>
-              <input
-                type="number"
-                id="pagesRead"
-                value={pagesRead}
-                onChange={(e) => {
-                  setPagesRead(parseInt(e.target.value) || 0);
-                  setError('');
-                }}
-                min="0"
-                max={book.totalPages}
-                className={`pages-input ${error ? 'error' : ''}`}
-                placeholder="Enter pages"
-              />
-              {error && <span className="error-message">{error}</span>}
-            </div>
-
-            {/* Quick Actions - Larger and More Prominent */}
-            <div className="quick-actions-grid">
-              <button type="button" className="quick-action-btn" onClick={() => handleQuickUpdate(10)}>
-                <span className="quick-number">+10</span>
-                <span className="quick-label">pages</span>
-              </button>
-              <button type="button" className="quick-action-btn" onClick={() => handleQuickUpdate(25)}>
-                <span className="quick-number">+25</span>
-                <span className="quick-label">pages</span>
-              </button>
-              <button type="button" className="quick-action-btn" onClick={() => handleQuickUpdate(50)}>
-                <span className="quick-number">+50</span>
-                <span className="quick-label">pages</span>
-              </button>
-              <button type="button" className="quick-action-btn quick-action-complete" onClick={() => setPagesRead(book.totalPages)}>
-                <span className="quick-number">✓</span>
-                <span className="quick-label">Finish</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="form-row">
-            {/* Start Date */}
-            <div className="form-group">
-              <label htmlFor="startDate">Start Date</label>
-              <input
-                type="date"
-                id="startDate"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-
-            {/* Complete Date */}
-            <div className="form-group">
-              <label htmlFor="completeDate">Complete Date</label>
-              <input
-                type="date"
-                id="completeDate"
-                value={completeDate}
-                onChange={(e) => setCompleteDate(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Rating */}
+          {/* Compact Segmented Status Control */}
           <div className="form-group">
-            <label>Rating</label>
-            <div className="rating-input">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  className={`star-btn ${star <= rating ? 'filled' : ''}`}
-                  onClick={() => setRating(star)}
-                >
-                  ★
-                </button>
-              ))}
-              {rating > 0 && (
-                <button
-                  type="button"
-                  className="clear-rating-btn"
-                  onClick={() => setRating(0)}
-                >
-                  Clear
-                </button>
+            <label>Status</label>
+            <div className="status-segmented">
+              <button
+                type="button"
+                className={`status-segment ${status === 'WANT_TO_READ' ? 'active' : ''}`}
+                onClick={() => handleStatusChange('WANT_TO_READ')}
+              >
+                Want to Read
+              </button>
+              <button
+                type="button"
+                className={`status-segment ${status === 'READING' ? 'active' : ''}`}
+                onClick={() => handleStatusChange('READING')}
+              >
+                Reading
+              </button>
+              <button
+                type="button"
+                className={`status-segment ${status === 'FINISHED' ? 'active' : ''}`}
+                onClick={() => handleStatusChange('FINISHED')}
+              >
+                Finished
+              </button>
+            </div>
+          </div>
+
+          {/* Conditional: Show Progress Only for READING */}
+          {status === 'READING' && (
+            <div className="progress-compact-section">
+              <label>Progress</label>
+              
+              {/* Slider with percentage */}
+              <div className="slider-row">
+                <input
+                  type="range"
+                  value={pagesRead}
+                  onChange={(e) => {
+                    setPagesRead(parseInt(e.target.value));
+                    setError('');
+                  }}
+                  min="0"
+                  max={book.totalPages}
+                  className="pages-slider-compact"
+                  style={{
+                    background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${progress}%, #e2e8f0 ${progress}%, #e2e8f0 100%)`
+                  }}
+                />
+                <span className="progress-percent">{progress}%</span>
+              </div>
+
+              {/* Input + Total + Quick Buttons Row */}
+              <div className="progress-controls-row">
+                <div className="pages-input-compact">
+                  <input
+                    type="number"
+                    value={pagesRead}
+                    onChange={(e) => {
+                      setPagesRead(parseInt(e.target.value) || 0);
+                      setError('');
+                    }}
+                    min="0"
+                    max={book.totalPages}
+                    className={`input-pages ${error ? 'error' : ''}`}
+                  />
+                  <span className="pages-total-text">/ {book.totalPages}</span>
+                </div>
+                
+                <div className="quick-buttons-inline">
+                  <button type="button" onClick={() => handleQuickUpdate(5)}>+5</button>
+                  <button type="button" onClick={() => handleQuickUpdate(10)}>+10</button>
+                  <button type="button" onClick={() => handleQuickUpdate(25)}>+25</button>
+                </div>
+              </div>
+              {error && <span className="error-message-compact">{error}</span>}
+            </div>
+          )}
+
+          {/* Conditional: Show Dates Side-by-Side */}
+          {(status === 'READING' || status === 'FINISHED') && (
+            <div className="form-row-inline">
+              {status === 'READING' && (
+                <div className="form-group-half">
+                  <label htmlFor="startDate">Start Date</label>
+                  <input
+                    type="date"
+                    id="startDate"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+              )}
+              {status === 'FINISHED' && (
+                <>
+                  <div className="form-group-half">
+                    <label htmlFor="startDate">Start Date</label>
+                    <input
+                      type="date"
+                      id="startDate"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group-half">
+                    <label htmlFor="completeDate">Complete Date</label>
+                    <input
+                      type="date"
+                      id="completeDate"
+                      value={completeDate}
+                      onChange={(e) => setCompleteDate(e.target.value)}
+                    />
+                  </div>
+                </>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Review */}
+          {/* Conditional: Show Rating Only for FINISHED */}
+          {status === 'FINISHED' && (
+            <div className="form-group">
+              <label>Rating</label>
+              <div className="rating-input-compact">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    className={`star-btn ${star <= rating ? 'filled' : ''}`}
+                    onClick={() => setRating(star)}
+                  >
+                    ★
+                  </button>
+                ))}
+                {rating > 0 && (
+                  <button
+                    type="button"
+                    className="clear-rating-btn"
+                    onClick={() => setRating(0)}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Conditional: Show Review Only for FINISHED */}
+          {status === 'FINISHED' && (
+            <div className="form-group">
+              <label htmlFor="review">Review / Notes</label>
+              <textarea
+                id="review"
+                value={review}
+                onChange={(e) => setReview(e.target.value)}
+                placeholder="Share your thoughts..."
+                rows="3"
+                maxLength="2000"
+                className="review-compact"
+              />
+              <span className="char-count">{review.length}/2000</span>
+            </div>
+          )}
+
+          {/* Tags - Always Show */}
           <div className="form-group">
-            <label htmlFor="review">Review / Notes</label>
-            <textarea
-              id="review"
-              value={review}
-              onChange={(e) => setReview(e.target.value)}
-              placeholder="Share your thoughts about this book..."
-              rows="4"
-              maxLength="2000"
-            />
-            <span className="char-count">{review.length}/2000</span>
-          </div>
-          {/* Tags */}
-          <div className="form-group">
-            <label htmlFor="tags">Tags / Genres</label>
+            <label htmlFor="tags">Tags</label>
             <div className="tags-input-container">
               <input
                 type="text"
@@ -338,20 +328,20 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagInputKeyDown}
-                placeholder="Add tags (press Enter or comma)"
-                className="tags-input"
+                placeholder="Add tags (press Enter)"
+                className="tags-input-compact"
               />
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="btn-add-tag"
+                className="tags-add-btn"
                 disabled={!tagInput.trim()}
               >
                 +
               </button>
             </div>
             {tags.length > 0 && (
-              <div className="tags-display">
+              <div className="tags-display-compact">
                 {tags.map((tag, index) => (
                   <span key={index} className="tag-chip">
                     {tag}
@@ -359,7 +349,6 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
                       type="button"
                       onClick={() => handleRemoveTag(tag)}
                       className="tag-remove"
-                      aria-label="Remove tag"
                     >
                       ×
                     </button>
@@ -368,11 +357,12 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
               </div>
             )}
           </div>
-          <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>
+
+          <div className="modal-actions-sticky">
+            <button type="button" className="btn-cancel" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            <button type="submit" className="btn-update" disabled={isSubmitting}>
               {isSubmitting ? 'Updating...' : 'Update Book'}
             </button>
           </div>

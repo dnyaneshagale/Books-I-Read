@@ -25,12 +25,15 @@ function Dashboard() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [activityDates, setActivityDates] = useState([]);
+  const [dailyStats, setDailyStats] = useState([]);
+  const [periodStats, setPeriodStats] = useState({ pagesThisWeek: 0, pagesThisMonth: 0, pagesThisYear: 0 });
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
   });
   const [randomQuote, setRandomQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Function to get a random quote from local collection
   const getRandomQuote = () => {
@@ -67,6 +70,8 @@ function Dashboard() {
   useEffect(() => {
     fetchBooks();
     fetchActivityDates();
+    fetchDailyStats();
+    fetchPeriodStats();
   }, []);
 
   // Apply filtering whenever books, filter, search, or tag changes
@@ -96,6 +101,30 @@ function Dashboard() {
     } catch (error) {
       console.error('Error fetching activity dates:', error);
       // Don't show error to user - fall back to old streak logic
+    }
+  };
+
+  const fetchDailyStats = async () => {
+    try {
+      const data = await bookApi.getDailyStats();
+      setDailyStats(data.dailyStats || []);
+    } catch (error) {
+      console.error('Error fetching daily stats:', error);
+      // Don't show error to user - analytics will use fallback
+    }
+  };
+
+  const fetchPeriodStats = async () => {
+    try {
+      const data = await bookApi.getPeriodStats();
+      setPeriodStats({
+        pagesThisWeek: data.pagesThisWeek || 0,
+        pagesThisMonth: data.pagesThisMonth || 0,
+        pagesThisYear: data.pagesThisYear || 0
+      });
+    } catch (error) {
+      console.error('Error fetching period stats:', error);
+      // Don't show error to user - will show 0
     }
   };
 
@@ -242,6 +271,25 @@ function Dashboard() {
     // Calculate reading pace (pages per day)
     const readingPace = calculateReadingPace(books);
 
+    // Calculate pages read for each time period
+    const booksFinishedThisWeek = finishedBooks.filter(b => {
+      const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
+      return bookDateIST >= weekAgoIST;
+    });
+    const pagesThisWeek = periodStats.pagesThisWeek;
+
+    const booksFinishedThisMonth = finishedBooks.filter(b => {
+      const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
+      return bookDateIST >= monthStartIST;
+    });
+    const pagesThisMonth = periodStats.pagesThisMonth;
+
+    const booksFinishedThisYear = finishedBooks.filter(b => {
+      const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
+      return bookDateIST >= yearStartIST;
+    });
+    const pagesThisYear = periodStats.pagesThisYear;
+
     return { 
       completed, 
       reading, 
@@ -249,6 +297,9 @@ function Dashboard() {
       booksThisWeek,
       booksThisMonth,
       booksThisYear,
+      pagesThisWeek,
+      pagesThisMonth,
+      pagesThisYear,
       currentStreak: streak.current,
       longestStreak: streak.longest,
       avgPages,
@@ -319,6 +370,24 @@ function Dashboard() {
   const calculateReadingPace = (books) => {
     if (books.length === 0) return null;
     
+    // Helper to get IST date (UTC+5:30)
+    const getISTDate = (date = new Date()) => {
+      const utcTime = date.getTime();
+      const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+      return new Date(utcTime + istOffset);
+    };
+
+    // Helper to get start of day in IST (midnight 00:00)
+    const getISTStartOfDay = (date) => {
+      const istDate = getISTDate(date);
+      return new Date(Date.UTC(
+        istDate.getUTCFullYear(),
+        istDate.getUTCMonth(),
+        istDate.getUTCDate(),
+        0, 0, 0, 0
+      ));
+    };
+    
     // Get all books with reading activity (reading or finished)
     const activeBooks = books.filter(b => 
       (b.status === 'READING' || b.status === 'FINISHED') && b.startDate
@@ -326,18 +395,18 @@ function Dashboard() {
     
     if (activeBooks.length === 0) return null;
     
-    // Find the earliest start date
-    const startDates = activeBooks.map(b => new Date(b.startDate));
+    // Find the earliest start date (normalized to start of day in IST)
+    const startDates = activeBooks.map(b => getISTStartOfDay(new Date(b.startDate)));
     const earliestStart = new Date(Math.min(...startDates));
     
-    // Calculate days from earliest start to today
-    const today = new Date();
-    const totalDays = Math.max(1, Math.floor((today - earliestStart) / (1000 * 60 * 60 * 24)));
+    // Calculate days from earliest start to today (using IST midnight boundaries)
+    const todayIST = getISTStartOfDay(getISTDate());
+    const totalDays = Math.max(1, Math.ceil((todayIST - earliestStart) / (1000 * 60 * 60 * 24)) + 1);
     
     // Calculate total pages read across all books
     const totalPagesRead = books.reduce((sum, b) => sum + b.pagesRead, 0);
     
-    // Pages per day
+    // Pages per day (rounded)
     return Math.round(totalPagesRead / totalDays);
   };
 
@@ -351,44 +420,104 @@ function Dashboard() {
           <div className="nav-brand">
             <span className="brand-icon">📚</span>
             <h1>Books I Read</h1>
+            <span className="user-greeting">Hi, {user?.username}!</span>
           </div>
           <div className="nav-actions">
-            <span className="user-greeting">Hi, {user?.username}!</span>
             <button
-              className="btn-analytics"
+              className="btn-add-book"
+              onClick={() => setShowAddForm(!showAddForm)}
+            >
+              {showAddForm ? '← Back' : '+ Add Book'}
+            </button>
+            
+            {/* Hamburger Menu */}
+            <button 
+              className="btn-hamburger"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              {menuOpen ? '✕' : '☰'}
+            </button>
+
+            {/* Dropdown Menu */}
+            <div className={`nav-dropdown ${menuOpen ? 'open' : ''}`}>
+              <button
+                className="btn-analytics-mobile"
+                onClick={() => {
+                  setShowAnalyticsModal(true);
+                  setMenuOpen(false);
+                }}
+              >
+                📊 Analytics
+              </button>
+              <button
+                className="btn-theme-toggle-mobile"
+                onClick={() => {
+                  setIsDarkMode(!isDarkMode);
+                  setMenuOpen(false);
+                }}
+              >
+                {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+              </button>
+              <button
+                className="btn-import-mobile"
+                onClick={() => {
+                  setShowImportModal(true);
+                  setMenuOpen(false);
+                }}
+              >
+                📥 Import
+              </button>
+              <button
+                className="btn-share-mobile"
+                onClick={() => {
+                  setShowShareModal(true);
+                  setMenuOpen(false);
+                }}
+              >
+                📤 Share
+              </button>
+              <button 
+                className="btn-logout-mobile" 
+                onClick={() => {
+                  handleLogout();
+                  setMenuOpen(false);
+                }}
+              >
+                🚪 Logout
+              </button>
+            </div>
+
+            {/* Desktop Actions - Hidden on Mobile */}
+            <button
+              className="btn-analytics desktop-only"
               onClick={() => setShowAnalyticsModal(true)}
               title="View Analytics"
             >
               📊 Analytics
             </button>
             <button
-              className="btn-theme-toggle"
+              className="btn-theme-toggle desktop-only"
               onClick={() => setIsDarkMode(!isDarkMode)}
               title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
               {isDarkMode ? '☀️' : '🌙'}
             </button>
             <button
-              className="btn-import"
+              className="btn-import desktop-only"
               onClick={() => setShowImportModal(true)}
               title="Import from Goodreads"
             >
               📥 Import
             </button>
             <button
-              className="btn-share"
+              className="btn-share desktop-only"
               onClick={() => setShowShareModal(true)}
               title="Share reading list"
             >
               📤 Share
             </button>
-            <button
-              className="btn-add-book"
-              onClick={() => setShowAddForm(!showAddForm)}
-            >
-              {showAddForm ? '← Back to Library' : '+ Add Book'}
-            </button>
-            <button className="btn-logout" onClick={handleLogout}>
+            <button className="btn-logout desktop-only" onClick={handleLogout}>
               Logout
             </button>
           </div>
@@ -408,26 +537,24 @@ function Dashboard() {
           </div>
         ) : (
           <>
-            {/* Random Quote Section */}
+            {/* Compact Quote Banner */}
             {randomQuote && (
-              <div className="quote-section">
-                <div className="quote-card">
-                  <div className="quote-icon">💡</div>
-                  <div className="quote-content">
-                    {quoteLoading ? (
-                      <p className="quote-text quote-loading">Loading new wisdom...</p>
-                    ) : (
-                      <>
-                        <p className="quote-text">"{randomQuote.text}"</p>
-                        <p className="quote-author">— {randomQuote.author}</p>
-                      </>
+              <div className="quote-banner">
+                <div className="quote-banner-content">
+                  <span className="quote-icon">💡</span>
+                  <div className="quote-text-wrapper">
+                    <span className="quote-text-compact">
+                      {quoteLoading ? 'Loading...' : `"${randomQuote.text}"`}
+                    </span>
+                    {!quoteLoading && (
+                      <span className="quote-author">— {randomQuote.author}</span>
                     )}
                   </div>
                   <button 
-                    className="btn-refresh-quote" 
+                    className="btn-refresh-quote-compact" 
                     onClick={getNewQuote}
                     disabled={quoteLoading}
-                    title="Get new quote"
+                    title="New quote"
                   >
                     🔄
                   </button>
@@ -435,38 +562,37 @@ function Dashboard() {
               </div>
             )}
 
-            {/* Statistics Cards */}
-            <div className="stats-section">
-              <div className="stat-card">
+            {/* Statistics Cards - 2x2 Grid */}
+            <div className="stats-grid-2x2">
+              <div className="stat-card-compact">
                 <div className="stat-icon">✅</div>
                 <div className="stat-content">
                   <div className="stat-value">{stats.completed}</div>
-                  <div className="stat-label">Books Completed</div>
+                  <div className="stat-label">Completed</div>
                 </div>
               </div>
 
-              <div className="stat-card">
+              <div className="stat-card-compact">
                 <div className="stat-icon">📖</div>
                 <div className="stat-content">
                   <div className="stat-value">{stats.reading}</div>
-                  <div className="stat-label">Currently Reading</div>
+                  <div className="stat-label">Reading</div>
                 </div>
               </div>
 
-              <div className="stat-card">
+              <div className="stat-card-compact">
                 <div className="stat-icon">📄</div>
                 <div className="stat-content">
                   <div className="stat-value">{stats.totalPagesRead.toLocaleString()}</div>
-                  <div className="stat-label">Total Pages Read</div>
+                  <div className="stat-label">Pages Read</div>
                 </div>
               </div>
 
-              <div className="stat-card">
+              <div className="stat-card-compact">
                 <div className="stat-icon">🔥</div>
                 <div className="stat-content">
                   <div className="stat-value">{stats.currentStreak}</div>
-                  <div className="stat-label">Current Streak</div>
-                  <div className="stat-subtitle">days in a row</div>
+                  <div className="stat-label">Streak</div>
                 </div>
               </div>
             </div>
@@ -622,6 +748,7 @@ function Dashboard() {
       {showAnalyticsModal && (
         <AnalyticsModal
           stats={stats}
+          dailyStats={dailyStats}
           onClose={() => setShowAnalyticsModal(false)}
         />
       )}

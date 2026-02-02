@@ -41,6 +41,18 @@ public interface ReadingActivityRepository extends JpaRepository<ReadingActivity
     List<LocalDate> findDistinctActivityDatesByUser(@Param("user") User user);
     
     /**
+     * Get total pages read on a specific date
+     */
+    @Query("SELECT COALESCE(SUM(ra.pagesReadToday), 0) FROM ReadingActivity ra WHERE ra.user = :user AND ra.activityDate = :date")
+    Integer getTotalPagesReadOnDate(@Param("user") User user, @Param("date") LocalDate date);
+    
+    /**
+     * Get total pages read between two dates (inclusive)
+     */
+    @Query("SELECT COALESCE(SUM(ra.pagesReadToday), 0) FROM ReadingActivity ra WHERE ra.user = :user AND ra.activityDate BETWEEN :startDate AND :endDate")
+    Integer getTotalPagesReadBetweenDates(@Param("user") User user, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    
+    /**
      * Delete all activities for a specific book
      */
     void deleteByBookId(Long bookId);

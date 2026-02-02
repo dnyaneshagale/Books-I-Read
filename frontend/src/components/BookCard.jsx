@@ -168,6 +168,12 @@ function BookCard({ book, onUpdate, onDelete }) {
 
       <div className="card-actions">
         <button
+          className="btn-update-book"
+          onClick={() => onUpdate(book)}
+        >
+          Update
+        </button>
+        <button
           className="btn-share-book"
           onClick={handleShare}
           title="Share this book"
@@ -175,16 +181,11 @@ function BookCard({ book, onUpdate, onDelete }) {
           📤
         </button>
         <button
-          className="btn-update"
-          onClick={() => onUpdate(book)}
-        >
-          Update
-        </button>
-        <button
-          className="btn-delete"
+          className="btn-delete-icon"
           onClick={() => onDelete(book.id)}
+          title="Delete book"
         >
-          Delete
+          🗑️
         </button>
       </div>
     </div>

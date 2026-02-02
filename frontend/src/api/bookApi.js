@@ -94,6 +94,32 @@ const bookApi = {
     }
   },
 
+  /**
+   * Get daily reading statistics for the last 7 days
+   * @returns {Promise} Object with dailyStats array
+   */
+  getDailyStats: async () => {
+    try {
+      const response = await axiosClient.get('/activities/daily-stats');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get pages read for week/month/year periods
+   * @returns {Promise} Object with pagesThisWeek, pagesThisMonth, pagesThisYear
+   */
+  getPeriodStats: async () => {
+    try {
+      const response = await axiosClient.get('/activities/period-stats');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Extension: Add future methods
   // getBookStats: async () => { ... },
   // searchBooks: async (query) => { ... },
