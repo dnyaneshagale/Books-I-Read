@@ -1012,13 +1012,6 @@ body.dark-mode .navbar {
   background: var(--color-bg-tertiary);
   color: var(--color-text-light);
 }
-  border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.15);
-  min-width: 24px;
-  text-align: center;
-  font-weight: var(--font-weight-bold);
-  position: relative;
-}
 
 .filter-tab.active .filter-count {
   background: rgba(255, 255, 255, 0.25);
