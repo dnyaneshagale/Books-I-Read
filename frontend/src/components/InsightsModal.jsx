@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import './InsightsModal.css';
 
 /**
@@ -17,9 +18,11 @@ import './InsightsModal.css';
 function InsightsModal({ book, loading = false, onClose }) {
   // Lock body scroll when modal is open
   useEffect(() => {
-    document.body.classList.add('insights-modal-open');
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    
     return () => {
-      document.body.classList.remove('insights-modal-open');
+      document.body.style.overflow = originalOverflow || 'unset';
     };
   }, []);
 
@@ -41,7 +44,7 @@ function InsightsModal({ book, loading = false, onClose }) {
   // Check if we have any data to show
   const hasData = summary || keyTakeaways.length > 0 || readerInsights.length > 0;
 
-  return (
+  const modalContent = (
     <div className="insights-modal-overlay" onClick={onClose}>
       <div className="insights-modal-content" onClick={(e) => e.stopPropagation()}>
         
@@ -148,6 +151,12 @@ function InsightsModal({ book, loading = false, onClose }) {
 
       </div>
     </div>
+  );
+
+  // Render modal in portal to prevent z-index stacking issues
+  return ReactDOM.createPortal(
+    modalContent,
+    document.getElementById('modal-root')
   );
 }
 

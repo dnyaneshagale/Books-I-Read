@@ -13,9 +13,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   padding: var(--spacing-lg);
   animation: insightsFadeIn 0.2s ease;
+}
+
+/* Mobile: Remove padding for better centering */
+@media (max-width: 640px) {
+  .insights-modal-overlay {
+    padding: 0;
+    align-items: center;
+  }
 }
 
 @keyframes insightsFadeIn {
@@ -42,6 +50,18 @@
   border: 1px solid var(--color-border);
   animation: insightsSlideUp 0.3s ease;
   overflow: hidden;
+  position: relative;
+  z-index: 10000;
+}
+
+/* Mobile: Responsive width and height with proper centering */
+@media (max-width: 640px) {
+  .insights-modal-content {
+    width: 95%;
+    max-height: 85vh;
+    margin: auto;
+    border-radius: var(--radius-lg);
+  }
 }
 
 @keyframes insightsSlideUp {
@@ -66,6 +86,13 @@
   border-bottom: 2px solid var(--color-border);
   background: var(--color-bg);
   flex-shrink: 0;
+}
+
+/* Mobile: Smaller padding */
+@media (max-width: 640px) {
+  .insights-modal-header {
+    padding: 16px;
+  }
 }
 
 .insights-header-text {
@@ -121,6 +148,13 @@
   /* Custom scrollbar */
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
+}
+
+/* Mobile: Reduce padding */
+@media (max-width: 640px) {
+  .insights-modal-body {
+    padding: 16px;
+  }
 }
 
 .insights-modal-body::-webkit-scrollbar {
@@ -241,6 +275,13 @@
   border-radius: var(--radius-md);
 }
 
+/* Mobile: Reduce padding */
+@media (max-width: 640px) {
+  .insights-summary-box {
+    padding: 12px 16px;
+  }
+}
+
 .insights-summary-text {
   font-size: 15px;
   line-height: 1.6;
@@ -299,6 +340,8 @@
 .insights-pill-text {
   color: #2c2c2c;
   flex: 1;
+  word-wrap: break-word;
+  white-space: normal;
 }
 
 /* ============================================
@@ -317,95 +360,7 @@
   text-align: center;
 }
 
-/* ============================================
-   Mobile Responsive (< 768px)
-   ============================================ */
-@media (max-width: 768px) {
-  .insights-modal-overlay {
-    padding: 0;
-    align-items: flex-end;
-  }
-
-  .insights-modal-content {
-    max-width: 100%;
-    width: 100%;
-    max-height: 100vh;
-    height: 100vh;
-    border-radius: 0;
-    animation: insightsSlideUpMobile 0.3s ease;
-  }
-
-  @keyframes insightsSlideUpMobile {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: translateY(0);
-    }
-  }
-
-  .insights-modal-header {
-    padding: 20px 16px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  .insights-modal-header h2 {
-    font-size: var(--font-size-xl);
-  }
-
-  .btn-close-insights {
-    min-width: 44px;
-    min-height: 44px;
-    font-size: 20px;
-  }
-
-  .insights-modal-body {
-    padding: 20px;
-    overflow-y: auto;
-  }
-
-  .insights-section {
-    margin-bottom: var(--spacing-2xl);
-  }
-
-  .insights-section-title {
-    font-size: var(--font-size-xl);
-  }
-
-  .insights-summary-box {
-    padding: 16px 18px;
-  }
-
-  .insights-summary-text {
-    font-size: var(--font-size-base);
-    line-height: 1.6;
-  }
-
-  .insights-pill {
-    padding: 12px 14px;
-    font-size: 13px;
-  }
-
-  .insights-loading,
-  .insights-empty {
-    padding: 40px 20px;
-  }
-
-  .insights-empty-icon {
-    font-size: 48px;
-  }
-}
-
-/* ============================================
-   Prevent Body Scroll When Modal Open
-   ============================================ */
-body.insights-modal-open {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-}
+/* Old mobile responsive code removed - now using centered modal approach */
 
 /* ============================================
    Dark Mode Support

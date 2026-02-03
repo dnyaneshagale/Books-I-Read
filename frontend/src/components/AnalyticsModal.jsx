@@ -1,8 +1,19 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import './AnalyticsModal.css';
 
 function AnalyticsModal({ stats, dailyStats = [], onClose }) {
   if (!stats) return null;
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.overflow = originalOverflow || 'unset';
+    };
+  }, []);
 
   // Calculate pages read for different periods from stats
   const pagesThisWeek = stats.pagesThisWeek || 0;
@@ -46,7 +57,7 @@ function AnalyticsModal({ stats, dailyStats = [], onClose }) {
   const maxPages = Math.max(...last7Days.map(d => d.pages), 1);
   const hasData = last7Days.some(d => d.pages > 0);
 
-  return (
+  const modalContent = (
     <div className="analytics-modal-overlay" onClick={onClose}>
       <div className="analytics-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="analytics-modal-header">
@@ -83,36 +94,27 @@ function AnalyticsModal({ stats, dailyStats = [], onClose }) {
           </div>
         )}
 
-        {/* Scorecard Row - Time Periods */}
-        <div className="scorecard-row">
-          <div className="scorecard-item">
-            <div className="scorecard-icon">📅</div>
-            <div className="scorecard-content">
-              <div className="scorecard-label">This Week</div>
-              <div className="scorecard-value">{stats.booksThisWeek}</div>
-              <div className="scorecard-sublabel">books</div>
-              <div className="scorecard-secondary">{pagesThisWeek} pages</div>
-            </div>
+        {/* Scorecard Row - Time Periods (Split Grid) */}
+        <div className="scorecard-grid-container">
+          <div className="scorecard-grid-cell">
+            <div className="scorecard-grid-label">This Week</div>
+            <div className="scorecard-grid-value">{stats.booksThisWeek}</div>
+            <div className="scorecard-grid-sublabel">{stats.booksThisWeek === 1 ? 'book' : 'books'}</div>
+            <div className="scorecard-grid-secondary">{pagesThisWeek} pages</div>
           </div>
 
-          <div className="scorecard-item">
-            <div className="scorecard-icon">📆</div>
-            <div className="scorecard-content">
-              <div className="scorecard-label">This Month</div>
-              <div className="scorecard-value">{stats.booksThisMonth}</div>
-              <div className="scorecard-sublabel">books</div>
-              <div className="scorecard-secondary">{pagesThisMonth} pages</div>
-            </div>
+          <div className="scorecard-grid-cell">
+            <div className="scorecard-grid-label">This Month</div>
+            <div className="scorecard-grid-value">{stats.booksThisMonth}</div>
+            <div className="scorecard-grid-sublabel">{stats.booksThisMonth === 1 ? 'book' : 'books'}</div>
+            <div className="scorecard-grid-secondary">{pagesThisMonth} pages</div>
           </div>
 
-          <div className="scorecard-item">
-            <div className="scorecard-icon">📊</div>
-            <div className="scorecard-content">
-              <div className="scorecard-label">This Year</div>
-              <div className="scorecard-value">{stats.booksThisYear}</div>
-              <div className="scorecard-sublabel">books</div>
-              <div className="scorecard-secondary">{pagesThisYear} pages</div>
-            </div>
+          <div className="scorecard-grid-cell">
+            <div className="scorecard-grid-label">This Year</div>
+            <div className="scorecard-grid-value">{stats.booksThisYear}</div>
+            <div className="scorecard-grid-sublabel">{stats.booksThisYear === 1 ? 'book' : 'books'}</div>
+            <div className="scorecard-grid-secondary">{pagesThisYear} pages</div>
           </div>
         </div>
 
@@ -137,33 +139,33 @@ function AnalyticsModal({ stats, dailyStats = [], onClose }) {
         </div>
 
         {/* Additional Metrics Row */}
-        <div className="metrics-row">
-          <div className="metric-compact">
-            <span className="metric-icon">📚</span>
-            <div>
-              <div className="metric-value">{stats.avgPages}</div>
-              <div className="metric-label">Avg Pages/Book</div>
-            </div>
+        <div className="metrics-grid-container">
+          <div className="metrics-grid-cell">
+            <div className="metrics-grid-label">Avg Pages/Book</div>
+            <div className="metrics-grid-value">{stats.avgPages}</div>
           </div>
 
-          <div className="metric-compact">
-            <span className="metric-icon">⚡</span>
-            <div>
-              <div className="metric-value">{stats.readingPace}</div>
-              <div className="metric-label">Pages/Day</div>
-            </div>
+          <div className="metrics-grid-cell">
+            <div className="metrics-grid-label">Pages/Day</div>
+            <div className="metrics-grid-value">{stats.readingPace}</div>
           </div>
 
-          <div className="metric-compact">
-            <span className="metric-icon">🎯</span>
-            <div>
-              <div className="metric-value">{stats.currentStreak}</div>
-              <div className="metric-label">Current Streak</div>
-            </div>
+          <div className="metrics-grid-cell">
+            <div className="metrics-grid-label">Current Streak</div>
+            <div className="metrics-grid-value">{stats.currentStreak}</div>
           </div>
         </div>
+
+        {/* Spacer to prevent content cutoff by mobile browser toolbar */}
+        <div className="scroll-spacer" aria-hidden="true" />
       </div>
     </div>
+  );
+
+  // Render modal in portal to prevent z-index stacking issues
+  return ReactDOM.createPortal(
+    modalContent,
+    document.getElementById('modal-root')
   );
 }
 

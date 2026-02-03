@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import './BookCard.css';
 
@@ -8,6 +8,25 @@ import './BookCard.css';
  * Displays individual book information with progress, rating, and reading dates
  */
 function BookCard({ book, onUpdate, onDelete, onShowInsights }) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
   
   const getStatusClass = (status) => {
     switch (status) {
@@ -96,9 +115,44 @@ function BookCard({ book, onUpdate, onDelete, onShowInsights }) {
     <div className="book-card">
       <div className="book-header">
         <h3 className="book-title">{book.title}</h3>
-        <span className={`status-badge ${getStatusClass(book.status)}`}>
-          {getStatusLabel(book.status)}
-        </span>
+        <div className="header-actions">
+          <span className={`status-badge ${getStatusClass(book.status)}`}>
+            {getStatusLabel(book.status)}
+          </span>
+          <div className="more-options-wrapper" ref={dropdownRef}>
+            <button 
+              className="btn-more-options"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              aria-label="More options"
+            >
+              ⋮
+            </button>
+            {isDropdownOpen && (
+              <div className="dropdown-menu">
+                <button 
+                  className="dropdown-item"
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onUpdate(book);
+                  }}
+                >
+                  <span className="dropdown-icon">✏️</span>
+                  Edit Details
+                </button>
+                <button 
+                  className="dropdown-item dropdown-item-danger"
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onDelete(book.id);
+                  }}
+                >
+                  <span className="dropdown-icon">🗑️</span>
+                  Delete Book
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <p className="book-author">by {book.author}</p>
@@ -181,20 +235,6 @@ function BookCard({ book, onUpdate, onDelete, onShowInsights }) {
             ✨
           </button>
         )}
-        <button
-          className="btn-share-book"
-          onClick={handleShare}
-          title="Share this book"
-        >
-          📤
-        </button>
-        <button
-          className="btn-delete-icon"
-          onClick={() => onDelete(book.id)}
-          title="Delete book"
-        >
-          🗑️
-        </button>
       </div>
     </div>
   );

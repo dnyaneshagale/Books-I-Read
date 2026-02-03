@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import axiosClient from '../api/axiosClient';
 import './RecommendationModal.css';
 
@@ -174,7 +175,21 @@ function RecommendationModal({ onClose, userBooks, onAddToWishlist }) {
     setAddedBooks(prev => new Set([...prev, bookKey]));
   };
 
-  return (
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    // Save current overflow value
+    const originalOverflow = document.body.style.overflow;
+    
+    // Disable scroll
+    document.body.style.overflow = 'hidden';
+    
+    // Cleanup: restore scroll on unmount
+    return () => {
+      document.body.style.overflow = originalOverflow || 'unset';
+    };
+  }, []);
+
+  const modalContent = (
     <div className="recommendation-modal-overlay" onClick={onClose}>
       <div className="recommendation-modal-content" onClick={(e) => e.stopPropagation()}>
         
@@ -335,6 +350,12 @@ function RecommendationModal({ onClose, userBooks, onAddToWishlist }) {
 
       </div>
     </div>
+  );
+
+  // Render modal in portal to prevent z-index stacking issues
+  return ReactDOM.createPortal(
+    modalContent,
+    document.getElementById('modal-root')
   );
 }
 

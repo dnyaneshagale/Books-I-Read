@@ -13,9 +13,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   padding: var(--spacing-lg);
   animation: fadeIn 0.2s ease;
+}
+
+/* Mobile: Reduce padding to allow more modal space */
+@media (max-width: 640px) {
+  .recommendation-modal-overlay {
+    padding: 0;
+    align-items: center;
+  }
 }
 
 @keyframes fadeIn {
@@ -42,6 +50,21 @@
   border: 1px solid var(--color-border);
   animation: slideUp 0.3s ease;
   overflow: hidden;
+  position: relative;
+  z-index: 10000;
+}
+
+/* Mobile: Responsive width and height with proper centering */
+@media (max-width: 640px) {
+  .recommendation-modal-content {
+    width: 95%;
+    max-height: 85vh;
+    max-height: 85dvh;
+    margin: auto;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 @keyframes slideUp {
@@ -75,6 +98,17 @@
   margin: 0;
 }
 
+/* Mobile: Smaller header and text */
+@media (max-width: 640px) {
+  .recommendation-modal-header {
+    padding: 16px;
+  }
+  
+  .recommendation-modal-header h2 {
+    font-size: var(--font-size-lg);
+  }
+}
+
 .btn-close-recommendation {
   background: var(--color-bg-tertiary);
   border: 1px solid var(--color-border);
@@ -104,6 +138,17 @@
   border-radius: 12px;
   border-bottom: none;
   margin-bottom: var(--spacing-lg);
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Mobile: Ensure tabs stay on one row */
+@media (max-width: 640px) {
+  .recommendation-tabs {
+    gap: 2px;
+    padding: 3px;
+    margin-bottom: var(--spacing-md);
+  }
 }
 
 .tab-button {
@@ -118,6 +163,17 @@
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mobile: Smaller font size for tabs to fit on one row */
+@media (max-width: 640px) {
+  .tab-button {
+    font-size: 12px;
+    padding: 10px 8px;
+  }
 }
 
 .tab-button:hover:not(.active) {
@@ -138,9 +194,22 @@
 .recommendation-modal-body {
   padding: 24px;
   overflow-y: auto;
-  flex: 1;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
+}
+
+/* Mobile: Ensure scrollability works */
+@media (max-width: 640px) {
+  .recommendation-modal-body {
+    padding: 16px;
+    padding-bottom: 40px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .recommendation-modal-body::-webkit-scrollbar {
@@ -163,6 +232,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  min-height: min-content;
 }
 
 .mode-description {
@@ -583,6 +653,10 @@
     font-size: var(--font-size-xl);
   }
 
+  .recommendation-modal-header {
+    padding: 16px;
+  }
+
   .btn-close-recommendation {
     min-width: 44px;
     min-height: 44px;
@@ -590,8 +664,10 @@
   }
 
   .recommendation-modal-body {
-    padding: 20px;
+    padding: 16px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: none;
   }
 
   .tab-button {
@@ -607,7 +683,11 @@
 
   .form-group label {
     font-size: var(--font-size-base);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+  }
+
+  .custom-form {
+    gap: var(--spacing-md);
   }
 
   .form-group input,
