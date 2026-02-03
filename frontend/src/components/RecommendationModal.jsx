@@ -123,7 +123,9 @@ function RecommendationModal({ onClose, userBooks, onAddToWishlist }) {
 
       setRecommendations(response.data.recommendations || []);
     } catch (err) {
-      setError('Failed to generate recommendations. Please try again.');
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to generate recommendations. Please try again.';
+      setError(errorMsg);
+      console.error('Library recommendations error:', err.response?.data || err);
     } finally {
       setLoading(false);
     }
@@ -149,7 +151,9 @@ function RecommendationModal({ onClose, userBooks, onAddToWishlist }) {
 
       setRecommendations(response.data.recommendations || []);
     } catch (err) {
-      setError('Failed to generate recommendations. Please try again.');
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to generate recommendations. Please try again.';
+      setError(errorMsg);
+      console.error('Custom recommendations error:', err.response?.data || err);
     } finally {
       setLoading(false);
     }
