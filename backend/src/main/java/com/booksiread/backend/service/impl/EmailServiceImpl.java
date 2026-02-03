@@ -1,26 +1,27 @@
 package com.booksiread.backend.service.impl;
 
 import com.booksiread.backend.service.EmailService;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * EmailServiceImpl - Email service implementation using Brevo SMTP
+ * EmailServiceImpl - Email service implementation using Brevo API
  */
 @Service
 public class EmailServiceImpl implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
+    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
-    @Autowired
-    private JavaMailSender mailSender;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -31,31 +32,61 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.email.from-name:Books I Read}")
     private String fromName;
 
+    @Value("${brevo.api.key}")
+    private String brevoApiKey;
+
     @Override
     public void sendPasswordResetEmail(String toEmail, String username, String resetToken) {
         try {
             String resetUrl = frontendUrl + "/reset-password?token=" + resetToken;
             
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail, fromName);
-            helper.setTo(toEmail);
-            helper.setSubject("Reset Your Password - Books I Read");
-
+            // Build Brevo API request
+            Map<String, Object> emailRequest = new HashMap<>();
+            
+            // Sender
+            Map<String, String> sender = new HashMap<>();
+            sender.put("email", fromEmail);
+            sender.put("name", fromName);
+            emailRequest.put("sender", sender);
+            
+            // Recipient
+            Map<String, String> recipient = new HashMap<>();
+            recipient.put("email", toEmail);
+            recipient.put("name", username);
+            emailRequest.put("to", List.of(recipient));
+            
+            // Subject
+            emailRequest.put("subject", "Reset Your Password - Books I Read");
+            
+            // HTML Content
             String htmlContent = buildPasswordResetEmailHtml(username, resetUrl);
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
+            emailRequest.put("htmlContent", htmlContent);
             
-            logger.info("Password reset email sent successfully to: {}", toEmail);
+            // Headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("api-key", brevoApiKey);
             
-        } catch (MessagingException e) {
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailRequest, headers);
+            
+            // Send request
+            ResponseEntity<String> response = restTemplate.exchange(
+                BREVO_API_URL,
+                HttpMethod.POST,
+                request,
+                String.class
+            );
+            
+            if (response.getStatusCode().is2xxSuccessful()) {
+                logger.info("Password reset email sent successfully to: {}", toEmail);
+            } else {
+                logger.error("Brevo API returned non-success status: {}", response.getStatusCode());
+                throw new RuntimeException("Failed to send password reset email.");
+            }
+            
+        } catch (Exception e) {
             logger.error("Failed to send password reset email to: {}", toEmail, e);
             throw new RuntimeException("Failed to send password reset email. Please try again later.");
-        } catch (Exception e) {
-            logger.error("Unexpected error sending email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send email. Please contact support.");
         }
     }
 
