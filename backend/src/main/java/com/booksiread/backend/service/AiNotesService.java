@@ -14,13 +14,6 @@ import java.time.LocalDateTime;
 
 /**
  * AI Notes Service - Business logic for generating AI-powered book notes
- * 
- * Extension Notes:
- * - Add caching to avoid regenerating notes for same book
- * - Implement queue-based processing (RabbitMQ/Kafka) for high volume
- * - Add user preference for AI note generation (opt-in/opt-out)
- * - Store generation metadata (tokens used, cost, model version)
- * - Add admin endpoint to bulk regenerate notes
  */
 @Service
 public class AiNotesService {
@@ -39,11 +32,6 @@ public class AiNotesService {
      * Generate AI notes asynchronously for a book
      * 
      * @param bookId - The book ID to generate notes for
-     * 
-     * Extension Notes:
-     * - Add user notification when notes are ready (WebSocket/SSE)
-     * - Implement retry mechanism with exponential backoff
-     * - Add telemetry/metrics (generation time, success rate)
      */
     @Async("aiNotesExecutor")
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
@@ -150,8 +138,6 @@ public class AiNotesService {
 
     /**
      * Regenerate notes for an existing book (manual trigger)
-     * 
-     * Extension: Add user permission check before allowing regeneration
      */
     @Transactional
     public void regenerateNotes(Long bookId) {

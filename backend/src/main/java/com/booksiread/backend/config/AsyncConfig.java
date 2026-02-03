@@ -9,12 +9,6 @@ import java.util.concurrent.Executor;
 
 /**
  * Async Configuration - Enables asynchronous processing for AI note generation
- * 
- * Extension Notes:
- * - Tune thread pool size based on production load
- * - Add monitoring/metrics for thread pool usage
- * - Consider separate executors for different async tasks
- * - Add rejection policy handling (queue full scenarios)
  */
 @Configuration
 @EnableAsync
@@ -28,8 +22,6 @@ public class AsyncConfig {
      * - Max pool size: 5 (maximum concurrent AI generations)
      * - Queue capacity: 100 (pending tasks queue)
      * - Thread name prefix: For easier debugging in logs
-     * 
-     * Extension: Scale based on your expected concurrent users
      */
     @Bean(name = "aiNotesExecutor")
     public Executor aiNotesExecutor() {

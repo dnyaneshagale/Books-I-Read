@@ -18,13 +18,6 @@ import java.util.Map;
  * Gemini API Client - Handles direct communication with Google Gemini API
  * 
  * Uses: v1beta API with gemini-pro (most stable, widely supported model)
- * 
- * Extension Notes:
- * - Add retry logic using @Retryable (Spring Retry)
- * - Implement circuit breaker pattern (Resilience4j)
- * - Add request/response logging for debugging
- * - Consider switching to WebClient for reactive programming
- * - Add rate limiting to respect API quotas
  */
 @Component
 public class GeminiClient {

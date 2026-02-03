@@ -32,11 +32,6 @@ import java.util.stream.Collectors;
  * - Business validations
  * - Entity-DTO conversions
  * - User-based filtering
- * 
- * Extension Notes:
- * - Add caching with @Cacheable for frequently accessed books
- * - Add event publishing for book completion notifications
- * - Add reading statistics calculation methods
  */
 @Service
 @Transactional
@@ -114,8 +109,6 @@ public class BookServiceImpl implements BookService {
         Book savedBook = bookRepository.saveAndFlush(book);
 
         // Trigger async AI notes generation AFTER book is committed
-        // Extension: Add configuration flag to enable/disable AI generation
-        // Extension: Add user preference check before generating
         aiNotesService.generateNotesAsync(savedBook.getId());
 
         // Convert Entity to Response DTO
@@ -133,9 +126,6 @@ public class BookServiceImpl implements BookService {
                 .stream()
                 .map(BookResponse::fromEntity)
                 .collect(Collectors.toList());
-        
-        // Extension: Add sorting by status (Reading -> Not Started -> Completed)
-        // Extension: Add pagination support
     }
 
     @Override

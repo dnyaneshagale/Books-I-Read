@@ -5,11 +5,6 @@ import java.util.List;
 
 /**
  * DTO for parsing Gemini API responses
- * 
- * Extension Notes:
- * - Add error handling for malformed responses
- * - Consider adding metadata fields (tokensUsed, modelVersion)
- * - Add validation for required fields
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GeminiResponse {
