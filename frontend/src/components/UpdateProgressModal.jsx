@@ -72,8 +72,6 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
       }
       onClose();
     } catch (error) {
-      console.error('Error updating book:', error);
-      
       if (error.response?.data?.message) {
         setError(error.response.data.message);
         toast.error(error.response.data.message);

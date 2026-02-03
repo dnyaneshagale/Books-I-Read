@@ -131,8 +131,6 @@ function AddBookForm({ onBookAdded, onCancel }) {
         onBookAdded();
       }
     } catch (error) {
-      console.error('Error adding book:', error);
-      
       if (error.response?.data?.errors) {
         // Handle validation errors from backend
         setErrors(error.response.data.errors);

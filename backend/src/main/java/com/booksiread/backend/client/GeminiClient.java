@@ -197,4 +197,69 @@ public class GeminiClient {
         
         return cleaned;
     }
+
+    /**
+     * Generate book recommendations using Gemini API
+     * Returns raw JSON string for parsing by the service layer
+     * 
+     * @param prompt - The recommendation prompt
+     * @return JSON string with recommendations or null if failed
+     */
+    public String generateRecommendations(String prompt) {
+        try {
+            logger.info("Calling Gemini API for book recommendations");
+
+            // Build request body
+            Map<String, Object> requestBody = buildRequestBody(prompt);
+
+            // Set headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            // Make API call
+            String url = GEMINI_API_URL + "?key=" + apiKey;
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    String.class
+            );
+
+            // Extract text from response
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                return extractTextFromResponse(response.getBody());
+            } else {
+                logger.error("Gemini API returned non-OK status: {}", response.getStatusCode());
+                return null;
+            }
+
+        } catch (Exception e) {
+            logger.error("Error calling Gemini API for recommendations: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Extract text content from Gemini API response
+     */
+    private String extractTextFromResponse(String responseBody) throws Exception {
+        JsonNode root = objectMapper.readTree(responseBody);
+        JsonNode candidates = root.path("candidates");
+
+        if (candidates.isArray() && candidates.size() > 0) {
+            JsonNode content = candidates.get(0).path("content");
+            JsonNode parts = content.path("parts");
+
+            if (parts.isArray() && parts.size() > 0) {
+                String text = parts.get(0).path("text").asText();
+                return text;
+            }
+        }
+
+        logger.error("Could not extract text from Gemini response");
+        return null;
+    }
 }
+

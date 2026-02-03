@@ -14,14 +14,7 @@ import java.util.List;
 
 /**
  * BookController - REST API endpoints for book management
- * 
  * Base URL: /api/books
- * 
- * Extension Notes:
- * - Add @PreAuthorize for role-based access control
- * - Add rate limiting with @RateLimiter
- * - Add API versioning (/api/v1/books)
- * - Add HATEOAS links for better REST compliance
  */
 @RestController
 @RequestMapping("/api/books")
@@ -50,10 +43,6 @@ public class BookController {
 
     /**
      * GET /api/books - Get all books
-     * 
-     * Extension: Add query parameters for filtering and pagination
-     * ?status=reading&page=0&size=10&sort=createdAt,desc
-     * 
      * @return list of all books
      */
     @GetMapping
@@ -77,13 +66,9 @@ public class BookController {
 
     /**
      * PUT /api/books/{id} - Update book details
-     * 
-     * Use this to update reading progress or book information
-     * 
      * @param id - book ID
      * @param request - updated book details
      * @return updated book
-     * @throws ResourceNotFoundException if book not found (404)
      */
     @PutMapping("/{id}")
     public ResponseEntity<BookResponse> updateBook(
@@ -108,32 +93,12 @@ public class BookController {
 
     /**
      * POST /api/books/{id}/regenerate-notes - Regenerate AI notes for a book
-     * 
-     * Useful when:
-     * - AI generation initially failed
-     * - User wants updated notes
-     * - Book details were corrected
-     * 
      * @param id - book ID
      * @return 202 Accepted (async processing)
-     * 
-     * Extension: Add cooldown period to prevent abuse (e.g., max 1 regeneration per hour)
      */
     @PostMapping("/{id}/regenerate-notes")
     public ResponseEntity<String> regenerateAiNotes(@PathVariable Long id) {
         aiNotesService.regenerateNotes(id);
         return ResponseEntity.accepted().body("AI notes regeneration started");
     }
-
-    /**
-     * Extension: Add statistics endpoint
-     * GET /api/books/stats - Get reading statistics
-     * 
-     * Returns:
-     * - Total books
-     * - Books completed
-     * - Currently reading
-     * - Total pages read
-     * - Average progress
-     */
 }

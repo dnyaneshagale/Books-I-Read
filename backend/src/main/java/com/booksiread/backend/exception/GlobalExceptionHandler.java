@@ -13,13 +13,6 @@ import java.util.Map;
 
 /**
  * GlobalExceptionHandler - Centralized exception handling
- * 
- * Handles all exceptions and returns consistent error responses
- * 
- * Extension Notes:
- * - Add logging with @Slf4j for error tracking
- * - Add monitoring/alerting for critical errors
- * - Add error codes for frontend error handling
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {

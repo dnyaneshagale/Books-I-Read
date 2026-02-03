@@ -5,6 +5,7 @@
 .dashboard {
   min-height: 100vh;
   background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  transition: background 300ms ease, color 300ms ease;
 }
 
 /* ============================================
@@ -19,7 +20,7 @@
   top: 0;
   z-index: 100;
   box-shadow: var(--shadow-sm);
-  transition: all var(--transition-base);
+  transition: all 300ms ease, background-color 300ms ease, border-color 300ms ease;
 }
 
 body.dark-mode .navbar {
@@ -105,7 +106,7 @@ body.dark-mode .navbar {
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 12px;
   flex-wrap: nowrap;
 }
 
@@ -155,6 +156,41 @@ body.dark-mode .navbar {
   border-color: transparent;
   transform: scale(1.05) rotate(15deg);
   box-shadow: var(--shadow-md);
+}
+
+/* Analytics Icon Button - Ghost style with light gray hover */
+.btn-analytics-icon {
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+}
+
+.btn-analytics-icon:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.05);
+}
+
+.btn-analytics-icon:active {
+  transform: scale(0.95);
+}
+
+/* Dark mode for analytics icon */
+.dark-mode .btn-analytics-icon {
+  color: var(--color-text-secondary-dark, #94a3b8);
+}
+
+.dark-mode .btn-analytics-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .btn-analytics {
@@ -289,21 +325,68 @@ body.dark-mode .navbar {
   transform: translateY(-1px) scale(1.01);
 }
 
+.btn-ai-recommend {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #78350f;
+  border: 2px solid #fbbf24;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-ai-recommend:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.5);
+  background: linear-gradient(135deg, #fde68a, #fcd34d);
+}
+
+.btn-ai-recommend:active {
+  transform: scale(1.05);
+}
+
+/* Dark mode for Magic Wand - Warm gold with soft background */
+.dark-mode .btn-ai-recommend {
+  background: rgba(255, 215, 0, 0.1);   /* #FFD700 with 10% opacity */
+  color: #FFD700;                        /* Warm gold */
+  border-color: rgba(255, 215, 0, 0.3); /* Soft gold border */
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+}
+
+.dark-mode .btn-ai-recommend:hover {
+  background: rgba(255, 215, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+  color: #FFE55C;                        /* Slightly brighter on hover */
+}
+
 .btn-add-book {
   background: var(--gradient-primary);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: var(--radius-lg);
+  padding: 0 20px;
+  height: 40px;
+  border-radius: 9999px;
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   cursor: pointer;
   transition: all var(--transition-slow);
-  box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.3);
   position: relative;
   overflow: hidden;
   letter-spacing: 0.3px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-add-book::before {
@@ -325,12 +408,12 @@ body.dark-mode .navbar {
 }
 
 .btn-add-book:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 20px rgba(109, 40, 217, 0.45), 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.4);
 }
 
 .btn-add-book:active {
-  transform: translateY(-1px) scale(1.01);
+  transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }
 
@@ -360,6 +443,7 @@ body.dark-mode .navbar {
   max-width: 1400px;
   margin: 0 auto;
   padding: var(--spacing-xl);
+  transition: background-color 300ms ease, color 300ms ease;
 }
 
 /* ============================================
@@ -383,6 +467,17 @@ body.dark-mode .navbar {
 .quote-banner-content:hover {
   border-left-width: 6px;
   background: linear-gradient(135deg, rgba(109, 40, 217, 0.15) 0%, rgba(168, 85, 247, 0.08) 100%);
+}
+
+/* Dark mode - Soft quote banner */
+.dark-mode .quote-banner-content {
+  background: rgba(124, 77, 255, 0.08);
+  border-left-color: #7C4DFF;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .quote-banner-content:hover {
+  background: rgba(124, 77, 255, 0.12);
 }
 
 .quote-icon {
@@ -587,6 +682,18 @@ body.dark-mode .navbar {
   border-color: var(--color-primary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+/* Dark mode - Soft depth for stat cards */
+.dark-mode .stat-card-compact {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.dark-mode .stat-card-compact:hover {
+  border-top: 1px solid rgba(124, 77, 255, 0.3);
+  box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px -10px rgba(124, 77, 255, 0.2);
 }
 
 .stat-card-compact .stat-icon {
@@ -929,6 +1036,18 @@ body.dark-mode .navbar {
   color: var(--color-text-light);
 }
 
+/* Dark mode - Darker search input for recessed look */
+.dark-mode .search-input {
+  background: #15121B;  /* Darker than cards (#1E1B24) */
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .search-input:focus {
+  background: #15121B;
+  border-color: rgba(124, 77, 255, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 4px rgba(124, 77, 255, 0.15);
+}
+
 .clear-search {
   position: absolute;
   right: 12px;
@@ -1235,31 +1354,37 @@ body.dark-mode .navbar {
   }
 
   .nav-content {
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: 12px var(--spacing-md);
     position: relative;
-    gap: var(--spacing-sm);
+    gap: 10px;
   }
 
   .nav-brand h1 {
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
+    letter-spacing: -0.5px;
   }
   
   .nav-brand {
-    gap: var(--spacing-sm);
+    gap: 10px;
   }
   
   .brand-icon {
-    font-size: 24px;
+    font-size: 26px;
   }
   
   .user-greeting {
-    font-size: var(--font-size-xs);
-    padding: 6px 10px;
-    max-width: 120px;
+    display: none; /* Hidden on mobile to save space */
   }
 
   .nav-actions {
-    gap: var(--spacing-xs);
+    gap: 8px;
+  }
+
+  /* Ensure buttons meet 44px minimum touch target */
+  .btn-ai-recommend {
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
   }
 
   /* Show hamburger menu on mobile */
@@ -1267,6 +1392,8 @@ body.dark-mode .navbar {
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   /* Show dropdown menu on mobile */
@@ -1280,64 +1407,69 @@ body.dark-mode .navbar {
   }
 
   .btn-add-book {
-    padding: 8px 14px;
-    font-size: var(--font-size-xs);
+    padding: 0 16px;
+    height: 44px;
+    font-size: var(--font-size-sm);
     white-space: nowrap;
   }
 
   /* Main Content */
   .main-content {
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg) var(--spacing-md);
   }
 
   /* Compact Quote Banner Mobile */
   .quote-banner {
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
   }
 
   .quote-banner-content {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-md);
     flex-wrap: wrap;
+    gap: var(--spacing-sm);
   }
 
   .quote-icon {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .quote-text-compact {
-    font-size: var(--font-size-xs);
-    line-height: 1.4;
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
   }
   
   .quote-author {
-    font-size: 10px;
+    font-size: var(--font-size-xs);
   }
   
   .btn-refresh-quote-compact {
-    font-size: 16px;
-    padding: 2px 6px;
+    font-size: 18px;
+    padding: 4px 8px;
+    min-width: 36px;
+    min-height: 36px;
   }
 
   /* Stats Grid - Optimized for mobile */
   .stats-grid-2x2 {
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
   }
 
   .stat-card-compact {
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg);
+    min-height: 100px;
   }
 
   .stat-card-compact .stat-icon {
-    font-size: 28px;
+    font-size: 32px;
   }
 
   .stat-card-compact .stat-value {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-2xl);
   }
 
   .stat-card-compact .stat-label {
-    font-size: 11px;
+    font-size: var(--font-size-xs);
   }
 
   /* Analytics Modal */
@@ -1373,45 +1505,51 @@ body.dark-mode .navbar {
 
   /* Search & Filters */
   .filters-section {
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
   }
 
   .search-input {
-    padding: 14px 40px 14px 16px;
-    font-size: var(--font-size-sm);
+    padding: 16px 48px 16px 16px;
+    font-size: var(--font-size-base);
+    min-height: 52px;
   }
 
   .clear-search {
-    font-size: 20px;
-    padding: 6px;
+    font-size: 22px;
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .filter-tabs {
     flex-wrap: wrap;
-    padding: 4px;
+    padding: 6px;
+    gap: 6px;
   }
 
   .filter-tab {
-    flex: 1 1 calc(50% - 4px);
+    flex: 1 1 calc(50% - 6px);
     min-width: 0;
-    padding: 10px 8px;
-    font-size: 11px;
+    padding: 12px 10px;
+    font-size: var(--font-size-xs);
+    min-height: 44px;
   }
 
   .filter-count {
-    font-size: 10px;
-    padding: 2px 6px;
-    min-width: 20px;
+    font-size: 11px;
+    padding: 3px 7px;
+    min-width: 22px;
   }
 
   /* Tag Filters */
   .tag-filter-chips {
-    gap: 6px;
+    gap: 8px;
   }
 
   .tag-filter-chip {
-    padding: 6px 12px;
-    font-size: 11px;
+    padding: 8px 14px;
+    font-size: var(--font-size-xs);
+    min-height: 36px;
   }
 
   /* Books Grid */
@@ -1422,69 +1560,79 @@ body.dark-mode .navbar {
 
   /* Book Cards */
   .book-card {
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg);
   }
 
   .book-title {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-xl);
+    line-height: 1.3;
   }
 
   .book-author {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
   }
 
   .status-badge {
-    font-size: 10px;
-    padding: 5px 12px;
+    font-size: 11px;
+    padding: 6px 14px;
   }
 
   .rating-stars {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .progress-percentage {
-    font-size: 12px;
+    font-size: var(--font-size-sm);
   }
 
   .pages-info {
-    font-size: 12px;
+    font-size: var(--font-size-sm);
   }
 
   .book-dates {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-md);
   }
 
   .date-item {
-    font-size: 12px;
+    font-size: var(--font-size-sm);
   }
 
   .book-tag {
-    font-size: 10px;
-    padding: 3px 8px;
+    font-size: 11px;
+    padding: 4px 10px;
   }
 
   .card-actions {
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
     flex-wrap: wrap;
   }
 
+  .btn-insights {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: var(--font-size-sm);
+  }
+
   .btn-share-book {
-    padding: 10px 14px;
-    font-size: 18px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px;
+    font-size: 20px;
   }
 
   .btn-update {
-    padding: 12px 18px;
-    font-size: 13px;
+    padding: 14px 20px;
+    font-size: var(--font-size-sm);
     flex: 1;
     min-width: 0;
+    min-height: 48px;
   }
 
   .btn-delete {
-    padding: 12px 16px;
-    font-size: 13px;
-    flex: 1;
-    min-width: 0;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 14px;
+    font-size: var(--font-size-base);
   }
 
   /* Add Book Form */

@@ -120,6 +120,20 @@ const bookApi = {
     }
   },
 
+  /**
+   * Generate AI notes for a book
+   * @param {number} id - Book ID
+   * @returns {Promise} void
+   */
+  generateAiNotes: async (id) => {
+    try {
+      const response = await axiosClient.post(`/ai/generate-notes/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Extension: Add future methods
   // getBookStats: async () => { ... },
   // searchBooks: async (query) => { ... },

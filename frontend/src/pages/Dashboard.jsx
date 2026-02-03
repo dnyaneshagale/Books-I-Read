@@ -6,6 +6,9 @@ import UpdateProgressModal from '../components/UpdateProgressModal';
 import ShareModal from '../components/ShareModal';
 import ImportModal from '../components/ImportModal';
 import AnalyticsModal from '../components/AnalyticsModal';
+import InsightsModal from '../components/InsightsModal';
+import RecommendationModal from '../components/RecommendationModal';
+import ProfileDropdown from '../components/ProfileDropdown';
 import bookApi from '../api/bookApi';
 import toast from 'react-hot-toast';
 import { READING_QUOTES } from '../data/quotes';
@@ -24,6 +27,10 @@ function Dashboard() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [showInsightsModal, setShowInsightsModal] = useState(false);
+  const [showRecommendationModal, setShowRecommendationModal] = useState(false);
+  const [insightsBook, setInsightsBook] = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const [activityDates, setActivityDates] = useState([]);
   const [dailyStats, setDailyStats] = useState([]);
   const [periodStats, setPeriodStats] = useState({ pagesThisWeek: 0, pagesThisMonth: 0, pagesThisYear: 0 });
@@ -85,7 +92,6 @@ function Dashboard() {
       const data = await bookApi.getAllBooks();
       setBooks(data);
     } catch (error) {
-      console.error('Error fetching books:', error);
       toast.error('Failed to load books');
     } finally {
       setLoading(false);
@@ -99,8 +105,7 @@ function Dashboard() {
       const dates = data.activityDates.map(dateStr => new Date(dateStr));
       setActivityDates(dates);
     } catch (error) {
-      console.error('Error fetching activity dates:', error);
-      // Don't show error to user - fall back to old streak logic
+      // Silently handle - fall back to old streak logic
     }
   };
 
@@ -109,8 +114,7 @@ function Dashboard() {
       const data = await bookApi.getDailyStats();
       setDailyStats(data.dailyStats || []);
     } catch (error) {
-      console.error('Error fetching daily stats:', error);
-      // Don't show error to user - analytics will use fallback
+      // Silently handle - analytics will use fallback
     }
   };
 
@@ -123,8 +127,7 @@ function Dashboard() {
         pagesThisYear: data.pagesThisYear || 0
       });
     } catch (error) {
-      console.error('Error fetching period stats:', error);
-      // Don't show error to user - will show 0
+      // Silently handle - will show 0
     }
   };
 
@@ -190,6 +193,53 @@ function Dashboard() {
     return parts.length > 0 ? parts.join(', ') : null;
   };
 
+  const handleShowInsights = async (book) => {
+    setInsightsBook(book);
+    setShowInsightsModal(true);
+    
+    // If AI notes haven't been generated yet or failed, trigger generation
+    if (book.aiStatus === 'PENDING' || book.aiStatus === 'FAILED' || !book.aiSummary) {
+      setInsightsLoading(true);
+      try {
+        await bookApi.generateAiNotes(book.id);
+        // Refresh book data to get AI notes
+        const updatedBook = await bookApi.getBookById(book.id);
+        setInsightsBook(updatedBook);
+        // Update book in the list
+        setBooks(prevBooks => prevBooks.map(b => b.id === book.id ? updatedBook : b));
+      } catch (error) {
+        toast.error('Failed to generate AI insights');
+      } finally {
+        setInsightsLoading(false);
+      }
+    }
+  };
+
+  const handleCloseInsights = () => {
+    setShowInsightsModal(false);
+    setInsightsBook(null);
+    setInsightsLoading(false);
+  };
+
+  const handleAddFromRecommendation = async (recommendedBook) => {
+    try {
+      const bookRequest = {
+        title: recommendedBook.title,
+        author: recommendedBook.author,
+        totalPages: 300, // Default, user can update later
+        status: 'WANT_TO_READ',
+        pagesRead: 0
+        // No rating - will be null, user can add later
+      };
+
+      await bookApi.createBook(bookRequest);
+      toast.success(`📚 "${recommendedBook.title}" added to your Want to Read list!`);
+      fetchBooks(); // Refresh the book list
+    } catch (error) {
+      toast.error('Failed to add book');
+    }
+  };
+
   const handleDelete = async (bookId) => {
     if (!window.confirm('Are you sure you want to delete this book?')) {
       return;
@@ -200,7 +250,6 @@ function Dashboard() {
       toast.success('🗑️ Book deleted successfully');
       fetchBooks();
     } catch (error) {
-      console.error('Error deleting book:', error);
       toast.error('Failed to delete book');
     }
   };
@@ -420,17 +469,45 @@ function Dashboard() {
           <div className="nav-brand">
             <span className="brand-icon">📚</span>
             <h1>Books I Read</h1>
-            <span className="user-greeting">Hi, {user?.username}!</span>
           </div>
           <div className="nav-actions">
+            {/* AI Magic Wand - Icon only */}
+            <button
+              className="btn-ai-recommend"
+              onClick={() => setShowRecommendationModal(true)}
+              title="Get AI Recommendations"
+            >
+              🪄
+            </button>
+
+            {/* Add Book - Primary action */}
             <button
               className="btn-add-book"
               onClick={() => setShowAddForm(!showAddForm)}
             >
               {showAddForm ? '← Back' : '+ Add Book'}
             </button>
+
+            {/* Analytics - Icon only (desktop) */}
+            <button
+              className="btn-analytics-icon desktop-only"
+              onClick={() => setShowAnalyticsModal(true)}
+              title="View Analytics"
+            >
+              📊
+            </button>
+
+            {/* Profile Dropdown (desktop) */}
+            <ProfileDropdown
+              username={user?.username || 'User'}
+              onImport={() => setShowImportModal(true)}
+              onShare={() => setShowShareModal(true)}
+              onLogout={handleLogout}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+            />
             
-            {/* Hamburger Menu */}
+            {/* Hamburger Menu (mobile) */}
             <button 
               className="btn-hamburger"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -439,7 +516,7 @@ function Dashboard() {
               {menuOpen ? '✕' : '☰'}
             </button>
 
-            {/* Dropdown Menu */}
+            {/* Mobile Dropdown Menu */}
             <div className={`nav-dropdown ${menuOpen ? 'open' : ''}`}>
               <button
                 className="btn-analytics-mobile"
@@ -487,39 +564,6 @@ function Dashboard() {
                 🚪 Logout
               </button>
             </div>
-
-            {/* Desktop Actions - Hidden on Mobile */}
-            <button
-              className="btn-analytics desktop-only"
-              onClick={() => setShowAnalyticsModal(true)}
-              title="View Analytics"
-            >
-              📊 Analytics
-            </button>
-            <button
-              className="btn-theme-toggle desktop-only"
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
-            <button
-              className="btn-import desktop-only"
-              onClick={() => setShowImportModal(true)}
-              title="Import from Goodreads"
-            >
-              📥 Import
-            </button>
-            <button
-              className="btn-share desktop-only"
-              onClick={() => setShowShareModal(true)}
-              title="Share reading list"
-            >
-              📤 Share
-            </button>
-            <button className="btn-logout desktop-only" onClick={handleLogout}>
-              Logout
-            </button>
           </div>
         </div>
       </nav>
@@ -702,6 +746,7 @@ function Dashboard() {
                       book={book}
                       onUpdate={handleUpdate}
                       onDelete={handleDelete}
+                      onShowInsights={handleShowInsights}
                     />
                   ))}
                 </div>
@@ -750,6 +795,24 @@ function Dashboard() {
           stats={stats}
           dailyStats={dailyStats}
           onClose={() => setShowAnalyticsModal(false)}
+        />
+      )}
+
+      {/* AI Insights Modal */}
+      {showInsightsModal && (
+        <InsightsModal
+          book={insightsBook}
+          loading={insightsLoading}
+          onClose={handleCloseInsights}
+        />
+      )}
+
+      {/* AI Recommendation Modal */}
+      {showRecommendationModal && (
+        <RecommendationModal
+          userBooks={books}
+          onClose={() => setShowRecommendationModal(false)}
+          onAddToWishlist={handleAddFromRecommendation}
         />
       )}
     </div>

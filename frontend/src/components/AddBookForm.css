@@ -199,53 +199,64 @@
 /* Responsive */
 @media (max-width: 768px) {
   .add-book-form {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl) var(--spacing-lg);
   }
 
   .add-book-form h2 {
-    font-size: var(--font-size-xl);
-    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--spacing-lg);
   }
 
   .form-row {
     grid-template-columns: 1fr;
-    gap: var(--spacing-md);
+    gap: var(--spacing-lg);
   }
 
   .form-group label {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
+    margin-bottom: 10px;
   }
 
   .form-group input,
   .form-group select,
   .form-group textarea {
-    padding: 12px 14px;
-    font-size: var(--font-size-sm);
+    padding: 14px 16px;
+    font-size: var(--font-size-base);
+    min-height: 48px;
+  }
+
+  .form-group textarea {
+    min-height: 120px;
   }
 
   .tags-input {
-    padding: 10px 12px;
-    font-size: var(--font-size-sm);
+    padding: 12px 14px;
+    font-size: var(--font-size-base);
+    min-height: 48px;
   }
 
   .tag-chip {
-    padding: 4px 10px;
-    font-size: 11px;
+    padding: 6px 12px;
+    font-size: var(--font-size-xs);
+    min-height: 32px;
   }
 
   .remove-tag {
-    font-size: 14px;
+    font-size: 16px;
+    min-width: 24px;
+    min-height: 24px;
   }
 
   .form-actions {
     flex-direction: column-reverse;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
   }
 
   .form-actions button {
     width: 100%;
-    padding: 14px 18px;
-    font-size: var(--font-size-sm);
+    padding: 16px 20px;
+    font-size: var(--font-size-base);
+    min-height: 52px;
   }
 }
 

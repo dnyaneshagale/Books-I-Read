@@ -42,15 +42,6 @@ axiosClient.interceptors.response.use(
     if (error.response) {
       const isAuthError = error.response.status === 401 || error.response.status === 403;
       
-      // Only log non-auth errors to avoid clutter
-      if (!isAuthError) {
-        console.error('API Error Response:', {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-      }
-      
       // Handle 401/403 - Invalid or expired token
       if (isAuthError) {
         // Clear invalid token
@@ -60,12 +51,6 @@ axiosClient.interceptors.response.use(
         // Emit logout event for AuthContext to handle
         window.dispatchEvent(new CustomEvent('auth:logout'));
       }
-    } else if (error.request) {
-      // Request made but no response received
-      console.error('Network Error:', error.request);
-    } else {
-      // Something else happened
-      console.error('Error:', error.message);
     }
     return Promise.reject(error);
   }

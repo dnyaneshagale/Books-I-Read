@@ -71,9 +71,7 @@ public class Book {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // ========== AI-Generated Fields ==========
-    // Extension Notes: Consider moving to separate AiNotes entity for cleaner separation
-    
+    // AI-Generated Fields
     @Column(name = "ai_summary", columnDefinition = "TEXT")
     private String aiSummary;
 

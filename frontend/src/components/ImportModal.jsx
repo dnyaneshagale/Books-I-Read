@@ -76,7 +76,7 @@ function ImportModal({ onClose, onImported }) {
 
         books.push(book);
       } catch (error) {
-        console.warn(`Error parsing line ${i + 1}:`, error);
+        // Skip invalid lines
       }
     }
 
@@ -153,7 +153,6 @@ function ImportModal({ onClose, onImported }) {
         setPreview(parsedBooks.slice(0, 5)); // Show first 5 books
         toast.success(`📚 Found ${parsedBooks.length} books in file`);
       } catch (error) {
-        console.error('Error parsing CSV:', error);
         toast.error(error.message || 'Failed to parse CSV file');
         setFile(null);
       }
@@ -184,7 +183,6 @@ function ImportModal({ onClose, onImported }) {
             await bookApi.createBook(book);
             successful++;
           } catch (error) {
-            console.error(`Failed to import "${book.title}":`, error);
             failed++;
           }
         }
@@ -200,7 +198,6 @@ function ImportModal({ onClose, onImported }) {
           toast.error(`⚠️ Failed to import ${failed} books`);
         }
       } catch (error) {
-        console.error('Error importing books:', error);
         toast.error('Failed to import books');
       } finally {
         setIsProcessing(false);

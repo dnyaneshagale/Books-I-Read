@@ -189,7 +189,6 @@ function ShareModal({ books, onClose, filterInfo }) {
       await navigator.clipboard.writeText(content);
       toast.success('📋 Copied to clipboard!');
     } catch (error) {
-      console.error('Error copying to clipboard:', error);
       toast.error('Failed to copy to clipboard');
     }
   };
@@ -214,7 +213,6 @@ function ShareModal({ books, onClose, filterInfo }) {
       
       toast.success(`📥 Downloaded ${fileName}`);
     } catch (error) {
-      console.error('Error downloading file:', error);
       toast.error('Failed to download file');
     }
   };

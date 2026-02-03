@@ -7,12 +7,6 @@ import java.util.List;
 
 /**
  * BookService Interface - Business logic layer
- * 
- * Extension Notes:
- * - Add getUserBooks(Long userId) for multi-user support
- * - Add searchBooks(String query) for search functionality
- * - Add getBooksByStatus(String status) for filtering
- * - Add importBooksFromCSV() for bulk import
  */
 public interface BookService {
 
@@ -25,7 +19,6 @@ public interface BookService {
 
     /**
      * Get all books
-     * Extension: Add pagination and sorting parameters
      * @return list of all books
      */
     List<BookResponse> getAllBooks();

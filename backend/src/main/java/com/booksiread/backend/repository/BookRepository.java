@@ -10,14 +10,6 @@ import java.util.Optional;
 
 /**
  * BookRepository - Data access layer for Book entity
- * 
- * Extends JpaRepository for basic CRUD operations
- * 
- * Extension Notes:
- * - Add findByStatus for filtering (completed, reading, etc.)
- * - Add findByGenre for category-based filtering
- * - Add custom queries with @Query for advanced search
- * - Add pagination with PagingAndSortingRepository
  */
 @Repository
 public interface BookRepository extends JpaRepository<Book, Long> {

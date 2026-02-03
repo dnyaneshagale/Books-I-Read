@@ -7,7 +7,7 @@ import './BookCard.css';
  * 
  * Displays individual book information with progress, rating, and reading dates
  */
-function BookCard({ book, onUpdate, onDelete }) {
+function BookCard({ book, onUpdate, onDelete, onShowInsights }) {
   
   const getStatusClass = (status) => {
     switch (status) {
@@ -88,7 +88,6 @@ function BookCard({ book, onUpdate, onDelete }) {
       await navigator.clipboard.writeText(shareText);
       toast.success('📋 Book recommendation copied to clipboard!');
     } catch (error) {
-      console.error('Error copying to clipboard:', error);
       toast.error('Failed to copy recommendation');
     }
   };
@@ -173,6 +172,15 @@ function BookCard({ book, onUpdate, onDelete }) {
         >
           Update
         </button>
+        {onShowInsights && (
+          <button
+            className="btn-ai-insights"
+            onClick={() => onShowInsights(book)}
+            title="AI Insights"
+          >
+            ✨
+          </button>
+        )}
         <button
           className="btn-share-book"
           onClick={handleShare}
