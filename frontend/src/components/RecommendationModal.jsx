@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axiosClient from '../api/axiosClient';
 import './RecommendationModal.css';
 
 /**
@@ -116,19 +117,11 @@ function RecommendationModal({ onClose, userBooks, onAddToWishlist }) {
 
       const bookList = relevantBooks.map(book => `"${book.title}" by ${book.author}`).join(', ');
 
-      const response = await fetch('/api/ai/recommendations/library', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ books: bookList })
+      const response = await axiosClient.post('/ai/recommendations/library', {
+        books: bookList
       });
 
-      if (!response.ok) throw new Error('Failed to get recommendations');
-
-      const data = await response.json();
-      setRecommendations(data.recommendations || []);
+      setRecommendations(response.data.recommendations || []);
     } catch (err) {
       setError('Failed to generate recommendations. Please try again.');
     } finally {
@@ -147,24 +140,14 @@ function RecommendationModal({ onClose, userBooks, onAddToWishlist }) {
     setRecommendations([]);
 
     try {
-      const response = await fetch('/api/ai/recommendations/custom', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          genre: genre || null,
-          mood: mood || null,
-          length: length || null,
-          topics: topics || null
-        })
+      const response = await axiosClient.post('/ai/recommendations/custom', {
+        genre: genre || null,
+        mood: mood || null,
+        length: length || null,
+        topics: topics || null
       });
 
-      if (!response.ok) throw new Error('Failed to get recommendations');
-
-      const data = await response.json();
-      setRecommendations(data.recommendations || []);
+      setRecommendations(response.data.recommendations || []);
     } catch (err) {
       setError('Failed to generate recommendations. Please try again.');
     } finally {
