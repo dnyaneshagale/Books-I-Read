@@ -64,7 +64,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/health").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/reset-password", "/api/auth/reset-password/confirm", "/api/health").permitAll()
                 .requestMatchers("/api/books/**", "/api/activities/**", "/api/ai/**").authenticated()
                 .anyRequest().authenticated()
             );

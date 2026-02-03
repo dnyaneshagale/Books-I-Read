@@ -30,6 +30,25 @@ const authApi = {
   validate: () => {
     return axiosClient.get('/auth/validate');
   },
+
+  /**
+   * Request password reset
+   * @param {Object} data - { email }
+   * @returns {Promise} - Success message
+   * @note Backend endpoint needs to be implemented at /auth/reset-password
+   */
+  resetPassword: (data) => {
+    return axiosClient.post('/auth/reset-password', data);
+  },
+};
+
+/**
+ * Confirm password reset with token
+ * @param {Object} data - { token, newPassword }
+ * @returns {Promise} - Success message
+ */
+export const resetPasswordConfirm = (data) => {
+  return axiosClient.post('/auth/reset-password/confirm', data);
 };
 
 export default authApi;

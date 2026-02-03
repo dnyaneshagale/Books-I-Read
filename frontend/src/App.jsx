@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './AuthContext';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import './App.css';
 
 /**
@@ -100,6 +101,10 @@ function App() {
                   <RegisterPage />
                 </PublicRoute>
               }
+            />
+            <Route
+              path="/reset-password"
+              element={<ResetPasswordPage />}
             />
           </Routes>
         </div>

@@ -4,11 +4,12 @@ import jakarta.validation.constraints.NotBlank;
 
 /**
  * LoginRequest DTO - Used for user login
+ * Supports login with either username or email
  */
 public class LoginRequest {
 
-    @NotBlank(message = "Username is required")
-    private String username;
+    @NotBlank(message = "Username or email is required")
+    private String username; // Can be username or email
 
     @NotBlank(message = "Password is required")
     private String password;
