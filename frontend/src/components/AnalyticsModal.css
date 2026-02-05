@@ -531,12 +531,30 @@ body.dark-mode .streak-message {
   margin-bottom: var(--spacing-lg);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .calendar-legend {
+    gap: var(--spacing-sm);
+    font-size: 0.7rem;
+    justify-content: flex-start;
+  }
 }
 
 .legend-item {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
+  white-space: nowrap;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+  .legend-item {
+    font-size: 0.7rem;
+  }
 }
 
 .legend-box {
