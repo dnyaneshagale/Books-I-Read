@@ -56,6 +56,9 @@ public class Book {
     @Column(length = 2000)
     private String review;
 
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "book_tags", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "tag")
@@ -226,6 +229,14 @@ public class Book {
 
     public void setReview(String review) {
         this.review = review;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     public List<String> getTags() {

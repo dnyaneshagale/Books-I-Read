@@ -7,6 +7,7 @@ import ShareModal from '../components/ShareModal';
 import ImportModal from '../components/ImportModal';
 import AnalyticsModal from '../components/AnalyticsModal';
 import InsightsModal from '../components/InsightsModal';
+import NotesModal from '../components/NotesModal';
 import RecommendationModal from '../components/RecommendationModal';
 import ProfileDropdown from '../components/ProfileDropdown';
 import bookApi from '../api/bookApi';
@@ -29,9 +30,12 @@ function Dashboard() {
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [showRecommendationModal, setShowRecommendationModal] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
   const [insightsBook, setInsightsBook] = useState(null);
+  const [notesBook, setNotesBook] = useState(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [activityDates, setActivityDates] = useState([]);
+  const [activityDetails, setActivityDetails] = useState([]);
   const [dailyStats, setDailyStats] = useState([]);
   const [periodStats, setPeriodStats] = useState({ pagesThisWeek: 0, pagesThisMonth: 0, pagesThisYear: 0 });
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -104,6 +108,10 @@ function Dashboard() {
       // Convert string dates to Date objects
       const dates = data.activityDates.map(dateStr => new Date(dateStr));
       setActivityDates(dates);
+      
+      // Also fetch detailed activity data with page counts
+      const detailsData = await bookApi.getActivityDetails();
+      setActivityDetails(detailsData.activities || []);
     } catch (error) {
       // Silently handle - fall back to old streak logic
     }
@@ -219,6 +227,17 @@ function Dashboard() {
     setShowInsightsModal(false);
     setInsightsBook(null);
     setInsightsLoading(false);
+  };
+
+  const handleViewNotes = (book) => {
+    setNotesBook(book);
+    setShowNotesModal(true);
+  };
+
+  const handleCloseNotes = () => {
+    setShowNotesModal(false);
+    setNotesBook(null);
+    fetchBooks(); // Refresh books to show updated notes
   };
 
   const handleAddFromRecommendation = async (recommendedBook) => {
@@ -363,20 +382,26 @@ function Dashboard() {
     }
     
     // Convert to IST start of day and sort (most recent first)
+    // Filter out any future dates to prevent backdated entries from affecting current streak
+    const todayStartOfDay = getISTStartOfDay(todayIST);
     const sortedDates = activityDatesFromBackend
       .map(date => getISTStartOfDay(new Date(date)))
+      .filter(date => date <= todayStartOfDay) // Only include dates up to today
       .sort((a, b) => b - a);
+    
+    if (sortedDates.length === 0) {
+      return { current: 0, longest: 0 };
+    }
     
     let currentStreak = 0;
     let longestStreak = 0;
     let tempStreak = 1;
     
-    // Normalize today to start of day for comparison
-    const todayStartOfDay = getISTStartOfDay(todayIST);
     const yesterdayIST = new Date(todayStartOfDay.getTime() - 24 * 60 * 60 * 1000);
     const mostRecentActivity = sortedDates[0];
     
-    // Check if user has activity today or yesterday (current streak)
+    // Current streak: Only count if most recent activity is today or yesterday
+    // This ensures backdated entries don't extend current streak
     if (mostRecentActivity.getTime() === todayStartOfDay.getTime() || 
         mostRecentActivity.getTime() === yesterdayIST.getTime()) {
       currentStreak = 1;
@@ -390,12 +415,12 @@ function Dashboard() {
         if (daysDiff === 1) {
           currentStreak++;
         } else if (daysDiff > 1) {
-          break;
+          break; // Stop counting if there's a gap
         }
       }
     }
     
-    // Calculate longest streak from all dates
+    // Calculate longest streak from all dates (historical)
     tempStreak = 1;
     for (let i = 1; i < sortedDates.length; i++) {
       const currentDate = sortedDates[i];
@@ -747,6 +772,7 @@ function Dashboard() {
                       onUpdate={handleUpdate}
                       onDelete={handleDelete}
                       onShowInsights={handleShowInsights}
+                      onViewNotes={handleViewNotes}
                     />
                   ))}
                 </div>
@@ -794,6 +820,8 @@ function Dashboard() {
         <AnalyticsModal
           stats={stats}
           dailyStats={dailyStats}
+          activityDates={activityDates}
+          activityDetails={activityDetails}
           onClose={() => setShowAnalyticsModal(false)}
         />
       )}
@@ -804,6 +832,15 @@ function Dashboard() {
           book={insightsBook}
           loading={insightsLoading}
           onClose={handleCloseInsights}
+        />
+      )}
+
+      {/* Notes Modal */}
+      {showNotesModal && (
+        <NotesModal
+          book={notesBook}
+          onClose={handleCloseNotes}
+          onUpdated={fetchBooks}
         />
       )}
 

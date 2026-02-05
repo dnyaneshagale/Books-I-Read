@@ -15,6 +15,7 @@
   z-index: 1000;
   padding: var(--spacing-md);
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
 }
 
 @keyframes fadeIn {
@@ -31,11 +32,13 @@
   border-radius: var(--radius-xl);
   max-width: 500px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
   animation: slideUp 0.3s ease;
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--color-border);
+  margin: auto;
 }
 
 .update-modal-large {
@@ -96,6 +99,34 @@
 .close-btn:hover {
   background-color: var(--color-bg-hover);
   color: var(--color-text-primary);
+}
+
+/* Modal Body - Scrollable Content */
+.modal-body-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+  min-height: 0;
+}
+
+/* Webkit scrollbar styling */
+.modal-body-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body-scrollable::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+  border-radius: 4px;
+}
+
+.modal-body-scrollable::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.modal-body-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
 }
 
 /* Book Info */
@@ -790,7 +821,12 @@ textarea:focus {
 }
 
 .update-modal-compact form {
-  padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg) var(--spacing-xl);
+}
+
+/* Modal Body - Scrollable Content */
+.modal-body-scrollable form {
+  padding-bottom: var(--spacing-lg);
 }
 
 /* Form Group Base Styles */
@@ -1064,6 +1100,27 @@ textarea:focus {
   border-color: var(--color-primary);
 }
 
+/* Notes Compact */
+.notes-compact {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #ffc107;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 80px;
+  background: rgba(255, 193, 7, 0.05);
+  color: var(--color-text);
+  font-family: inherit;
+}
+
+.notes-compact:focus {
+  outline: none;
+  border-color: #f59e0b;
+  background: rgba(255, 193, 7, 0.08);
+}
+
 /* Tags Compact */
 .tags-input-container {
   display: flex;
@@ -1121,9 +1178,13 @@ textarea:focus {
 .modal-actions-sticky {
   display: flex;
   gap: var(--spacing-md);
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
+  padding: var(--spacing-lg);
   border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .btn-cancel {

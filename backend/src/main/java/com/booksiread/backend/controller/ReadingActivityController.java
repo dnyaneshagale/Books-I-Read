@@ -59,6 +59,34 @@ public class ReadingActivityController {
     }
 
     /**
+     * GET /api/activities/details - Get all activity dates with page counts
+     * 
+     * @return list of activity details with date and pages read
+     */
+    @GetMapping("/details")
+    public ResponseEntity<Map<String, List<Map<String, Object>>>> getActivityDetails() {
+        User currentUser = getCurrentUser();
+        List<LocalDate> activityDates = activityRepository.findDistinctActivityDatesByUser(currentUser);
+        
+        List<Map<String, Object>> activityDetails = new java.util.ArrayList<>();
+        
+        for (LocalDate date : activityDates) {
+            Integer pagesRead = activityRepository.getTotalPagesReadOnDate(currentUser, date);
+            
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("date", date.toString());
+            detail.put("pages", pagesRead != null ? pagesRead : 0);
+            
+            activityDetails.add(detail);
+        }
+        
+        Map<String, List<Map<String, Object>>> response = new HashMap<>();
+        response.put("activities", activityDetails);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * GET /api/activities/daily-stats - Get daily reading statistics for the last 7 days
      * 
      * @return list of daily stats with date and pages read

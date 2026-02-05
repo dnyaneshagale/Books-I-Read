@@ -45,6 +45,8 @@ public class BookRequest {
 
     private String review;
 
+    private String notes;
+
     private List<String> tags;
 
     // Constructors
@@ -130,6 +132,14 @@ public class BookRequest {
 
     public void setReview(String review) {
         this.review = review;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     public List<String> getTags() {

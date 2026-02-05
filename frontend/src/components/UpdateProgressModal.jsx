@@ -147,12 +147,13 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
 
-        <div className="book-info-compact">
-          <h3>{book.title}</h3>
-          <p className="author-text">by {book.author}</p>
-        </div>
+        <div className="modal-body-scrollable">
+          <div className="book-info-compact">
+            <h3>{book.title}</h3>
+            <p className="author-text">by {book.author}</p>
+          </div>
 
-        <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} id="update-book-form">
           {/* Compact Segmented Status Control */}
           <div className="form-group">
             <label>Status</label>
@@ -302,12 +303,12 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
           {/* Conditional: Show Review Only for FINISHED */}
           {status === 'FINISHED' && (
             <div className="form-group">
-              <label htmlFor="review">Review / Notes</label>
+              <label htmlFor="review">Review</label>
               <textarea
                 id="review"
                 value={review}
                 onChange={(e) => setReview(e.target.value)}
-                placeholder="Share your thoughts..."
+                placeholder="Share your thoughts about this book..."
                 rows="3"
                 maxLength="2000"
                 className="review-compact"
@@ -356,15 +357,17 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
             )}
           </div>
 
-          <div className="modal-actions-sticky">
-            <button type="button" className="btn-cancel" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-update" disabled={isSubmitting}>
-              {isSubmitting ? 'Updating...' : 'Update Book'}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        <div className="modal-actions-sticky">
+          <button type="button" className="btn-cancel" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" form="update-book-form" className="btn-update" disabled={isSubmitting}>
+            {isSubmitting ? 'Updating...' : 'Update Book'}
+          </button>
+        </div>
       </div>
     </div>
   );

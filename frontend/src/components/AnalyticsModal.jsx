@@ -1,9 +1,14 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { useAuth } from '../AuthContext';
 import './AnalyticsModal.css';
 
-function AnalyticsModal({ stats, dailyStats = [], onClose }) {
+function AnalyticsModal({ stats, dailyStats = [], activityDates = [], activityDetails = [], onClose }) {
+  const { user } = useAuth();
   if (!stats) return null;
+
+  // Track current month being displayed (0 = most recent month)
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -19,6 +24,119 @@ function AnalyticsModal({ stats, dailyStats = [], onClose }) {
   const pagesThisWeek = stats.pagesThisWeek || 0;
   const pagesThisMonth = stats.pagesThisMonth || 0;
   const pagesThisYear = stats.pagesThisYear || 0;
+
+  // Generate streak calendar data (month-wise)
+  const streakCalendar = useMemo(() => {
+    try {
+      // Use account creation date or fallback to first activity date
+      let accountCreationDate;
+      if (user?.createdAt) {
+        accountCreationDate = new Date(user.createdAt);
+      } else if (activityDates && activityDates.length > 0) {
+        // Use the earliest activity date
+        const earliestDate = new Date(Math.min(...activityDates.map(d => d.getTime())));
+        accountCreationDate = earliestDate;
+      } else {
+        // Fallback to today if no data
+        accountCreationDate = new Date();
+      }
+      
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // End of today for comparison
+      
+      // Helper function to convert date to local YYYY-MM-DD string
+      const toLocalDateString = (date) => {
+        const d = date instanceof Date ? date : new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
+      // Create a map of date strings to page counts
+      const activityMap = new Map();
+      if (activityDetails && Array.isArray(activityDetails)) {
+        activityDetails.forEach(activity => {
+          if (activity && activity.date) {
+            // Normalize the date from backend to YYYY-MM-DD format
+            const normalizedDate = activity.date.includes('T') 
+              ? activity.date.split('T')[0] 
+              : activity.date;
+            activityMap.set(normalizedDate, activity.pages || 0);
+          }
+        });
+      }
+      
+      console.log('Activity Map:', Object.fromEntries(activityMap));
+      
+      const monthsData = [];
+
+      // Start from the first day of the account creation month
+      const startDate = new Date(accountCreationDate.getFullYear(), accountCreationDate.getMonth(), 1);
+      const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      // Iterate through each month
+      for (let monthDate = new Date(startDate); monthDate <= currentMonth; monthDate.setMonth(monthDate.getMonth() + 1)) {
+        const year = monthDate.getFullYear();
+        const month = monthDate.getMonth();
+        const monthName = monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        
+        // Get first and last day of the month
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        
+        // Get the day of week for the first day (0 = Sunday)
+        const startDayOfWeek = firstDay.getDay();
+        
+        const days = [];
+        
+        // Add empty cells for days before the month starts
+        for (let i = 0; i < startDayOfWeek; i++) {
+          days.push({ isEmpty: true });
+        }
+        
+        // Add all days of the month
+        for (let day = 1; day <= lastDay.getDate(); day++) {
+          const date = new Date(year, month, day);
+          const dateStr = toLocalDateString(date);
+          const isFuture = date > today;
+          const isBeforeAccount = date < accountCreationDate;
+          const pagesRead = activityMap.get(dateStr) || 0;
+          
+          // Determine intensity level based on pages read
+          let intensity = 0;
+          if (pagesRead >= 15) intensity = 5; // Golden
+          else if (pagesRead >= 10) intensity = 4; // Dark Green
+          else if (pagesRead >= 5) intensity = 3; // Dark Light Green
+          else if (pagesRead >= 3) intensity = 2; // Light Green
+          else if (pagesRead >= 1) intensity = 1; // Whitish Light Green
+          
+          days.push({
+            date,
+            dateStr,
+            hasActivity: pagesRead > 0,
+            pagesRead,
+            intensity,
+            isFuture,
+            isBeforeAccount,
+            isEmpty: false
+          });
+        }
+        
+        monthsData.push({
+          monthName,
+          year,
+          month,
+          days
+        });
+      }
+
+      return monthsData;
+    } catch (error) {
+      console.error('Error generating calendar:', error);
+      return [];
+    }
+  }, [activityDates, activityDetails, user]);
 
   // Process daily stats from backend
   const last7Days = useMemo(() => {
@@ -136,6 +254,117 @@ function AnalyticsModal({ stats, dailyStats = [], onClose }) {
           <div className="streak-flame-bg">
             <span className="flame-large">🔥</span>
           </div>
+        </div>
+
+        {/* Streak Calendar */}
+        <div className="streak-calendar-section">
+          <h3 className="calendar-title">
+            📅 Reading Activity Calendar
+            <span className="calendar-subtitle">
+              {user?.createdAt 
+                ? `Since ${new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                : 'Last 365 days'
+              }
+            </span>
+          </h3>
+          <div className="calendar-legend">
+            <div className="legend-item">
+              <div className="legend-box legend-inactive"></div>
+              <span>No activity</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-box intensity-1"></div>
+              <span>1-2 pages</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-box intensity-2"></div>
+              <span>3-4 pages</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-box intensity-3"></div>
+              <span>5-9 pages</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-box intensity-4"></div>
+              <span>10-14 pages</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-box intensity-5"></div>
+              <span>15+ pages</span>
+            </div>
+          </div>
+          {streakCalendar.length > 0 ? (
+            <div className="streak-calendar-container">
+              {/* Month Navigation */}
+              <div className="calendar-navigation">
+                <button 
+                  className="nav-btn"
+                  onClick={() => setCurrentMonthIndex(prev => Math.min(prev + 1, streakCalendar.length - 1))}
+                  disabled={currentMonthIndex >= streakCalendar.length - 1}
+                  title="Previous month"
+                >
+                  ← Previous
+                </button>
+                <div className="current-month-display">
+                  {streakCalendar[streakCalendar.length - 1 - currentMonthIndex]?.monthName}
+                </div>
+                <button 
+                  className="nav-btn"
+                  onClick={() => setCurrentMonthIndex(prev => Math.max(prev - 1, 0))}
+                  disabled={currentMonthIndex === 0}
+                  title="Next month"
+                >
+                  Next →
+                </button>
+              </div>
+
+              {/* Single Month Display */}
+              {(() => {
+                const monthData = streakCalendar[streakCalendar.length - 1 - currentMonthIndex];
+                if (!monthData || !monthData.days) return null;
+                
+                return (
+                  <div className="calendar-month">
+                    <div className="month-weekdays">
+                      <span>S</span>
+                      <span>M</span>
+                      <span>T</span>
+                      <span>W</span>
+                      <span>T</span>
+                      <span>F</span>
+                      <span>S</span>
+                    </div>
+                    <div className="month-grid">
+                      {monthData.days.map((day, dayIndex) => {
+                        if (!day || day.isEmpty) {
+                          return <div key={dayIndex} className="calendar-day empty" />;
+                        }
+                        const isToday = day.date && day.date.toDateString() === new Date().toDateString();
+                        return (
+                          <div
+                            key={dayIndex}
+                            className={`calendar-day ${
+                              day.isFuture || day.isBeforeAccount ? 'disabled' : ''
+                            } ${day.hasActivity ? `intensity-${day.intensity}` : ''} ${isToday ? 'today' : ''}`}
+                            title={`${day.date ? day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}${
+                              day.pagesRead > 0 ? ` - ${day.pagesRead} page${day.pagesRead !== 1 ? 's' : ''} read` : 
+                              day.isFuture || day.isBeforeAccount ? '' : ' - No activity'
+                            }`}
+                          >
+                            <span className="day-number">{day.date ? day.date.getDate() : ''}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          ) : (
+            <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)', padding: 'var(--spacing-md)' }}>
+              No calendar data available
+            </p>
+          )}
         </div>
 
         {/* Additional Metrics Row */}

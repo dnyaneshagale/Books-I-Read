@@ -7,7 +7,7 @@ import './BookCard.css';
  * 
  * Displays individual book information with progress, rating, and reading dates
  */
-function BookCard({ book, onUpdate, onDelete, onShowInsights }) {
+function BookCard({ book, onUpdate, onDelete, onShowInsights, onViewNotes }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -226,6 +226,15 @@ function BookCard({ book, onUpdate, onDelete, onShowInsights }) {
         >
           Update
         </button>
+        {onViewNotes && (
+          <button
+            className="btn-view-notes"
+            onClick={() => onViewNotes(book)}
+            title="View Notes"
+          >
+            📝
+          </button>
+        )}
         {onShowInsights && (
           <button
             className="btn-ai-insights"

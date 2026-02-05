@@ -94,6 +94,15 @@ const bookApi = {
     }
   },
 
+  getActivityDetails: async () => {
+    try {
+      const response = await axiosClient.get('/activities/details');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   /**
    * Get daily reading statistics for the last 7 days
    * @returns {Promise} Object with dailyStats array

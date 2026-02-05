@@ -97,6 +97,9 @@ public class BookServiceImpl implements BookService {
         if (request.getReview() != null) {
             book.setReview(request.getReview());
         }
+        if (request.getNotes() != null) {
+            book.setNotes(request.getNotes());
+        }
         if (request.getTags() != null) {
             book.setTags(request.getTags());
         }
@@ -183,6 +186,9 @@ public class BookServiceImpl implements BookService {
         }
         if (request.getReview() != null) {
             book.setReview(request.getReview());
+        }
+        if (request.getNotes() != null) {
+            book.setNotes(request.getNotes());
         }
         if (request.getTags() != null) {
             book.setTags(request.getTags());

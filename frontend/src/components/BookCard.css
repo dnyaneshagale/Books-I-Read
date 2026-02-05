@@ -321,6 +321,36 @@
   transform: translateY(-1px);
 }
 
+/* View Notes Button - Icon-only version */
+.btn-view-notes {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+  color: #856404;
+  border: 2px solid #ffc107;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  font-size: 18px;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-view-notes:hover {
+  background: linear-gradient(135deg, #ffe69c 0%, #ffd966 100%);
+  border-color: #f59e0b;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+}
+
+.btn-view-notes:active {
+  transform: translateY(0) scale(1);
+}
+
 /* AI Insights Button - Compact icon-only version */
 .btn-ai-insights {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
