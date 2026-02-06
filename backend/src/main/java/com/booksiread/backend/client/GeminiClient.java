@@ -23,7 +23,8 @@ import java.util.Map;
 public class GeminiClient {
 
     private static final Logger logger = LoggerFactory.getLogger(GeminiClient.class);
-    private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+    @Value("${gemini.api.url}")
+    private String GEMINI_API_URL;
 
     @Value("${gemini.api.key}")
     private String apiKey;
