@@ -15,12 +15,23 @@ dist-ssr
 # Firebase
 .firebase/
 firebase-debug.log
+.firebaserc
+firebase.json.backup
 
 # Environment
 .env
 .env.local
 .env.production
+.env.development
 .env.*.local
+.env.test
+
+# Package Manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.yarn/
+.pnp.*
 
 # Editor directories and files
 .vscode/*
@@ -42,7 +53,31 @@ Thumbs.db
 build/
 coverage/
 .nyc_output/
+out/
+.next/
+.cache/
+.parcel-cache/
+.vite/
+
+# Testing
+.jest/
+__snapshots__/
+*.test.js.snap
 
 # Debug
 .vscode/launch.json
 .vscode/settings.json
+
+# Android (Capacitor)
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/local.properties
+android/*.iml
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo

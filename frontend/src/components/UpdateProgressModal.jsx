@@ -200,7 +200,7 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
                   max={book.totalPages}
                   className="pages-slider-compact"
                   style={{
-                    background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${progress}%, #e2e8f0 ${progress}%, #e2e8f0 100%)`
+                    background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${progress}%, var(--color-border) ${progress}%, var(--color-border) 100%)`
                   }}
                 />
                 <span className="progress-percent">{progress}%</span>
