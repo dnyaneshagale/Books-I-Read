@@ -4,7 +4,7 @@ server.port=${PORT:8080}
 
 spring.datasource.url=${DATABASE_URL:jdbc:postgresql://localhost:5432/booksiread_db}
 spring.datasource.username=${DATABASE_USERNAME:postgres}
-spring.datasource.password=${DATABASE_PASSWORD:0000}
+spring.datasource.password=${DATABASE_PASSWORD:your_password_here}
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 
@@ -25,7 +25,7 @@ logging.level.org.hibernate.SQL=${SQL_LOG_LEVEL:WARN}
 # ============================================
 # CRITICAL: Use strong random secret in production (min 256 bits)
 # Generate using: openssl rand -base64 64
-jwt.secret=${JWT_SECRET}
+jwt.secret=${JWT_SECRET:your_jwt_secret_here_change_in_production}
 jwt.expiration=${JWT_EXPIRATION:86400000}
 
 
@@ -43,7 +43,7 @@ app.frontend.url=${FRONTEND_URL:http://localhost:5173}
 # Email Configuration (Brevo API)
 # ============================================
 # Get your Brevo API key from: https://app.brevo.com/settings/keys/api
-brevo.api.key=${BREVO_API_KEY}
+brevo.api.key=${BREVO_API_KEY:your_brevo_api_key_here}
 
 # Email Sender Configuration
 app.email.from=${EMAIL_FROM:noreply@booksiread.com}
@@ -54,5 +54,5 @@ app.email.from-name=${EMAIL_FROM_NAME:Books I Read}
 # ============================================
 # Get your API key from: https://makersuite.google.com/app/apikey
 # CRITICAL: Set GEMINI_API_KEY environment variable in production
-gemini.api.key=${GEMINI_API_KEY}
-gemini.api.url=${GEMINI_API_URL}
+gemini.api.key=${GEMINI_API_KEY:your_gemini_api_key_here}
+gemini.api.url=${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent}
