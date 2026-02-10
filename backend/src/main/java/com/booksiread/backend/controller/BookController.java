@@ -2,6 +2,7 @@ package com.booksiread.backend.controller;
 
 import com.booksiread.backend.dto.BookRequest;
 import com.booksiread.backend.dto.BookResponse;
+import com.booksiread.backend.repository.BookReviewRepository;
 import com.booksiread.backend.service.AiNotesService;
 import com.booksiread.backend.service.BookService;
 import jakarta.validation.Valid;
@@ -10,7 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * BookController - REST API endpoints for book management
@@ -22,11 +25,14 @@ public class BookController {
 
     private final BookService bookService;
     private final AiNotesService aiNotesService;
+    private final BookReviewRepository bookReviewRepository;
 
     @Autowired
-    public BookController(BookService bookService, AiNotesService aiNotesService) {
+    public BookController(BookService bookService, AiNotesService aiNotesService,
+                          BookReviewRepository bookReviewRepository) {
         this.bookService = bookService;
         this.aiNotesService = aiNotesService;
+        this.bookReviewRepository = bookReviewRepository;
     }
 
     /**
@@ -79,6 +85,18 @@ public class BookController {
     }
 
     /**
+     * PATCH /api/books/{id}/privacy - Toggle book privacy
+     */
+    @PatchMapping("/{id}/privacy")
+    public ResponseEntity<BookResponse> togglePrivacy(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, Boolean> body) {
+        Boolean isPublic = body.get("isPublic");
+        BookResponse response = bookService.togglePrivacy(id, isPublic);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * DELETE /api/books/{id} - Delete a book
      * 
      * @param id - book ID
@@ -100,5 +118,18 @@ public class BookController {
     public ResponseEntity<String> regenerateAiNotes(@PathVariable Long id) {
         aiNotesService.regenerateNotes(id);
         return ResponseEntity.accepted().body("AI notes regeneration started");
+    }
+
+    /**
+     * GET /api/books/{id}/community-stats - Community rating & review count for a book
+     */
+    @GetMapping("/{id}/community-stats")
+    public ResponseEntity<Map<String, Object>> getCommunityStats(@PathVariable Long id) {
+        Map<String, Object> stats = new HashMap<>();
+        Double avgRating = bookReviewRepository.getAverageRatingForBook(id);
+        long reviewCount = bookReviewRepository.countByBookId(id);
+        stats.put("averageRating", avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : null);
+        stats.put("reviewCount", reviewCount);
+        return ResponseEntity.ok(stats);
     }
 }

@@ -50,26 +50,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/reset-password", "/api/auth/reset-password/confirm", "/api/health").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/reset-password", "/api/auth/reset-password/confirm", "/api/auth/check-username/**", "/api/health").permitAll()
                 .requestMatchers("/api/books/**", "/api/activities/**", "/api/ai/**").authenticated()
                 .anyRequest().authenticated()
             );
 
-        http.authenticationProvider(authenticationProvider());
+        http.authenticationProvider(authProvider);
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -28,6 +28,7 @@ public class BookResponse {
     private Integer rating;
     private String review;
     private String notes;
+    private Boolean isPublic;
     private List<String> tags;
     
     // AI-generated fields
@@ -44,7 +45,7 @@ public class BookResponse {
     public BookResponse(Long id, String title, String author, Integer totalPages, 
                        Integer pagesRead, Double progress, ReadingStatus status,
                        LocalDate startDate, LocalDate completeDate, Integer rating, String review,
-                       String notes, List<String> tags, String aiSummary, String aiHighlights, 
+                       String notes, Boolean isPublic, List<String> tags, String aiSummary, String aiHighlights, 
                        String aiOverallOpinion, LocalDateTime aiGeneratedAt, AiStatus aiStatus) {
         this.id = id;
         this.title = title;
@@ -58,6 +59,7 @@ public class BookResponse {
         this.rating = rating;
         this.review = review;
         this.notes = notes;
+        this.isPublic = isPublic;
         this.tags = tags;
         this.aiSummary = aiSummary;
         this.aiHighlights = aiHighlights;
@@ -86,6 +88,7 @@ public class BookResponse {
             book.getRating(),
             book.getReview(),
             book.getNotes(),
+            book.getIsPublic(),
             book.getTags(),
             book.getAiSummary(),
             book.getAiHighlights(),
@@ -198,6 +201,14 @@ public class BookResponse {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Boolean getIsPublic() {
+        return isPublic;
+    }
+
+    public void setIsPublic(Boolean isPublic) {
+        this.isPublic = isPublic;
     }
 
     public List<String> getTags() {

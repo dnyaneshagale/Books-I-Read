@@ -40,6 +40,38 @@ public class User {
     @Column(nullable = false)
     private String password; // Stored as BCrypt hash
 
+    // ============================================
+    // Social Profile Fields
+    // ============================================
+    
+    @Size(max = 100, message = "Display name must be at most 100 characters")
+    @Column(name = "display_name", length = 100)
+    private String displayName;
+
+    @Size(max = 500, message = "Bio must be at most 500 characters")
+    @Column(length = 500)
+    private String bio;
+
+    @Column(name = "profile_picture_url", length = 500)
+    private String profilePictureUrl;
+
+    @Column(name = "is_public")
+    private Boolean isPublic = true; // Default: public profile (like Instagram default)
+
+    @Column(name = "followers_count")
+    private Integer followersCount = 0;
+
+    @Column(name = "following_count")
+    private Integer followingCount = 0;
+
+    @Column(name = "books_count")
+    private Integer booksCount = 0;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_favorite_genres", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "genre")
+    private List<String> favoriteGenres = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -126,5 +158,70 @@ public class User {
 
     public void setBooks(List<Book> books) {
         this.books = books;
+    }
+
+    // Social Profile Getters and Setters
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public Boolean getIsPublic() {
+        return isPublic != null ? isPublic : true;
+    }
+
+    public void setIsPublic(Boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
+    public Integer getFollowersCount() {
+        return followersCount != null ? followersCount : 0;
+    }
+
+    public void setFollowersCount(Integer followersCount) {
+        this.followersCount = followersCount;
+    }
+
+    public Integer getFollowingCount() {
+        return followingCount != null ? followingCount : 0;
+    }
+
+    public void setFollowingCount(Integer followingCount) {
+        this.followingCount = followingCount;
+    }
+
+    public Integer getBooksCount() {
+        return booksCount != null ? booksCount : 0;
+    }
+
+    public void setBooksCount(Integer booksCount) {
+        this.booksCount = booksCount;
+    }
+
+    public List<String> getFavoriteGenres() {
+        return favoriteGenres;
+    }
+
+    public void setFavoriteGenres(List<String> favoriteGenres) {
+        this.favoriteGenres = favoriteGenres;
     }
 }

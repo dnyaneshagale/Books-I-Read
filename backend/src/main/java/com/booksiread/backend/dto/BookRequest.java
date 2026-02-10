@@ -47,6 +47,8 @@ public class BookRequest {
 
     private String notes;
 
+    private Boolean isPublic;
+
     private List<String> tags;
 
     // Constructors
@@ -140,6 +142,14 @@ public class BookRequest {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Boolean getIsPublic() {
+        return isPublic;
+    }
+
+    public void setIsPublic(Boolean isPublic) {
+        this.isPublic = isPublic;
     }
 
     public List<String> getTags() {

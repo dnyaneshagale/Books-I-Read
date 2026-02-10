@@ -71,6 +71,20 @@ public class AuthController {
     }
 
     /**
+     * Check username availability
+     * GET /api/auth/check-username/{username}
+     * Public endpoint - works without authentication
+     */
+    @GetMapping("/check-username/{username}")
+    public ResponseEntity<Map<String, Object>> checkUsername(@PathVariable String username) {
+        Map<String, Object> response = new HashMap<>();
+        boolean taken = authService.isUsernameTaken(username);
+        response.put("available", !taken);
+        response.put("username", username);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Request password reset
      * POST /api/auth/reset-password
      * 

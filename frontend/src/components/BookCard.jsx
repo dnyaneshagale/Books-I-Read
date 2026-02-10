@@ -7,7 +7,7 @@ import './BookCard.css';
  * 
  * Displays individual book information with progress, rating, and reading dates
  */
-function BookCard({ book, onUpdate, onDelete, onShowInsights, onViewNotes }) {
+function BookCard({ book, onUpdate, onDelete, onShowInsights, onViewNotes, onWriteReview, onTogglePrivacy }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -114,7 +114,10 @@ function BookCard({ book, onUpdate, onDelete, onShowInsights, onViewNotes }) {
   return (
     <div className="book-card">
       <div className="book-header">
-        <h3 className="book-title">{book.title}</h3>
+        <h3 className="book-title">
+          {!onTogglePrivacy && book.isPublic === false && <span className="privacy-indicator" title="Private book">🔒</span>}
+          {book.title}
+        </h3>
         <div className="header-actions">
           <span className={`status-badge ${getStatusClass(book.status)}`}>
             {getStatusLabel(book.status)}
@@ -156,6 +159,16 @@ function BookCard({ book, onUpdate, onDelete, onShowInsights, onViewNotes }) {
       </div>
 
       <p className="book-author">by {book.author}</p>
+
+      {onTogglePrivacy && (
+        <button
+          className={`privacy-toggle-btn ${book.isPublic === false ? 'privacy-toggle-btn--private' : ''}`}
+          onClick={() => onTogglePrivacy(book.id, book.isPublic === false)}
+        >
+          <span className="privacy-toggle-btn__icon">{book.isPublic === false ? '🔒' : '🌍'}</span>
+          <span className="privacy-toggle-btn__label">{book.isPublic === false ? 'Private' : 'Public'}</span>
+        </button>
+      )}
 
       {book.rating && (
         <div className="book-rating">
@@ -242,6 +255,15 @@ function BookCard({ book, onUpdate, onDelete, onShowInsights, onViewNotes }) {
             title="AI Insights"
           >
             ✨
+          </button>
+        )}
+        {onWriteReview && (
+          <button
+            className="btn-write-review"
+            onClick={() => onWriteReview(book)}
+            title="Write Review"
+          >
+            ✍️
           </button>
         )}
       </div>

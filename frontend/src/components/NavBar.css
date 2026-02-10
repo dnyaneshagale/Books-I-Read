@@ -1,0 +1,164 @@
+/* =============================================
+   NavBar - Shared Navigation
+   Bottom bar on mobile, glassmorphism top bar on desktop
+   ============================================= */
+
+.app-nav {
+  background: rgba(255, 255, 255, 0.92);
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 4px 0 env(safe-area-inset-bottom, 4px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.app-nav__items {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.app-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary, #64748b);
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+.app-nav__item.active {
+  color: var(--color-primary, #6d28d9);
+}
+
+.app-nav__item.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: var(--gradient-primary, linear-gradient(135deg, #6d28d9, #7c3aed));
+  border-radius: 0 0 3px 3px;
+}
+
+.app-nav__item:hover {
+  color: var(--color-primary, #6d28d9);
+}
+
+.app-nav__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.app-nav__label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Dark mode */
+body.dark-mode .app-nav {
+  background: rgba(15, 12, 21, 0.88);
+  border-top-color: var(--color-border, #2d2a4a);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+body.dark-mode .app-nav__item {
+  color: var(--color-text-secondary, #9E95A8);
+}
+
+body.dark-mode .app-nav__item.active {
+  color: var(--color-primary, #7C4DFF);
+}
+
+body.dark-mode .app-nav__item.active::after {
+  background: var(--gradient-primary, linear-gradient(135deg, #7C4DFF, #9575FF));
+}
+
+body.dark-mode .app-nav__item:hover {
+  color: var(--color-primary, #7C4DFF);
+}
+
+/* Desktop: Glassmorphism top bar */
+@media (min-width: 769px) {
+  .app-nav {
+    position: fixed;
+    top: 0;
+    bottom: auto;
+    border-top: none;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+    padding: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+  }
+
+  body.dark-mode .app-nav {
+    background: rgba(15, 12, 21, 0.85);
+    border-bottom-color: rgba(45, 42, 74, 0.6);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .app-nav__items {
+    max-width: 800px;
+    gap: 4px;
+    padding: 0 16px;
+  }
+
+  .app-nav__item {
+    flex-direction: row;
+    gap: 8px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+  }
+
+  .app-nav__item:hover {
+    background: rgba(99, 102, 241, 0.06);
+  }
+
+  body.dark-mode .app-nav__item:hover {
+    background: rgba(124, 77, 255, 0.08);
+  }
+
+  .app-nav__item.active {
+    background: rgba(99, 102, 241, 0.08);
+  }
+
+  body.dark-mode .app-nav__item.active {
+    background: rgba(124, 77, 255, 0.12);
+  }
+
+  .app-nav__item.active::after {
+    top: auto;
+    bottom: 0;
+    border-radius: 3px 3px 0 0;
+    width: 24px;
+    height: 3px;
+  }
+
+  .app-nav__label {
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .app-nav__icon {
+    font-size: 1.15rem;
+  }
+}

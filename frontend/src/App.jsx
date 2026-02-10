@@ -1,28 +1,44 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './AuthContext';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ProfilePage from './pages/ProfilePage';
+import DiscoverPage from './pages/DiscoverPage';
+import FeedPage from './pages/FeedPage';
+import ReviewDetailPage from './pages/ReviewDetailPage';
+import ReflectionDetailPage from './pages/ReflectionDetailPage';
+import ReviewsFeedPage from './pages/ReviewsFeedPage';
+import MyListsPage from './pages/MyListsPage';
+import ListDetailPage from './pages/ListDetailPage';
+import BrowseListsPage from './pages/BrowseListsPage';
+import NavBar from './components/NavBar';
 import './App.css';
 
 /**
  * ProtectedRoute - Require authentication to access
  */
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, hideNavBar }) => {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <div>Loading...</div>;
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      {!hideNavBar && <NavBar />}
+    </>
+  );
 };
 
 /**
@@ -81,8 +97,88 @@ function App() {
             <Route
               path="/"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute hideNavBar>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/:username"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/discover"
+              element={
+                <ProtectedRoute>
+                  <DiscoverPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/feed"
+              element={
+                <ProtectedRoute>
+                  <FeedPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reviews"
+              element={
+                <ProtectedRoute>
+                  <ReviewsFeedPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reviews/:reviewId"
+              element={
+                <ProtectedRoute>
+                  <ReviewDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reflections/:reflectionId"
+              element={
+                <ProtectedRoute>
+                  <ReflectionDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lists"
+              element={
+                <ProtectedRoute>
+                  <MyListsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lists/browse"
+              element={
+                <ProtectedRoute>
+                  <BrowseListsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lists/:listId"
+              element={
+                <ProtectedRoute>
+                  <ListDetailPage />
                 </ProtectedRoute>
               }
             />

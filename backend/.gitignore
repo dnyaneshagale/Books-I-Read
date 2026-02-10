@@ -39,7 +39,6 @@ build/
 .env.development
 
 ### Application Properties with Secrets ###
-application.properties
 application-local.properties
 application-dev.properties
 application-prod.properties

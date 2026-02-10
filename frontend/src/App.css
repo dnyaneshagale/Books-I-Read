@@ -70,3 +70,74 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ============================================
+   Shared Back Button — Premium Pill Style
+   ============================================ */
+
+.page-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-bg, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-full, 9999px);
+  padding: 8px 18px;
+  font-size: var(--font-size-sm, 14px);
+  font-weight: 600;
+  color: var(--color-text-primary, #0f172a);
+  cursor: pointer;
+  margin-bottom: 14px;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.04));
+}
+
+.page-back-btn:hover {
+  background: var(--color-bg-hover, #f1f5f9);
+  border-color: var(--color-primary, #6d28d9);
+  color: var(--color-primary, #6d28d9);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06));
+  transform: translateX(-2px);
+}
+
+body.dark-mode .page-back-btn {
+  background: var(--color-bg-secondary, #1E1B24);
+  border-color: var(--color-border, #2D2A35);
+  color: var(--color-text-primary, #E2D9F3);
+}
+
+body.dark-mode .page-back-btn:hover {
+  background: var(--color-bg-tertiary, #2D2A35);
+  border-color: var(--color-primary, #7C4DFF);
+  color: var(--color-primary, #7C4DFF);
+}
+
+/* ============================================
+   Page Padding for Fixed NavBar
+   ============================================ */
+
+/* Bottom padding on mobile for bottom NavBar */
+.profile-page,
+.discover-page,
+.feed-page,
+.reviews-feed-page,
+.review-detail-page,
+.my-lists-page,
+.browse-lists-page,
+.list-detail-page {
+  padding-bottom: 80px;
+}
+
+/* Top padding on desktop for top NavBar */
+@media (min-width: 769px) {
+  .profile-page,
+  .discover-page,
+  .feed-page,
+  .reviews-feed-page,
+  .review-detail-page,
+  .my-lists-page,
+  .browse-lists-page,
+  .list-detail-page {
+    padding-top: 72px;
+  }
+}

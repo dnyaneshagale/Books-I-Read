@@ -41,6 +41,11 @@ public interface BookService {
     BookResponse updateBook(Long id, BookRequest request);
 
     /**
+     * Toggle book privacy
+     */
+    BookResponse togglePrivacy(Long id, Boolean isPublic);
+
+    /**
      * Delete a book
      * @param id - book ID
      * @throws ResourceNotFoundException if book not found

@@ -997,6 +997,199 @@ body.dark-mode .navbar {
 }
 
 /* ============================================
+   Goal + Social Two-Column Row
+   ============================================ */
+.goal-social-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+  margin-bottom: var(--spacing-lg, 20px);
+  align-items: stretch;
+}
+
+.goal-social-row__col {
+  min-width: 0;
+  display: flex;
+}
+
+/* Let the goal widget fill its column */
+.goal-social-row__col .goal-widget {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+/* Stack on small screens */
+@media (max-width: 600px) {
+  .goal-social-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Social Entry Card (professional single-button)
+   ============================================ */
+.social-entry-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 40%, #8b5cf6 100%);
+  border-radius: 16px;
+  padding: 28px 24px;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  color: #fff;
+  height: 100%;
+  box-sizing: border-box;
+  flex: 1;
+  overflow: hidden;
+}
+
+.social-entry-card__glow {
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.social-entry-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(109, 40, 217, 0.35);
+}
+
+.social-entry-card__content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.social-entry-card__icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.social-entry-card:hover .social-entry-card__icon-wrap {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.social-entry-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.social-entry-card__text h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.social-entry-card__text p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 400;
+}
+
+.social-entry-card__arrow {
+  position: relative;
+  z-index: 1;
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.social-entry-card:hover .social-entry-card__arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* Dark mode */
+body.dark-mode .social-entry-card {
+  background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 40%, #6d28d9 100%);
+}
+
+body.dark-mode .social-entry-card:hover {
+  box-shadow: 0 12px 32px rgba(76, 29, 149, 0.45);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .social-entry-card {
+    padding: 20px 16px;
+  }
+  
+  .social-entry-card__icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+  
+  .social-entry-card__icon-wrap svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ============================================
+   Social Navbar Button
+   ============================================ */
+.btn-social-icon {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-social-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5);
+}
+
+.btn-social-icon:active {
+  transform: scale(1.05);
+}
+
+.dark-mode .btn-social-icon {
+  background: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+.dark-mode .btn-social-icon:hover {
+  background: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+}
+
+/* ============================================
    Filters Section - Modern Search & Tabs
    ============================================ */
 .filters-section {

@@ -4,14 +4,18 @@ import com.booksiread.backend.dto.BookRequest;
 import com.booksiread.backend.dto.BookResponse;
 import com.booksiread.backend.entity.Book;
 import com.booksiread.backend.entity.User;
+import com.booksiread.backend.entity.UserActivity;
 import com.booksiread.backend.exception.ResourceNotFoundException;
 import com.booksiread.backend.exception.ValidationException;
-import com.booksiread.backend.model.ReadingActivity;
+import com.booksiread.backend.entity.ReadingActivity;
 import com.booksiread.backend.repository.BookRepository;
 import com.booksiread.backend.repository.ReadingActivityRepository;
+import com.booksiread.backend.repository.UserActivityRepository;
 import com.booksiread.backend.security.CustomUserDetailsService;
 import com.booksiread.backend.service.AiNotesService;
 import com.booksiread.backend.service.BookService;
+import com.booksiread.backend.service.ReadingGoalService;
+import com.booksiread.backend.service.SocialService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,6 +45,8 @@ public class BookServiceImpl implements BookService {
     private final CustomUserDetailsService userDetailsService;
     private final ReadingActivityRepository readingActivityRepository;
     private final AiNotesService aiNotesService;
+    private final SocialService socialService;
+    private final ReadingGoalService readingGoalService;
     
     // IST timezone for activity tracking
     private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
@@ -49,11 +55,15 @@ public class BookServiceImpl implements BookService {
     public BookServiceImpl(BookRepository bookRepository, 
                           CustomUserDetailsService userDetailsService,
                           ReadingActivityRepository readingActivityRepository,
-                          AiNotesService aiNotesService) {
+                          AiNotesService aiNotesService,
+                          SocialService socialService,
+                          ReadingGoalService readingGoalService) {
         this.bookRepository = bookRepository;
         this.userDetailsService = userDetailsService;
         this.readingActivityRepository = readingActivityRepository;
         this.aiNotesService = aiNotesService;
+        this.socialService = socialService;
+        this.readingGoalService = readingGoalService;
     }
 
     /**
@@ -103,6 +113,9 @@ public class BookServiceImpl implements BookService {
         if (request.getTags() != null) {
             book.setTags(request.getTags());
         }
+        if (request.getIsPublic() != null) {
+            book.setIsPublic(request.getIsPublic());
+        }
 
         // ========== AI Notes Generation ==========
         // Set initial AI status to PENDING
@@ -113,6 +126,21 @@ public class BookServiceImpl implements BookService {
 
         // Trigger async AI notes generation AFTER book is committed
         aiNotesService.generateNotesAsync(savedBook.getId());
+
+        // Record social activity: book added (only for public books)
+        try {
+            if (savedBook.getIsPublic() == null || savedBook.getIsPublic()) {
+                socialService.recordActivity(
+                    currentUser.getId(), UserActivity.ActivityType.ADDED_BOOK, 
+                    savedBook.getId(), null
+                );
+            }
+            // Update books count
+            currentUser.setBooksCount((currentUser.getBooksCount() != null ? currentUser.getBooksCount() : 0) + 1);
+            // Note: user is managed entity, will be saved with transaction
+        } catch (Exception e) {
+            // Don't fail book creation if activity recording fails
+        }
 
         // Convert Entity to Response DTO
         return BookResponse.fromEntity(savedBook);
@@ -161,6 +189,11 @@ public class BookServiceImpl implements BookService {
         Integer newPagesRead = request.getPagesRead();
         boolean pagesChanged = !oldPagesRead.equals(newPagesRead);
 
+        // Track old values for social activity recording
+        Book.ReadingStatus oldStatus = book.getStatus();
+        Integer oldRating = book.getRating();
+        String oldReview = book.getReview();
+
         // Update fields
         book.setTitle(request.getTitle());
         book.setAuthor(request.getAuthor());
@@ -193,6 +226,9 @@ public class BookServiceImpl implements BookService {
         if (request.getTags() != null) {
             book.setTags(request.getTags());
         }
+        if (request.getIsPublic() != null) {
+            book.setIsPublic(request.getIsPublic());
+        }
 
         // Save updated book
         Book updatedBook = bookRepository.save(book);
@@ -202,7 +238,77 @@ public class BookServiceImpl implements BookService {
             recordReadingActivity(updatedBook, currentUser, newPagesRead - oldPagesRead);
         }
 
+        // Record social activities based on changes (only for public books)
+        boolean bookIsPublic = updatedBook.getIsPublic() == null || updatedBook.getIsPublic();
+        try {
+            if (bookIsPublic) {
+            // Track status changes
+            if (request.getStatus() != null && !request.getStatus().equals(oldStatus)) {
+                if (request.getStatus() == Book.ReadingStatus.READING) {
+                    socialService.recordActivity(
+                        currentUser.getId(), UserActivity.ActivityType.STARTED_READING,
+                        updatedBook.getId(), null
+                    );
+                } else if (request.getStatus() == Book.ReadingStatus.FINISHED) {
+                    socialService.recordActivity(
+                        currentUser.getId(), UserActivity.ActivityType.FINISHED_BOOK,
+                        updatedBook.getId(), null
+                    );
+                    // Auto-increment reading goal progress
+                    try {
+                        readingGoalService.incrementBooksCompleted(currentUser.getId());
+                    } catch (Exception e) {
+                        // Don't fail the book update if goal tracking fails
+                    }
+                }
+            }
+            // Track rating
+            if (request.getRating() != null && !request.getRating().equals(oldRating)) {
+                socialService.recordActivity(
+                    currentUser.getId(), UserActivity.ActivityType.RATED_BOOK,
+                    updatedBook.getId(), null,
+                    "{\"rating\":" + request.getRating() + "}"
+                );
+            }
+            // Track significant progress updates (only if not already tracked by status change)
+            if (pagesChanged && (request.getStatus() == null || request.getStatus().equals(oldStatus))) {
+                int progressPercent = (int) ((newPagesRead * 100.0) / request.getTotalPages());
+                // Only record at 25%, 50%, 75% milestones
+                int oldPercent = (int) ((oldPagesRead * 100.0) / request.getTotalPages());
+                if ((progressPercent >= 25 && oldPercent < 25) ||
+                    (progressPercent >= 50 && oldPercent < 50) ||
+                    (progressPercent >= 75 && oldPercent < 75)) {
+                    socialService.recordActivity(
+                        currentUser.getId(), UserActivity.ActivityType.PROGRESS_UPDATE,
+                        updatedBook.getId(), null,
+                        "{\"progress\":" + progressPercent + "}"
+                    );
+                }
+            }
+            // Track review
+            if (request.getReview() != null && !request.getReview().isEmpty() 
+                && (oldReview == null || oldReview.isEmpty())) {
+                socialService.recordActivity(
+                    currentUser.getId(), UserActivity.ActivityType.WROTE_REVIEW,
+                    updatedBook.getId(), null
+                );
+            }
+            } // end if bookIsPublic
+        } catch (Exception e) {
+            // Don't fail book update if activity recording fails
+        }
+
         return BookResponse.fromEntity(updatedBook);
+    }
+
+    @Override
+    public BookResponse togglePrivacy(Long id, Boolean isPublic) {
+        User currentUser = getCurrentUser();
+        Book book = bookRepository.findByIdAndUser(id, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
+        book.setIsPublic(isPublic != null ? isPublic : !Boolean.FALSE.equals(book.getIsPublic()));
+        Book saved = bookRepository.save(book);
+        return BookResponse.fromEntity(saved);
     }
 
     @Override

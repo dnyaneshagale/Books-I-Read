@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import BookCard from '../components/BookCard';
 import AddBookForm from '../components/AddBookForm';
@@ -10,6 +11,9 @@ import InsightsModal from '../components/InsightsModal';
 import NotesModal from '../components/NotesModal';
 import RecommendationModal from '../components/RecommendationModal';
 import ProfileDropdown from '../components/ProfileDropdown';
+import NotificationBell from '../components/social/NotificationBell';
+import ReadingGoalWidget from '../components/ReadingGoalWidget';
+import ReviewForm from '../components/social/ReviewForm';
 import bookApi from '../api/bookApi';
 import toast from 'react-hot-toast';
 import { READING_QUOTES } from '../data/quotes';
@@ -17,6 +21,7 @@ import './Dashboard.css';
 
 function Dashboard() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +50,8 @@ function Dashboard() {
   const [randomQuote, setRandomQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [goalRefreshKey, setGoalRefreshKey] = useState(0);
+  const [reviewBook, setReviewBook] = useState(null);
 
   // Function to get a random quote from local collection
   const getRandomQuote = () => {
@@ -95,6 +102,7 @@ function Dashboard() {
     try {
       const data = await bookApi.getAllBooks();
       setBooks(data);
+      setGoalRefreshKey(k => k + 1);
     } catch (error) {
       toast.error('Failed to load books');
     } finally {
@@ -513,6 +521,15 @@ function Dashboard() {
               {showAddForm ? '← Back' : '+ Add Book'}
             </button>
 
+            {/* Social - Icon only (desktop) */}
+            <button
+              className="btn-social-icon desktop-only"
+              onClick={() => navigate('/feed')}
+              title="Social"
+            >
+              🌐
+            </button>
+
             {/* Analytics - Icon only (desktop) */}
             <button
               className="btn-analytics-icon desktop-only"
@@ -521,6 +538,11 @@ function Dashboard() {
             >
               📊
             </button>
+
+            {/* Notification Bell (desktop) */}
+            <div className="desktop-only">
+              <NotificationBell />
+            </div>
 
             {/* Profile Dropdown (desktop) */}
             <ProfileDropdown
@@ -551,6 +573,60 @@ function Dashboard() {
                 }}
               >
                 📊 Analytics
+              </button>
+              <button
+                className="btn-nav-mobile"
+                onClick={() => {
+                  navigate('/profile');
+                  setMenuOpen(false);
+                }}
+              >
+                👤 My Profile
+              </button>
+              <button
+                className="btn-nav-mobile"
+                onClick={() => {
+                  navigate('/feed');
+                  setMenuOpen(false);
+                }}
+              >
+                📰 Feed
+              </button>
+              <button
+                className="btn-nav-mobile"
+                onClick={() => {
+                  navigate('/reviews');
+                  setMenuOpen(false);
+                }}
+              >
+                ✍️ Reviews
+              </button>
+              <button
+                className="btn-nav-mobile"
+                onClick={() => {
+                  navigate('/lists');
+                  setMenuOpen(false);
+                }}
+              >
+                📚 Lists
+              </button>
+              <button
+                className="btn-nav-mobile"
+                onClick={() => {
+                  navigate('/lists/browse');
+                  setMenuOpen(false);
+                }}
+              >
+                🔍 Browse Lists
+              </button>
+              <button
+                className="btn-nav-mobile"
+                onClick={() => {
+                  navigate('/discover');
+                  setMenuOpen(false);
+                }}
+              >
+                🔍 Discover
               </button>
               <button
                 className="btn-theme-toggle-mobile"
@@ -666,6 +742,37 @@ function Dashboard() {
               </div>
             </div>
 
+            {/* Goal + Social Row */}
+            <div className="goal-social-row">
+              <div className="goal-social-row__col">
+                <ReadingGoalWidget refreshKey={goalRefreshKey} />
+              </div>
+              <div className="goal-social-row__col">
+                <div className="social-entry-card" onClick={() => navigate('/feed')}>
+                  <div className="social-entry-card__glow"></div>
+                  <div className="social-entry-card__content">
+                    <div className="social-entry-card__icon-wrap">
+                      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <div className="social-entry-card__text">
+                      <h3>Social</h3>
+                      <p>See what friends are reading</p>
+                    </div>
+                  </div>
+                  <div className="social-entry-card__arrow">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Filters */}
             <div className="filters-section">
               <div className="search-bar">
@@ -773,6 +880,14 @@ function Dashboard() {
                       onDelete={handleDelete}
                       onShowInsights={handleShowInsights}
                       onViewNotes={handleViewNotes}
+                      onWriteReview={(b) => setReviewBook(b)}
+                      onTogglePrivacy={async (id, isPublic) => {
+                        try {
+                          await bookApi.togglePrivacy(id, isPublic);
+                          fetchBooks();
+                          toast.success(isPublic ? '🌍 Book is now public' : '🔒 Book is now private');
+                        } catch { toast.error('Failed to update privacy'); }
+                      }}
                     />
                   ))}
                 </div>
@@ -841,6 +956,19 @@ function Dashboard() {
           book={notesBook}
           onClose={handleCloseNotes}
           onUpdated={fetchBooks}
+        />
+      )}
+
+      {/* Review Form Modal */}
+      {reviewBook && (
+        <ReviewForm
+          bookId={reviewBook.id}
+          bookTitle={reviewBook.title}
+          onClose={() => setReviewBook(null)}
+          onSaved={() => {
+            fetchBooks();
+            setReviewBook(null);
+          }}
         />
       )}
 

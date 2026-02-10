@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './ProfileDropdown.css';
 
 function ProfileDropdown({ username, onImport, onShare, onLogout, isDarkMode, onToggleDarkMode }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -41,6 +43,11 @@ function ProfileDropdown({ username, onImport, onShare, onLogout, isDarkMode, on
     onToggleDarkMode();
   };
 
+  const handleNavigate = (path) => {
+    setIsOpen(false);
+    navigate(path);
+  };
+
   return (
     <div className="profile-dropdown" ref={dropdownRef}>
       <button
@@ -70,6 +77,34 @@ function ProfileDropdown({ username, onImport, onShare, onLogout, isDarkMode, on
 
       {isOpen && (
         <div className="profile-menu">
+          {/* Social Navigation */}
+          <button className="profile-menu-item" onClick={() => handleNavigate('/profile')}>
+            <span className="menu-icon">👤</span>
+            <span>My Profile</span>
+          </button>
+          
+          <button className="profile-menu-item" onClick={() => handleNavigate('/discover')}>
+            <span className="menu-icon">🔍</span>
+            <span>Discover</span>
+          </button>
+          
+          <button className="profile-menu-item" onClick={() => handleNavigate('/feed')}>
+            <span className="menu-icon">📰</span>
+            <span>Feed</span>
+          </button>
+          
+          <button className="profile-menu-item" onClick={() => handleNavigate('/reviews')}>
+            <span className="menu-icon">✍️</span>
+            <span>Reviews</span>
+          </button>
+          
+          <button className="profile-menu-item" onClick={() => handleNavigate('/lists')}>
+            <span className="menu-icon">📚</span>
+            <span>My Lists</span>
+          </button>
+          
+          <div className="profile-menu-divider"></div>
+
           {/* Dark Mode Toggle */}
           <div className="profile-menu-item dark-mode-toggle" onClick={handleToggleDarkMode}>
             <div className="dark-mode-label">

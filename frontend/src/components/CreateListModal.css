@@ -1,0 +1,361 @@
+/* ── Create List Modal — Modern Premium ──────────────────── */
+
+.create-list-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.create-list-modal {
+  background: var(--color-bg, #ffffff);
+  border-radius: var(--radius-xl, 20px);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(109, 40, 217, 0.06);
+}
+
+.create-list-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 26px 0;
+}
+
+.create-list-modal__header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-extrabold, 800);
+  color: var(--color-text-primary, #0f172a);
+}
+
+.create-list-modal__close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--color-text-secondary, #475569);
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm, 8px);
+  transition: all 0.2s;
+}
+
+.create-list-modal__close:hover {
+  background: var(--color-bg-tertiary, #f1f5f9);
+  color: var(--color-text-primary, #0f172a);
+}
+
+.create-list-modal__form {
+  padding: 22px 26px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Emoji Section ──────────────────────────────────── */
+
+.create-list-modal__emoji-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.create-list-modal__emoji-selected {
+  font-size: 2.5rem;
+  width: 62px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(109, 40, 217, 0.06), rgba(37, 99, 235, 0.04));
+  border-radius: var(--radius-md, 12px);
+  flex-shrink: 0;
+}
+
+.create-list-modal__emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.create-list-modal__emoji-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm, 8px);
+  background: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.create-list-modal__emoji-btn:hover {
+  background: var(--color-bg-tertiary, #f1f5f9);
+}
+
+.create-list-modal__emoji-btn.active {
+  border-color: var(--color-primary, #6d28d9);
+  background: rgba(109, 40, 217, 0.06);
+}
+
+/* ── Fields ──────────────────────────────────────────── */
+
+.create-list-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.create-list-modal__field label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-secondary, #475569);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.create-list-modal__field input,
+.create-list-modal__field textarea {
+  padding: 12px 16px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-md, 12px);
+  font-size: var(--font-size-sm, 14px);
+  color: var(--color-text-primary, #0f172a);
+  background: var(--color-bg, #ffffff);
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.create-list-modal__field input:focus,
+.create-list-modal__field textarea:focus {
+  border-color: var(--color-primary, #6d28d9);
+  box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.08);
+}
+
+.create-list-modal__char-count {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  font-size: 0.7rem;
+  color: var(--color-text-light, #94a3b8);
+}
+
+/* ── Toggle ──────────────────────────────────────────── */
+
+.create-list-modal__toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: var(--color-bg-tertiary, #f1f5f9);
+  border-radius: var(--radius-md, 12px);
+}
+
+.create-list-modal__toggle-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #0f172a);
+  display: block;
+}
+
+.create-list-modal__toggle-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #475569);
+  display: block;
+  margin-top: 2px;
+}
+
+.create-list-modal__toggle {
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  background: var(--color-border, #e2e8f0);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.create-list-modal__toggle.active {
+  background: var(--color-primary, #6d28d9);
+}
+
+.create-list-modal__toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.create-list-modal__toggle.active .create-list-modal__toggle-knob {
+  transform: translateX(20px);
+}
+
+/* ── Actions ─────────────────────────────────────────── */
+
+.create-list-modal__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+}
+
+.create-list-modal__cancel-btn {
+  padding: 10px 22px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-bg, #ffffff);
+  color: var(--color-text-primary, #0f172a);
+  font-size: var(--font-size-sm, 14px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.create-list-modal__cancel-btn:hover {
+  background: var(--color-bg-tertiary, #f1f5f9);
+}
+
+.create-list-modal__save-btn {
+  padding: 10px 26px;
+  border: none;
+  border-radius: var(--radius-md, 12px);
+  background: var(--gradient-primary, linear-gradient(135deg, #6d28d9, #7c3aed, #2563eb));
+  color: white;
+  font-size: var(--font-size-sm, 14px);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.25);
+}
+
+.create-list-modal__save-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35);
+}
+
+.create-list-modal__save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Dark Mode ───────────────────────────────────────── */
+
+body.dark-mode .create-list-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .create-list-modal {
+  background: var(--color-bg-secondary, #1E1B24);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(124, 77, 255, 0.08);
+}
+
+body.dark-mode .create-list-modal__header h2 {
+  color: var(--color-text-primary, #E2D9F3);
+}
+
+body.dark-mode .create-list-modal__close {
+  color: var(--color-text-secondary, #9E95A8);
+}
+
+body.dark-mode .create-list-modal__close:hover {
+  background: var(--color-bg-tertiary, #2D2A35);
+  color: var(--color-text-primary, #E2D9F3);
+}
+
+body.dark-mode .create-list-modal__emoji-selected {
+  background: linear-gradient(135deg, rgba(124, 77, 255, 0.12), rgba(149, 117, 255, 0.06));
+}
+
+body.dark-mode .create-list-modal__emoji-btn:hover {
+  background: var(--color-bg-tertiary, #2D2A35);
+}
+
+body.dark-mode .create-list-modal__emoji-btn.active {
+  background: rgba(124, 77, 255, 0.12);
+  border-color: var(--color-primary, #7C4DFF);
+}
+
+body.dark-mode .create-list-modal__field label {
+  color: var(--color-text-secondary, #9E95A8);
+}
+
+body.dark-mode .create-list-modal__field input,
+body.dark-mode .create-list-modal__field textarea {
+  background: var(--color-bg, #0F0C15);
+  border-color: var(--color-border, #2D2A35);
+  color: var(--color-text-primary, #E2D9F3);
+}
+
+body.dark-mode .create-list-modal__field input:focus,
+body.dark-mode .create-list-modal__field textarea:focus {
+  border-color: var(--color-primary, #7C4DFF);
+  box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.1);
+}
+
+body.dark-mode .create-list-modal__char-count {
+  color: #7a7181;
+}
+
+body.dark-mode .create-list-modal__toggle-row {
+  background: var(--color-bg-tertiary, #2D2A35);
+}
+
+body.dark-mode .create-list-modal__toggle-label {
+  color: var(--color-text-primary, #E2D9F3);
+}
+
+body.dark-mode .create-list-modal__toggle-hint {
+  color: var(--color-text-secondary, #9E95A8);
+}
+
+body.dark-mode .create-list-modal__toggle {
+  background: #3D3A45;
+}
+
+body.dark-mode .create-list-modal__toggle.active {
+  background: var(--color-primary, #7C4DFF);
+}
+
+body.dark-mode .create-list-modal__actions {
+  border-top-color: var(--color-border, #2D2A35);
+}
+
+body.dark-mode .create-list-modal__cancel-btn {
+  background: var(--color-bg-tertiary, #2D2A35);
+  border-color: var(--color-border, #2D2A35);
+  color: var(--color-text-primary, #E2D9F3);
+}
+
+body.dark-mode .create-list-modal__cancel-btn:hover {
+  background: #3D3A45;
+}
+
+body.dark-mode .create-list-modal__save-btn {
+  box-shadow: 0 2px 8px rgba(124, 77, 255, 0.3);
+}
+
+body.dark-mode .create-list-modal__save-btn:hover {
+  box-shadow: 0 4px 14px rgba(124, 77, 255, 0.4);
+}

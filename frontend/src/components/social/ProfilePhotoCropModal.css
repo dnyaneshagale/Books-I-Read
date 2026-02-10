@@ -1,0 +1,436 @@
+/* =============================================
+   ProfilePhotoCropModal — LinkedIn-style
+   ============================================= */
+
+.ppc-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 24px;
+  animation: ppc-fadeIn 0.15s ease;
+}
+
+@keyframes ppc-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ppc-scaleIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ppc-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ppc-modal {
+  background: var(--color-bg, #ffffff);
+  border-radius: 16px;
+  max-width: 460px;
+  width: 100%;
+  overflow: hidden;
+  animation: ppc-scaleIn 0.2s ease;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .ppc-modal {
+  background: #1E1B24;
+  border: 1px solid #2D2A35;
+}
+
+/* ── Header ── */
+
+.ppc-modal__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+
+body.dark-mode .ppc-modal__header {
+  border-bottom-color: #2D2A35;
+}
+
+.ppc-modal__header h2 {
+  flex: 1;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text, #0f172a);
+  margin: 0;
+}
+
+body.dark-mode .ppc-modal__header h2 {
+  color: #E2D9F3;
+}
+
+.ppc-modal__back,
+.ppc-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--color-text-secondary, #64748b);
+  transition: background 0.15s, color 0.15s;
+}
+
+.ppc-modal__back:hover,
+.ppc-modal__close:hover {
+  background: var(--color-bg-secondary, #f1f5f9);
+  color: var(--color-text, #0f172a);
+}
+
+body.dark-mode .ppc-modal__back:hover,
+body.dark-mode .ppc-modal__close:hover {
+  background: #2D2A35;
+  color: #E2D9F3;
+}
+
+.ppc-modal__close {
+  margin-left: auto;
+}
+
+/* ── Step 1: Select ── */
+
+.ppc-select {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  gap: 24px;
+}
+
+.ppc-select__preview {
+  position: relative;
+}
+
+.ppc-select__avatar-ring {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, #6d28d9, #a855f7, #ec4899);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ppc-select__avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-bg, #fff);
+}
+
+body.dark-mode .ppc-select__avatar-img {
+  border-color: #1E1B24;
+}
+
+.ppc-select__avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--color-bg-secondary, #f1f5f9);
+  border: 3px solid var(--color-bg, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+body.dark-mode .ppc-select__avatar-fallback {
+  background: #2D2A35;
+  border-color: #1E1B24;
+  color: #6b6580;
+}
+
+.ppc-select__avatar-fallback svg {
+  width: 48px;
+  height: 48px;
+}
+
+.ppc-select__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.ppc-select__hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #94a3b8);
+  margin: 0;
+}
+
+/* ── Buttons ── */
+
+.ppc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ppc-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.ppc-btn--primary {
+  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.3);
+}
+
+.ppc-btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(109, 40, 217, 0.4);
+}
+
+.ppc-btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ppc-btn--ghost {
+  background: var(--color-bg-secondary, #f1f5f9);
+  color: var(--color-text-secondary, #475569);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+.ppc-btn--ghost:hover:not(:disabled) {
+  background: var(--color-border, #e2e8f0);
+}
+
+body.dark-mode .ppc-btn--ghost {
+  background: #2D2A35;
+  color: #9E95A8;
+  border-color: #3b3670;
+}
+
+body.dark-mode .ppc-btn--ghost:hover:not(:disabled) {
+  background: #3b3670;
+}
+
+.ppc-btn--danger {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.ppc-btn--danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+body.dark-mode .ppc-btn--danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+/* ── Step 2: Crop ── */
+
+.ppc-crop {
+  display: flex;
+  flex-direction: column;
+}
+
+.ppc-crop__area {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  background: #0a0a0a;
+}
+
+/* Override react-easy-crop styles for cleaner look */
+.ppc-crop__area :global(.reactEasyCrop_Container) {
+  background: #0a0a0a;
+}
+
+.ppc-crop__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+}
+
+body.dark-mode .ppc-crop__controls {
+  border-top-color: #2D2A35;
+}
+
+.ppc-crop__controls svg {
+  color: var(--color-text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+body.dark-mode .ppc-crop__controls svg {
+  color: #6b6580;
+}
+
+.ppc-crop__slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--color-border, #e2e8f0);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+body.dark-mode .ppc-crop__slider {
+  background: #2D2A35;
+}
+
+.ppc-crop__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s;
+}
+
+.ppc-crop__slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.ppc-crop__slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ppc-crop__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+}
+
+body.dark-mode .ppc-crop__actions {
+  border-top-color: #2D2A35;
+}
+
+/* ── Spinner ── */
+
+.ppc-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ppc-spin 0.6s linear infinite;
+}
+
+/* ── Avatar overlay for own profile (camera icon on hover) ── */
+
+.pp-header__avatar-wrap--editable {
+  cursor: pointer;
+  position: relative;
+}
+
+.pp-header__avatar-wrap--editable::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.2s;
+  pointer-events: none;
+}
+
+.pp-header__avatar-wrap--editable:hover::after {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.pp-header__avatar-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.pp-header__avatar-overlay svg {
+  width: 28px;
+  height: 28px;
+}
+
+.pp-header__avatar-overlay span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pp-header__avatar-wrap--editable:hover .pp-header__avatar-overlay {
+  opacity: 1;
+}
+
+/* ── Mobile ── */
+
+@media (max-width: 480px) {
+  .ppc-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .ppc-modal {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 95vh;
+  }
+
+  .ppc-crop__area {
+    height: 300px;
+  }
+
+  .ppc-select__avatar-ring {
+    width: 130px;
+    height: 130px;
+  }
+}

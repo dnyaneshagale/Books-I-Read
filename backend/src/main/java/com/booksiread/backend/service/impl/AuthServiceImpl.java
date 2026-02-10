@@ -81,6 +81,9 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getDisplayName() != null && !request.getDisplayName().isBlank()) {
+            user.setDisplayName(request.getDisplayName());
+        }
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
@@ -214,5 +217,10 @@ public class AuthServiceImpl implements AuthService {
 
         // Security: Log password reset for audit trail
         logger.warn("PASSWORD RESET COMPLETED for user: {} ({})", user.getUsername(), user.getEmail());
+    }
+
+    @Override
+    public boolean isUsernameTaken(String username) {
+        return userRepository.existsByUsername(username);
     }
 }

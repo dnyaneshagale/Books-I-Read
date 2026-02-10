@@ -1,7 +1,5 @@
-package com.booksiread.backend.model;
+package com.booksiread.backend.entity;
 
-import com.booksiread.backend.entity.Book;
-import com.booksiread.backend.entity.User;
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;

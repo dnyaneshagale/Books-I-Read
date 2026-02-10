@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import authApi from '../authApi';
 import './LoginPage.css';
@@ -18,6 +18,8 @@ const LoginPage = () => {
   const [isResetting, setIsResetting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,7 +38,7 @@ const LoginPage = () => {
 
     if (result.success) {
       toast.success('Welcome back!');
-      navigate('/');
+      navigate(redirectTo);
     } else {
       toast.error(result.error);
     }

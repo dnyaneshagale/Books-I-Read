@@ -13,6 +13,9 @@ public class RegisterRequest {
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
 
+    @Size(max = 100, message = "Display name must be at most 100 characters")
+    private String displayName;
+
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
     private String email;
@@ -25,8 +28,9 @@ public class RegisterRequest {
     public RegisterRequest() {
     }
 
-    public RegisterRequest(String username, String email, String password) {
+    public RegisterRequest(String username, String displayName, String email, String password) {
         this.username = username;
+        this.displayName = displayName;
         this.email = email;
         this.password = password;
     }
@@ -38,6 +42,14 @@ public class RegisterRequest {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public String getEmail() {

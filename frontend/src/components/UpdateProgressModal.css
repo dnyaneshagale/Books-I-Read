@@ -1212,6 +1212,31 @@ textarea:focus {
   margin-top: var(--spacing-sm);
 }
 
+/* Privacy Toggle */
+.form-group--toggle {
+  margin-top: var(--spacing-md);
+}
+
+.privacy-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.privacy-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.privacy-toggle__label {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
 /* Modal Actions Sticky */
 .modal-actions-sticky {
   display: flex;

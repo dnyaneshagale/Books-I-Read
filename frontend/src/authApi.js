@@ -40,6 +40,15 @@ const authApi = {
   resetPassword: (data) => {
     return axiosClient.post('/auth/reset-password', data);
   },
+
+  /**
+   * Check if a username is available
+   * @param {string} username
+   * @returns {Promise} - { available: boolean, username: string }
+   */
+  checkUsername: (username) => {
+    return axiosClient.get(`/auth/check-username/${encodeURIComponent(username)}`);
+  },
 };
 
 /**

@@ -23,6 +23,20 @@ frontend/android/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
+
+# Secret / credential files
+*.pem
+*.key
+*.p12
+*.jks
+serviceAccountKey.json
+firebase-adminsdk*.json
+
+# Firebase
+.firebase/
+firebase-debug.log
 
 # Logs
 *.log
@@ -35,6 +49,11 @@ logs/
 # Backup files
 *.backup
 *.old
+
+# Build outputs
+target/
+dist/
+node_modules/
 
 # System files
 desktop.ini

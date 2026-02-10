@@ -67,8 +67,6 @@ function AnalyticsModal({ stats, dailyStats = [], activityDates = [], activityDe
         });
       }
       
-      console.log('Activity Map:', Object.fromEntries(activityMap));
-      
       const monthsData = [];
 
       // Start from the first day of the account creation month

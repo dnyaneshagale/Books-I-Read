@@ -17,6 +17,7 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
   const [completeDate, setCompleteDate] = useState(book.completeDate || '');
   const [tags, setTags] = useState(book.tags || []);
   const [tagInput, setTagInput] = useState('');
+  const [isPublic, setIsPublic] = useState(book.isPublic !== false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -56,7 +57,8 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
         review: review.trim() || null,
         startDate: startDate || null,
         completeDate: completeDate || null,
-        tags: tags
+        tags: tags,
+        isPublic: isPublic
       };
 
       await bookApi.updateBook(book.id, updatedData);
@@ -355,6 +357,20 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Privacy Toggle */}
+          <div className="form-group form-group--toggle">
+            <label className="privacy-toggle">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+              />
+              <span className="privacy-toggle__label">
+                {isPublic ? '🌍 Public — visible to your followers' : '🔒 Private — only you can see this book'}
+              </span>
+            </label>
           </div>
 
           </form>

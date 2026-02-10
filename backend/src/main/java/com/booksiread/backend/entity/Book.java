@@ -59,6 +59,10 @@ public class Book {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "is_public", nullable = false)
+    @ColumnDefault("true")
+    private Boolean isPublic = true;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "book_tags", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "tag")
@@ -237,6 +241,14 @@ public class Book {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Boolean getIsPublic() {
+        return isPublic;
+    }
+
+    public void setIsPublic(Boolean isPublic) {
+        this.isPublic = isPublic;
     }
 
     public List<String> getTags() {

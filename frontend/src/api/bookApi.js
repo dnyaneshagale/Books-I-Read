@@ -69,6 +69,14 @@ const bookApi = {
   },
 
   /**
+   * Toggle book privacy
+   */
+  togglePrivacy: async (id, isPublic) => {
+    const response = await axiosClient.patch(`/books/${id}/privacy`, { isPublic });
+    return response.data;
+  },
+
+  /**
    * Delete a book
    * @param {number} id - Book ID
    * @returns {Promise} void

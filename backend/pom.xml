@@ -95,21 +95,6 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Redis Cache -->
-		<!--
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-redis</artifactId>
-		</dependency>
-		-->
-
-		<!-- Actuator (monitoring endpoints) -->
-		<!--
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
-		-->
 	</dependencies>
 
 	<build>

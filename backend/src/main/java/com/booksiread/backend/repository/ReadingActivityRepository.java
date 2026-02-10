@@ -1,7 +1,7 @@
 package com.booksiread.backend.repository;
 
 import com.booksiread.backend.entity.User;
-import com.booksiread.backend.model.ReadingActivity;
+import com.booksiread.backend.entity.ReadingActivity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

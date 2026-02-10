@@ -41,4 +41,11 @@ public interface AuthService {
      * @param request Token and new password
      */
     void confirmPasswordReset(PasswordResetConfirmRequest request);
+
+    /**
+     * Check if a username is already taken
+     * @param username Username to check
+     * @return true if taken, false if available
+     */
+    boolean isUsernameTaken(String username);
 }

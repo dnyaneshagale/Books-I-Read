@@ -21,6 +21,18 @@ services:
         value: prod
       - key: CORS_ALLOWED_ORIGINS
         sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: EMAIL_FROM_NAME
+        value: Books I Read
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_API_URL
+        sync: false
       - key: SHOW_SQL
         value: false
       - key: LOG_LEVEL

@@ -1,0 +1,226 @@
+/* ============================================
+   Follow Button Styles
+   Instagram-like follow/unfollow button
+   ============================================ */
+
+.follow-btn {
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* Size variants */
+.follow-btn--small {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+}
+
+.follow-btn--medium {
+  padding: 8px 20px;
+  font-size: 0.875rem;
+}
+
+.follow-btn--large {
+  padding: 10px 28px;
+  font-size: 1rem;
+}
+
+/* State: Follow (not following) */
+.follow-btn--follow {
+  background: var(--color-primary, #6d28d9);
+  color: white;
+}
+
+.follow-btn--follow:hover:not(:disabled) {
+  background: var(--color-primary-hover, #5b21b6);
+  transform: translateY(-1px);
+}
+
+/* State: Following */
+.follow-btn--following {
+  background: var(--color-bg-secondary, #f1f5f9);
+  color: var(--color-text-primary, #0f172a);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+.follow-btn--following:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+/* State: Requested (pending) */
+.follow-btn--requested {
+  background: var(--color-bg-secondary, #f1f5f9);
+  color: var(--color-text-secondary, #64748b);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+.follow-btn--requested:hover:not(:disabled) {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #d97706;
+}
+
+/* Loading state */
+.follow-btn--loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.follow-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ============================================
+   Unfollow Confirmation Modal
+   ============================================ */
+
+.unfollow-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+}
+
+.unfollow-modal {
+  background: var(--color-bg, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  animation: slideUp 0.2s ease;
+}
+
+.unfollow-modal p {
+  margin: 0 0 20px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-primary, #0f172a);
+}
+
+.unfollow-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.unfollow-modal-btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.unfollow-modal-btn--cancel {
+  background: var(--color-bg-secondary, #f1f5f9);
+  color: var(--color-text-primary, #0f172a);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+.unfollow-modal-btn--cancel:hover {
+  background: var(--color-border, #e2e8f0);
+}
+
+.unfollow-modal-btn--unfollow {
+  background: #dc2626;
+  color: white;
+  border: none;
+}
+
+.unfollow-modal-btn--unfollow:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.unfollow-modal-btn--unfollow:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Dark Mode Styles
+   ============================================ */
+
+body.dark-mode .follow-btn--following {
+  background: var(--color-bg-secondary, #1e1b4b);
+  color: var(--color-text-primary, #e2e8f0);
+  border-color: var(--color-border, #3b3670);
+}
+
+body.dark-mode .follow-btn--following:hover:not(:disabled) {
+  background: #450a0a;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+body.dark-mode .follow-btn--requested {
+  background: var(--color-bg-secondary, #1e1b4b);
+  color: var(--color-text-secondary, #a5b4fc);
+  border-color: var(--color-border, #3b3670);
+}
+
+body.dark-mode .follow-btn--requested:hover:not(:disabled) {
+  background: #451a03;
+  border-color: #78350f;
+  color: #fcd34d;
+}
+
+body.dark-mode .unfollow-modal {
+  background: var(--color-bg, #0F0C15);
+  border: 1px solid var(--color-border, #3b3670);
+}
+
+body.dark-mode .unfollow-modal p {
+  color: var(--color-text-primary, #e2e8f0);
+}
+
+body.dark-mode .unfollow-modal-btn--cancel {
+  background: var(--color-bg-secondary, #1e1b4b);
+  color: var(--color-text-primary, #e2e8f0);
+  border-color: var(--color-border, #3b3670);
+}
+
+body.dark-mode .unfollow-modal-btn--cancel:hover {
+  background: var(--color-border, #3b3670);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

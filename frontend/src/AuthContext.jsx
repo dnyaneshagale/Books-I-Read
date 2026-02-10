@@ -54,9 +54,13 @@ export const AuthProvider = ({ children }) => {
   /**
    * Register new user
    */
-  const register = async (username, email, password) => {
+  const register = async (username, email, password, displayName) => {
     try {
-      const response = await authApi.register({ username, email, password });
+      const payload = { username, email, password };
+      if (displayName && displayName.trim()) {
+        payload.displayName = displayName.trim();
+      }
+      const response = await authApi.register(payload);
       const { token: newToken, ...userData } = response.data;
 
       // Save to state
@@ -113,6 +117,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    setUser,
     token,
     login,
     register,

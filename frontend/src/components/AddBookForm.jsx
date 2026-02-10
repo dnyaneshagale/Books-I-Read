@@ -15,6 +15,7 @@ function AddBookForm({ onBookAdded, onCancel }) {
     totalPages: '',
     pagesRead: '0',
     status: 'WANT_TO_READ',
+    isPublic: true,
     tags: []
   });
 
@@ -110,6 +111,7 @@ function AddBookForm({ onBookAdded, onCancel }) {
         totalPages: parseInt(formData.totalPages),
         pagesRead: parseInt(formData.pagesRead),
         status: formData.status,
+        isPublic: formData.isPublic,
         tags: formData.tags
       };
 
@@ -123,6 +125,7 @@ function AddBookForm({ onBookAdded, onCancel }) {
         totalPages: '',
         pagesRead: '0',
         status: 'WANT_TO_READ',
+        isPublic: true,
         tags: []
       });
       setTagInput('');
@@ -257,6 +260,19 @@ function AddBookForm({ onBookAdded, onCancel }) {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="form-group form-group--toggle">
+          <label className="privacy-toggle">
+            <input
+              type="checkbox"
+              checked={!formData.isPublic}
+              onChange={(e) => setFormData(prev => ({ ...prev, isPublic: !e.target.checked }))}
+            />
+            <span className="privacy-toggle__label">
+              {formData.isPublic ? '🌍 Public — visible to your followers' : '🔒 Private — only you can see this book'}
+            </span>
+          </label>
         </div>
 
         <div className="form-actions">

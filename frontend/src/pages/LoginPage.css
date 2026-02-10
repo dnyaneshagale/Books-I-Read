@@ -386,3 +386,65 @@
     width: 100%;
   }
 }
+
+/* ── Username Availability Indicator ──────────────── */
+
+.input-with-status {
+  position: relative;
+}
+
+.input-with-status input {
+  width: 100%;
+}
+
+.input-status {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.78rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.input-status--checking {
+  color: #6b7280;
+}
+
+.input-status--available {
+  color: #059669;
+}
+
+.input-status--taken {
+  color: #dc2626;
+}
+
+.input-error {
+  border-color: #dc2626 !important;
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+  border-color: #dc2626 !important;
+}
+
+.input-success {
+  border-color: #059669 !important;
+}
+
+.input-success:focus {
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12) !important;
+  border-color: #059669 !important;
+}
+
+body.dark-mode .input-status--checking {
+  color: #9ca3af;
+}
+
+body.dark-mode .input-status--available {
+  color: #34d399;
+}
+
+body.dark-mode .input-status--taken {
+  color: #f87171;
+}
