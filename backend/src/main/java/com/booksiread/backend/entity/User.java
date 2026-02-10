@@ -56,7 +56,7 @@ public class User {
     private String profilePictureUrl;
 
     @Column(name = "is_public")
-    private Boolean isPublic = true; // Default: public profile (like Instagram default)
+    private Boolean isPublic = false; // Default: private profile
 
     @Column(name = "followers_count")
     private Integer followersCount = 0;
