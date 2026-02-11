@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import authApi from './authApi';
 import axiosClient from './api/axiosClient';
 
@@ -17,6 +19,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -32,10 +35,14 @@ export const AuthProvider = ({ children }) => {
     
     setLoading(false);
 
-    // Listen for logout events from axios interceptor
-    const handleLogout = () => {
+    // Listen for logout events from axios interceptor (expired token)
+    const handleLogout = (e) => {
       setToken(null);
       setUser(null);
+      if (e.detail?.expired) {
+        toast.error('Session expired. Please log in again.');
+        navigate('/login', { replace: true });
+      }
     };
 
     window.addEventListener('auth:logout', handleLogout);

@@ -40,16 +40,21 @@ axiosClient.interceptors.response.use(
   (error) => {
     // Handle specific error cases
     if (error.response) {
-      const isAuthError = error.response.status === 401 || error.response.status === 403;
+      const { status, config } = error.response;
+      const isAuthError = status === 401 || status === 403;
       
-      // Handle 401/403 - Invalid or expired token
-      if (isAuthError) {
+      // Skip auth redirect for login/register/reset-password requests
+      const authPaths = ['/auth/login', '/auth/register', '/auth/reset-password', '/auth/forgot-password'];
+      const isAuthRequest = authPaths.some((p) => config.url?.includes(p));
+
+      // Handle 401/403 - Invalid or expired token (only for authenticated requests)
+      if (isAuthError && !isAuthRequest && localStorage.getItem('token')) {
         // Clear invalid token
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         
-        // Emit logout event for AuthContext to handle
-        window.dispatchEvent(new CustomEvent('auth:logout'));
+        // Emit logout event for AuthContext to handle + redirect
+        window.dispatchEvent(new CustomEvent('auth:logout', { detail: { expired: true } }));
       }
     }
     return Promise.reject(error);
