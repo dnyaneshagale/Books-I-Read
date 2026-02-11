@@ -35,11 +35,7 @@
   border: 3px solid #e5e7eb;
   border-top-color: #6366f1;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+  animation: g-spin 0.8s linear infinite;
 }
 
 /* ── Empty State ──────────────────────────────────────── */

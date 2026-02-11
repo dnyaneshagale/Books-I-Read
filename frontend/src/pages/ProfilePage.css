@@ -46,7 +46,7 @@ body.dark-mode .pp-page {
 .pp-page__container {
   max-width: 680px;
   margin: 0 auto;
-  animation: pp-fadeIn 0.4s ease;
+  animation: g-fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (min-width: 1024px) {

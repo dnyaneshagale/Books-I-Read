@@ -26,6 +26,7 @@ body.dark-mode .ln-feed {
 .ln-feed__container {
   max-width: 620px;
   margin: 0 auto;
+  animation: g-fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (min-width: 1024px) {
@@ -33,6 +34,18 @@ body.dark-mode .ln-feed {
     max-width: 680px;
   }
 }
+
+.ln-feed__skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ln-feed__skeleton-card {
+  animation: g-fadeIn 0.4s ease both;
+}
+.ln-feed__skeleton-card:nth-child(2) { animation-delay: 80ms; }
+.ln-feed__skeleton-card:nth-child(3) { animation-delay: 160ms; }
 
 .ln-feed__loading {
   display: flex;
@@ -50,10 +63,8 @@ body.dark-mode .ln-feed {
   border: 3px solid var(--color-border, #e2e8f0);
   border-top-color: var(--color-primary, #6d28d9);
   border-radius: 50%;
-  animation: ln-spin 0.7s linear infinite;
+  animation: g-spin 0.7s linear infinite;
 }
-
-@keyframes ln-spin { to { transform: rotate(360deg); } }
 
 .ln-feed__list {
   display: flex;
@@ -370,6 +381,79 @@ body.dark-mode .ln-tabs__indicator {
   background: var(--gradient-primary, linear-gradient(135deg, #7C4DFF, #9575FF));
 }
 
+/* ---- Search Bar ---- */
+.ln-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-bg, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.04));
+  transition: border-color 200ms, box-shadow 200ms;
+}
+
+.ln-search-bar:focus-within {
+  border-color: var(--color-primary, #7C3AED);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.ln-search-bar__icon {
+  color: var(--color-text-tertiary, #94a3b8);
+  flex-shrink: 0;
+}
+
+.ln-search-bar__input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 0.95rem;
+  color: var(--color-text-primary, #0f172a);
+  font-family: inherit;
+}
+
+.ln-search-bar__input::placeholder {
+  color: var(--color-text-tertiary, #94a3b8);
+}
+
+.ln-search-bar__clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-tertiary, #94a3b8);
+  font-size: 1rem;
+  padding: 2px 6px;
+  border-radius: 50%;
+  transition: background 150ms, color 150ms;
+}
+
+.ln-search-bar__clear:hover {
+  background: var(--color-bg-secondary, #f1f5f9);
+  color: var(--color-text-primary, #0f172a);
+}
+
+body.dark-mode .ln-search-bar {
+  background: var(--color-bg, #1a1625);
+  border-color: var(--color-border, #2D2640);
+}
+
+body.dark-mode .ln-search-bar:focus-within {
+  border-color: var(--color-primary, #A78BFA);
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+}
+
+body.dark-mode .ln-search-bar__input {
+  color: var(--color-text-primary, #E2D9F3);
+}
+
+body.dark-mode .ln-search-bar__clear:hover {
+  background: var(--color-bg-secondary, #2D2640);
+  color: var(--color-text-primary, #E2D9F3);
+}
+
 /* ---- Tabs + Sort Row ---- */
 .ln-tabs-row {
   display: flex;
@@ -455,6 +539,7 @@ body.dark-mode .ln-sort-toggle__btn:not(.active):hover {
   border-radius: var(--radius-lg, 16px);
   border: 1px solid var(--color-border, #e2e8f0);
   box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06));
+  animation: g-fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 body.dark-mode .ln-empty {
@@ -549,6 +634,7 @@ body.dark-mode .ln-post:hover {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  animation: g-fadeIn 0.3s ease both;
 }
 
 .ln-post__avatar-letter {
@@ -870,7 +956,11 @@ body.dark-mode .ln-post__actions {
   font-weight: 600;
   cursor: pointer;
   border-radius: var(--radius-sm, 8px);
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ln-post__action-btn:active {
+  transform: scale(0.94);
 }
 
 .ln-post__action-btn:hover {
@@ -891,6 +981,10 @@ body.dark-mode .ln-post__action-btn:hover {
   color: var(--color-primary, #6d28d9);
 }
 
+.ln-post__action-btn.active .ln-post__action-icon {
+  animation: g-heartPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 body.dark-mode .ln-post__action-btn.active {
   color: var(--color-primary, #7C4DFF);
 }
@@ -906,7 +1000,7 @@ body.dark-mode .ln-post__action-btn.active {
    ============================================ */
 .ln-comments {
   padding: 0 20px 14px;
-  animation: ln-fadeIn 0.2s ease;
+  animation: g-contentFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Comment Input */

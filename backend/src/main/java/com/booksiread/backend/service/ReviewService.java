@@ -188,6 +188,16 @@ public class ReviewService {
         return getFollowingReviews(viewerId, page, size, "relevant");
     }
 
+    /**
+     * Search reviews by content, book title, author, or reviewer name
+     */
+    @Transactional(readOnly = true)
+    public Page<ReviewResponse> searchReviews(String query, Long viewerId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<BookReview> reviews = reviewRepository.searchReviews(query.trim(), pageable);
+        return reviews.map(r -> mapToResponse(r, viewerId));
+    }
+
     // ============================================
     // Likes
     // ============================================

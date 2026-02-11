@@ -52,4 +52,17 @@ public interface BookReviewRepository extends JpaRepository<BookReview, Long> {
     /** Get average rating for a book from reviews */
     @Query("SELECT AVG(br.rating) FROM BookReview br WHERE br.book.id = :bookId AND br.rating IS NOT NULL")
     Double getAverageRatingForBook(@Param("bookId") Long bookId);
+
+    /** Search reviews by content, book title, book author, or reviewer username */
+    @Query("""
+        SELECT br FROM BookReview br
+        WHERE (LOWER(br.content) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR LOWER(br.book.title) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR LOWER(br.book.author) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR LOWER(br.user.username) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR LOWER(br.user.displayName) LIKE LOWER(CONCAT('%', :query, '%')))
+          AND br.user.isPublic = true
+        ORDER BY br.createdAt DESC
+    """)
+    Page<BookReview> searchReviews(@Param("query") String query, Pageable pageable);
 }

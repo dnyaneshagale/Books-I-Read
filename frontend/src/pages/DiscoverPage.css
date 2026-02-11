@@ -11,6 +11,7 @@
 .discover-page__container {
   max-width: 800px;
   margin: 0 auto;
+  animation: g-fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .discover-page__loading {
@@ -30,11 +31,7 @@
   border: 3px solid var(--color-border, #e2e8f0);
   border-top-color: var(--color-primary, #6d28d9);
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+  animation: g-spin 0.7s linear infinite;
 }
 
 /* ============================================

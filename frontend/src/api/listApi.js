@@ -18,6 +18,9 @@ const listApi = {
   getMyLists: () =>
     axiosClient.get('/lists/mine'),
 
+  getSavedLists: () =>
+    axiosClient.get('/lists/saved'),
+
   getUserLists: (userId) =>
     axiosClient.get(`/lists/user/${userId}`),
 

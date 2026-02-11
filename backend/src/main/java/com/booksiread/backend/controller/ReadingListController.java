@@ -120,6 +120,16 @@ public class ReadingListController {
         return ResponseEntity.ok(readingListService.searchLists(q, user.getId(), page));
     }
 
+    /**
+     * Get lists the current user has saved (liked).
+     * GET /api/lists/saved
+     */
+    @GetMapping("/saved")
+    public ResponseEntity<List<ReadingListResponse>> getSavedLists() {
+        User user = getCurrentUser();
+        return ResponseEntity.ok(readingListService.getSavedLists(user.getId()));
+    }
+
     // ─── Items ──────────────────────────────────────────────────
 
     /**

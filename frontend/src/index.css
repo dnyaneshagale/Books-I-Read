@@ -202,3 +202,200 @@ body {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* ============================================
+   Global Animation Utilities — Instagram-smooth
+   ============================================ */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* ── Global Keyframes ────────────────────────────────── */
+
+@keyframes g-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes g-fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes g-fadeInScale {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes g-slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes g-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes g-heartPop {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.3); }
+  30% { transform: scale(0.95); }
+  45% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes g-scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes g-contentFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes g-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Animation Utility Classes ───────────────────────── */
+
+.animate-fade-in {
+  animation: g-fadeIn 0.3s ease both;
+}
+
+.animate-fade-in-up {
+  animation: g-fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: g-scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-content {
+  animation: g-contentFade 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Staggered Children ──────────────────────────────── */
+
+.stagger-children > * {
+  animation: g-fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+.stagger-children > *:nth-child(9) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(10) { animation-delay: 450ms; }
+
+/* ── Skeleton Shimmer Base ───────────────────────────── */
+
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: g-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm, 8px);
+}
+
+body.dark-mode .skeleton {
+  background: linear-gradient(90deg, #2D2A35 25%, #3a3644 50%, #2D2A35 75%);
+  background-size: 200% 100%;
+}
+
+.skeleton-text {
+  height: 14px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text--sm {
+  width: 40%;
+}
+
+.skeleton-text--md {
+  width: 65%;
+}
+
+.skeleton-text--lg {
+  width: 90%;
+}
+
+.skeleton-text--full {
+  width: 100%;
+}
+
+.skeleton-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-card {
+  background: var(--color-bg, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  padding: 20px;
+  box-shadow: var(--shadow-xs);
+}
+
+body.dark-mode .skeleton-card {
+  background: var(--color-bg-secondary, #1E1B24);
+  border-color: var(--color-border, #2D2A35);
+}
+
+/* ── Image Fade-In ───────────────────────────────────── */
+
+/* Global avatar/profile image fade-in — Instagram-smooth */
+[class*="avatar"] img,
+[class*="Avatar"] img,
+[class*="profile"] img,
+[class*="Profile"] img {
+  animation: g-fadeIn 0.35s ease both;
+}
+
+.img-fade {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.img-fade.loaded {
+  opacity: 1;
+}
+
+/* ── Interactive Feedback ────────────────────────────── */
+
+.press-scale {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.press-scale:active {
+  transform: scale(0.96);
+}
+
+.heart-pop {
+  animation: g-heartPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Tab Content Transition ──────────────────────────── */
+
+.tab-content {
+  animation: g-contentFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

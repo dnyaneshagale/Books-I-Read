@@ -402,18 +402,7 @@ const ProfilePage = () => {
     }
   };
 
-  // ── Loading State ──
-  if (loading) {
-    return (
-      <div className="pp-page">
-        <div className="pp-page__container">
-          <SkeletonLoader />
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) {
+  if (!loading && !profile) {
     return (
       <div className="pp-page">
         <div className="pp-page__empty">
@@ -424,8 +413,8 @@ const ProfilePage = () => {
     );
   }
 
-  const isOwnProfile = profile.isOwnProfile;
-  const canViewContent = profile.isPublic || isOwnProfile || profile.isFollowing;
+  const isOwnProfile = profile?.isOwnProfile;
+  const canViewContent = profile?.isPublic || isOwnProfile || profile?.isFollowing;
 
   const tabs = [
     { key: 'books', icon: <GridIcon />, label: 'Books' },
@@ -440,6 +429,12 @@ const ProfilePage = () => {
 
   return (
     <div className="pp-page">
+      {loading ? (
+        <div className="pp-page__container">
+          <SkeletonLoader />
+        </div>
+      ) : (
+      <>
       <div className="pp-page__container">
 
         {/* Back Button */}
@@ -916,6 +911,8 @@ const ProfilePage = () => {
             </form>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

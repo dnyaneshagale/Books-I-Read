@@ -340,6 +340,11 @@ const FeedPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const navigate = useNavigate();
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const searchDebounceRef = useRef(null);
+
   // Composer state
   const [showComposer, setShowComposer] = useState(false);
   const [newContent, setNewContent] = useState('');
@@ -366,8 +371,39 @@ const FeedPage = () => {
   const [openMenuId, setOpenMenuId] = useState(null);
 
   useEffect(() => {
-    loadReflections(0, true);
+    if (!isSearching) {
+      loadReflections(0, true);
+    }
   }, [activeTab, sortMode]);
+
+  // Real-time debounced search for reflections
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+    if (!searchQuery.trim()) {
+      if (isSearching) {
+        setIsSearching(false);
+        loadReflections(0, true);
+      }
+      return;
+    }
+
+    searchDebounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      setLoading(true);
+      try {
+        const res = await socialApi.searchReflections(searchQuery.trim(), 0, 20);
+        setReflections(res.data.content || []);
+        setHasMore(false);
+      } catch {
+        setReflections([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (showComposer && myBooks.length === 0) {
@@ -685,20 +721,6 @@ const FeedPage = () => {
 
   const CONTENT_LIMIT = 300;
 
-  // Loading skeleton
-  if (loading) {
-    return (
-      <div className="ln-feed">
-        <div className="ln-feed__container">
-          <div className="ln-feed__loading">
-            <div className="ln-feed__spinner" />
-            <span>Loading your feed...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="ln-feed">
       <div className="ln-feed__container">
@@ -768,6 +790,23 @@ const FeedPage = () => {
           )}
         </div>
 
+        {/* ---- Search Bar ---- */}
+        <div className="ln-search-bar">
+          <svg className="ln-search-bar__icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+          <input
+            type="text"
+            className="ln-search-bar__input"
+            placeholder="Search reflections by content, book, user..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="ln-search-bar__clear" onClick={() => setSearchQuery('')}>✕</button>
+          )}
+        </div>
+
         {/* ---- Tabs + Sort ---- */}
         <div className="ln-tabs-row">
           <div className="ln-tabs">
@@ -809,23 +848,47 @@ const FeedPage = () => {
         </div>
 
         {/* ---- Feed ---- */}
-        {reflections.length === 0 ? (
+        {loading ? (
+          <div className="ln-feed__skeleton-list">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="skeleton-card ln-feed__skeleton-card">
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
+                  <div className="skeleton skeleton-avatar" />
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton skeleton-text skeleton-text--md" />
+                    <div className="skeleton skeleton-text skeleton-text--sm" style={{ marginBottom: 0 }} />
+                  </div>
+                </div>
+                <div className="skeleton skeleton-text skeleton-text--full" />
+                <div className="skeleton skeleton-text skeleton-text--lg" />
+                <div className="skeleton skeleton-text skeleton-text--md" style={{ marginBottom: 16 }} />
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div className="skeleton" style={{ width: 60, height: 28, borderRadius: 14 }} />
+                  <div className="skeleton" style={{ width: 60, height: 28, borderRadius: 14 }} />
+                  <div className="skeleton" style={{ width: 60, height: 28, borderRadius: 14 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : reflections.length === 0 ? (
           <div className="ln-empty">
             <div className="ln-empty__icon">
-              {activeTab === 'following' ? '👥' : '🌍'}
+              {isSearching ? '🔍' : activeTab === 'following' ? '👥' : '🌍'}
             </div>
-            <h3>{activeTab === 'following' ? 'No reflections from your network yet' : 'No reflections to show'}</h3>
-            <p>{activeTab === 'following'
+            <h3>{isSearching ? 'No reflections found' : activeTab === 'following' ? 'No reflections from your network yet' : 'No reflections to show'}</h3>
+            <p>{isSearching
+              ? `No results for "${searchQuery}". Try a different search.`
+              : activeTab === 'following'
               ? 'Follow some readers or share the first reflection!'
               : 'Be the first to share a reflection with the community!'}</p>
-            {activeTab === 'following' && (
+            {!isSearching && activeTab === 'following' && (
               <button className="ln-empty__btn" onClick={() => navigate('/discover')}>
                 Discover Readers
               </button>
             )}
           </div>
         ) : (
-          <div className="ln-feed__list">
+          <div className="ln-feed__list stagger-children" key={activeTab + sortMode}>
             {reflections.map((r) => (
               <div key={r.id} className="ln-post">
                 {/* ---- Post Header ---- */}

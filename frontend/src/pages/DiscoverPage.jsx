@@ -191,17 +191,6 @@ const DiscoverPage = () => {
     return name.charAt(0).toUpperCase();
   };
 
-  if (loading) {
-    return (
-      <div className="discover-page">
-        <div className="discover-page__loading">
-          <div className="discover-loading-spinner" />
-          <span>Finding readers for you...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="discover-page">
       <div className="discover-page__container">
@@ -362,6 +351,13 @@ const DiscoverPage = () => {
 
         {/* Discover Content */}
         <div className="discover-content">
+          {loading ? (
+            <div className="discover-page__loading">
+              <div className="discover-loading-spinner" />
+              <span>Finding readers for you...</span>
+            </div>
+          ) : (
+          <>
           {/* Suggested Users */}
           {suggestedUsers.length > 0 && (
             <section className="discover-section">
@@ -461,6 +457,8 @@ const DiscoverPage = () => {
               <h3>No users to discover yet</h3>
               <p>Be the first to invite your friends!</p>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

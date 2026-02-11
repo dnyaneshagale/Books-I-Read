@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import reviewApi from '../api/reviewApi';
@@ -17,9 +17,44 @@ const ReviewsFeedPage = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const debounceRef = useRef(null);
+
   useEffect(() => {
-    fetchReviews();
+    if (!isSearching) {
+      fetchReviews();
+    }
   }, [activeTab, sortMode]);
+
+  // Real-time debounced search
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!searchQuery.trim()) {
+      if (isSearching) {
+        setIsSearching(false);
+        fetchReviews();
+      }
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      setLoading(true);
+      try {
+        const res = await reviewApi.searchReviews(searchQuery.trim(), 0, 20);
+        setReviews(res.data.content || []);
+      } catch {
+        setReviews([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [searchQuery]);
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -43,6 +78,23 @@ const ReviewsFeedPage = () => {
             ← Back
           </button>
           <h1>Reviews</h1>
+        </div>
+
+        {/* Search Bar */}
+        <div className="reviews-feed__search">
+          <svg className="reviews-feed__search-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+          <input
+            type="text"
+            className="reviews-feed__search-input"
+            placeholder="Search reviews by book, author, content..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="reviews-feed__search-clear" onClick={() => setSearchQuery('')}>✕</button>
+          )}
         </div>
 
         {/* Tabs + Sort */}
@@ -86,32 +138,57 @@ const ReviewsFeedPage = () => {
         {/* Content */}
         <div className="reviews-feed__content">
           {loading ? (
-            <div className="reviews-feed__loading">Loading reviews...</div>
+            <div className="reviews-feed__skeleton-list">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="skeleton-card reviews-feed__skeleton-card">
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
+                    <div className="skeleton skeleton-avatar" />
+                    <div style={{ flex: 1 }}>
+                      <div className="skeleton skeleton-text skeleton-text--md" />
+                      <div className="skeleton skeleton-text skeleton-text--sm" style={{ marginBottom: 0 }} />
+                    </div>
+                  </div>
+                  <div className="skeleton skeleton-text skeleton-text--full" />
+                  <div className="skeleton skeleton-text skeleton-text--lg" />
+                  <div className="skeleton skeleton-text skeleton-text--sm" style={{ marginBottom: 16 }} />
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div className="skeleton" style={{ width: 80, height: 24, borderRadius: 12 }} />
+                    <div className="skeleton" style={{ width: 60, height: 24, borderRadius: 12 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : reviews.length === 0 ? (
             <div className="reviews-feed__empty">
               <p>📖</p>
-              <h3>No reviews yet</h3>
+              <h3>{isSearching ? 'No reviews found' : 'No reviews yet'}</h3>
               <p>
-                {activeTab === 'following'
+                {isSearching
+                  ? `No results for "${searchQuery}". Try a different search.`
+                  : activeTab === 'following'
                   ? 'Follow more readers to see their book reviews here.'
                   : 'Be the first to write a review!'}
               </p>
-              <button
-                className="reviews-feed__discover-btn"
-                onClick={() => navigate('/discover')}
-              >
-                Discover Readers
-              </button>
+              {!isSearching && (
+                <button
+                  className="reviews-feed__discover-btn"
+                  onClick={() => navigate('/discover')}
+                >
+                  Discover Readers
+                </button>
+              )}
             </div>
           ) : (
-            reviews.map((review) => (
+            <div className="stagger-children" key={activeTab + sortMode}>
+            {reviews.map((review) => (
               <ReviewCard
                 key={review.id}
                 review={review}
                 currentUserId={user?.id}
                 onUpdate={fetchReviews}
               />
-            ))
+            ))}
+            </div>
           )}
         </div>
       </div>

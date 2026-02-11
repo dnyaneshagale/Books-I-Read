@@ -533,14 +533,17 @@ const ReflectionDetailPage = () => {
     setReflection(prev => prev ? { ...prev, commentsCount: Math.max(0, (prev.commentsCount || 1) - 1) } : prev);
   };
 
-  if (loading) return <SkeletonLoader />;
-  if (!reflection) return null;
+  if (!loading && !reflection) return null;
 
-  const isOwn = user && reflection.user?.id === user.id;
-  const commentsCount = reflection.commentsCount || 0;
+  const isOwn = user && reflection?.user?.id === user.id;
+  const commentsCount = reflection?.commentsCount || 0;
 
   return (
     <div className="reflection-detail-page">
+      {loading ? (
+        <SkeletonLoader />
+      ) : (
+      <>
       <div className="reflection-detail__container">
         {/* Back Button */}
         <button className="page-back-btn" onClick={() => navigate(-1)}>
@@ -714,6 +717,8 @@ const ReflectionDetailPage = () => {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };

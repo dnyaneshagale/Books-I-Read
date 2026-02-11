@@ -37,6 +37,10 @@ const reviewApi = {
   getFollowingReviews: (page = 0, size = 10, sort = 'relevant') =>
     axiosClient.get('/reviews/feed', { params: { page, size, sort } }),
 
+  /** Search reviews by content, book, author, or reviewer */
+  searchReviews: (query, page = 0, size = 20) =>
+    axiosClient.get('/reviews/search', { params: { query, page, size } }),
+
   // ============================================
   // Likes
   // ============================================

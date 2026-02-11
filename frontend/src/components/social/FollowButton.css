@@ -7,12 +7,16 @@
   font-weight: 600;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
+}
+
+.follow-btn:active {
+  transform: scale(0.95);
 }
 
 /* Size variants */

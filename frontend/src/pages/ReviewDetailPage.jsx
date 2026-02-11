@@ -171,21 +171,17 @@ const ReviewDetailPage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="review-detail-page">
-        <SkeletonLoader />
-      </div>
-    );
-  }
+  if (!loading && !review) return null;
 
-  if (!review) return null;
-
-  const isOwnReview = user && review.authorId === user.id;
-  const commentsCount = review.commentsCount || 0;
+  const isOwnReview = user && review?.authorId === user.id;
+  const commentsCount = review?.commentsCount || 0;
 
   return (
     <div className="review-detail-page">
+      {loading ? (
+        <SkeletonLoader />
+      ) : (
+      <>
       <div className="review-detail__container">
         {/* Back Button */}
         <button className="page-back-btn" onClick={() => navigate(-1)}>
@@ -330,6 +326,8 @@ const ReviewDetailPage = () => {
           onClose={() => setShowEditForm(false)}
           onSaved={fetchReview}
         />
+      )}
+      </>
       )}
     </div>
   );

@@ -40,6 +40,7 @@ body.dark-mode .reflection-detail-page {
 .reflection-detail__container {
   max-width: 680px;
   margin: 0 auto;
+  animation: g-fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (min-width: 1024px) {

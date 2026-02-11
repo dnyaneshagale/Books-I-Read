@@ -112,6 +112,17 @@ public class ReviewController {
         return ResponseEntity.ok(reviews);
     }
 
+    /** GET /api/reviews/search - Search reviews by content, book, author, or reviewer */
+    @GetMapping("/search")
+    public ResponseEntity<Page<ReviewResponse>> searchReviews(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        User currentUser = getCurrentUser();
+        Page<ReviewResponse> reviews = reviewService.searchReviews(query, currentUser.getId(), page, size);
+        return ResponseEntity.ok(reviews);
+    }
+
     // ============================================
     // Likes
     // ============================================

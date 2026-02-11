@@ -444,6 +444,7 @@ body.dark-mode .navbar {
   margin: 0 auto;
   padding: var(--spacing-xl);
   transition: background-color 300ms ease, color 300ms ease;
+  animation: g-fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ============================================
@@ -1411,14 +1412,8 @@ body.dark-mode .social-entry-card:hover {
   border: 3px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: g-spin 0.8s linear infinite;
   margin-bottom: var(--spacing-md);
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .loading-state p,

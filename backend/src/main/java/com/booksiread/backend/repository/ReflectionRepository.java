@@ -61,4 +61,18 @@ public interface ReflectionRepository extends JpaRepository<Reflection, Long> {
 
     /** Count reflections by user */
     long countByUserId(Long userId);
+
+    /** Search reflections by content, book title, book author, or user */
+    @Query("""
+        SELECT r FROM Reflection r
+        WHERE (LOWER(r.content) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR LOWER(r.user.username) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR LOWER(r.user.displayName) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR (r.book IS NOT NULL AND LOWER(r.book.title) LIKE LOWER(CONCAT('%', :query, '%')))
+           OR (r.book IS NOT NULL AND LOWER(r.book.author) LIKE LOWER(CONCAT('%', :query, '%'))))
+          AND r.user.isPublic = true
+          AND r.visibleToFollowersOnly = false
+        ORDER BY r.createdAt DESC
+    """)
+    Page<Reflection> searchReflections(@Param("query") String query, Pageable pageable);
 }

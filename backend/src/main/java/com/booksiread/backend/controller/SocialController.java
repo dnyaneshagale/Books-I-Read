@@ -399,6 +399,19 @@ public class SocialController {
         return ResponseEntity.ok(reflections);
     }
 
+    /**
+     * GET /api/social/reflections/search - Search reflections by content, book, author, or user
+     */
+    @GetMapping("/reflections/search")
+    public ResponseEntity<Page<ReflectionResponse>> searchReflections(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        User currentUser = getCurrentUser();
+        Page<ReflectionResponse> reflections = socialService.searchReflections(query, currentUser.getId(), page, size);
+        return ResponseEntity.ok(reflections);
+    }
+
     // ============================================
     // Reflection Like / Comment / Save (LinkedIn-style)
     // ============================================

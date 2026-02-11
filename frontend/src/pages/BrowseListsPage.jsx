@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import listApi from '../api/listApi';
 import './BrowseListsPage.css';
@@ -11,10 +11,42 @@ export default function BrowseListsPage() {
   const [hasMore, setHasMore] = useState(true);
   const [searching, setSearching] = useState(false);
   const navigate = useNavigate();
+  const debounceRef = useRef(null);
 
   useEffect(() => {
     loadLists();
   }, []);
+
+  // Real-time debounced search
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!searchQuery.trim()) {
+      if (searching) {
+        setSearching(false);
+        setLoading(true);
+        loadLists(0);
+      }
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      setLoading(true);
+      try {
+        const res = await listApi.searchLists(searchQuery, 0);
+        setLists(res.data.content);
+        setHasMore(res.data.page ? res.data.page.number < res.data.page.totalPages - 1 : !res.data.last);
+        setPage(0);
+      } catch (err) {
+        console.error('Search failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [searchQuery]);
 
   const loadLists = async (pageNum = 0) => {
     try {
@@ -29,28 +61,6 @@ export default function BrowseListsPage() {
       setPage(pageNum);
     } catch (err) {
       console.error('Failed to load lists:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearch = async (e) => {
-    e?.preventDefault();
-    if (!searchQuery.trim()) {
-      setSearching(false);
-      setLoading(true);
-      await loadLists(0);
-      return;
-    }
-    setSearching(true);
-    setLoading(true);
-    try {
-      const res = await listApi.searchLists(searchQuery, 0);
-      setLists(res.data.content);
-      setHasMore(res.data.page ? res.data.page.number < res.data.page.totalPages - 1 : !res.data.last);
-      setPage(0);
-    } catch (err) {
-      console.error('Search failed:', err);
     } finally {
       setLoading(false);
     }
@@ -76,30 +86,41 @@ export default function BrowseListsPage() {
         <p>Explore curated book collections from the community</p>
       </div>
 
-      <form className="browse-lists-page__search" onSubmit={handleSearch}>
+      <div className="browse-lists-page__search">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search lists..."
         />
-        <button type="submit">Search</button>
-        {searching && (
-          <button type="button" onClick={() => { setSearchQuery(''); setSearching(false); loadLists(0); }}>
-            Clear
+        {searchQuery && (
+          <button type="button" onClick={() => setSearchQuery('')}>
+            ✕
           </button>
         )}
-      </form>
+      </div>
 
       {loading ? (
-        <div className="browse-lists-page__loading">Loading lists...</div>
+        <div className="browse-lists-page__grid">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="skeleton-card browse-lists__skeleton-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div className="skeleton" style={{ width: 52, height: 52, borderRadius: 12 }} />
+                <div className="skeleton" style={{ width: 60, height: 28, borderRadius: 14 }} />
+              </div>
+              <div className="skeleton skeleton-text skeleton-text--lg" />
+              <div className="skeleton skeleton-text skeleton-text--md" />
+              <div className="skeleton skeleton-text skeleton-text--sm" style={{ marginTop: 14, marginBottom: 0 }} />
+            </div>
+          ))}
+        </div>
       ) : lists.length === 0 ? (
         <div className="browse-lists-page__empty">
           <p>{searching ? 'No lists found for your search.' : 'No public lists yet. Be the first to create one!'}</p>
         </div>
       ) : (
         <>
-          <div className="browse-lists-page__grid">
+          <div className="browse-lists-page__grid stagger-children">
             {lists.map((list) => (
               <div
                 key={list.id}

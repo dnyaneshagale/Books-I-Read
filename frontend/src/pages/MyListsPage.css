@@ -6,6 +6,7 @@
   padding: 32px 20px;
   padding-bottom: 80px;
   min-height: 100vh;
+  animation: g-fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (min-width: 1024px) {
@@ -33,6 +34,34 @@
   margin: 6px 0 0;
   font-size: var(--font-size-sm, 14px);
   color: var(--color-text-secondary, #475569);
+}
+
+.my-lists-page__header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.my-lists-page__browse-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-bg, #ffffff);
+  color: var(--color-text-primary, #0f172a);
+  border-radius: var(--radius-md, 12px);
+  font-size: var(--font-size-sm, 14px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.my-lists-page__browse-btn:hover {
+  border-color: rgba(109, 40, 217, 0.3);
+  color: #6d28d9;
+  background: rgba(109, 40, 217, 0.04);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.1);
 }
 
 .my-lists-page__create-btn {
@@ -74,7 +103,220 @@
   box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35);
 }
 
+/* ── Tabs ─────────────────────────────────────────────── */
+
+.my-lists-page__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--color-bg, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  padding: 4px;
+  box-shadow: var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.04));
+}
+
+.my-lists-page__tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-md, 12px);
+  font-size: var(--font-size-sm, 14px);
+  font-weight: 600;
+  color: var(--color-text-secondary, #475569);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.my-lists-page__tab:hover {
+  color: var(--color-text-primary, #0f172a);
+  background: var(--color-bg-hover, #f1f5f9);
+}
+
+.my-lists-page__tab.active {
+  background: var(--gradient-primary, linear-gradient(135deg, #6d28d9, #7c3aed, #2563eb));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.25);
+}
+
+.my-lists-page__tab-count {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.2);
+  padding: 1px 7px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.my-lists-page__tab:not(.active) .my-lists-page__tab-count {
+  background: rgba(109, 40, 217, 0.08);
+  color: #6d28d9;
+}
+
+/* ── Saved List Cards ────────────────────────────────── */
+
+.saved-list-card {
+  background: var(--color-bg, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.04));
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.saved-list-card:hover {
+  border-color: rgba(109, 40, 217, 0.2);
+  box-shadow: var(--shadow-md, 0 6px 18px rgba(15,23,42,0.08));
+}
+
+.saved-list-card__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  cursor: pointer;
+}
+
+.saved-list-card__owner {
+  margin: 2px 0 0;
+  font-size: var(--font-size-xs, 12px);
+  color: #6d28d9;
+  font-weight: 600;
+}
+
+.saved-list-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.saved-list-card__expand-btn,
+.saved-list-card__unsave-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  color: var(--color-text-light, #94a3b8);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.saved-list-card__expand-btn:hover {
+  background: rgba(109, 40, 217, 0.08);
+  color: #6d28d9;
+}
+
+.saved-list-card__unsave-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--color-danger, #ef4444);
+}
+
+/* ── Expanded Book List ──────────────────────────────── */
+
+.saved-list-card__books {
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  padding: 8px 16px 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.saved-list-card__no-books {
+  text-align: center;
+  color: var(--color-text-secondary, #475569);
+  font-size: var(--font-size-sm, 14px);
+  padding: 16px 0;
+}
+
+.saved-list-card__book-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: var(--radius-sm, 8px);
+  transition: background 0.15s;
+}
+
+.saved-list-card__book-row:hover {
+  background: var(--color-bg-hover, #f8fafc);
+}
+
+.saved-list-card__book-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saved-list-card__book-title {
+  font-size: var(--font-size-sm, 14px);
+  font-weight: 600;
+  color: var(--color-text-primary, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-list-card__book-author {
+  font-size: var(--font-size-xs, 12px);
+  color: var(--color-text-secondary, #475569);
+}
+
+.saved-list-card__add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid rgba(109, 40, 217, 0.2);
+  background: rgba(109, 40, 217, 0.06);
+  color: #6d28d9;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.saved-list-card__add-btn:hover:not(:disabled) {
+  background: #6d28d9;
+  color: #fff;
+  border-color: #6d28d9;
+}
+
+.saved-list-card__add-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saved-list-card__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(109, 40, 217, 0.2);
+  border-top-color: #6d28d9;
+  border-radius: 50%;
+  animation: g-spin 0.6s linear infinite;
+}
+
 /* ── Loading & Empty ─────────────────────────────────── */
+
+.my-lists__skeleton-card {
+  animation: g-fadeIn 0.4s ease both;
+}
+.my-lists__skeleton-card:nth-child(2) { animation-delay: 80ms; }
+.my-lists__skeleton-card:nth-child(3) { animation-delay: 160ms; }
 
 .my-lists-page__loading {
   text-align: center;
@@ -219,6 +461,18 @@ body.dark-mode .my-lists-page__subtitle {
   color: var(--color-text-secondary, #9E95A8);
 }
 
+body.dark-mode .my-lists-page__browse-btn {
+  background: var(--color-bg-secondary, #1E1B24);
+  border-color: var(--color-border, #2D2A35);
+  color: var(--color-text-primary, #E2D9F3);
+}
+
+body.dark-mode .my-lists-page__browse-btn:hover {
+  border-color: rgba(124, 77, 255, 0.4);
+  color: #9575FF;
+  background: rgba(124, 77, 255, 0.08);
+}
+
 body.dark-mode .my-lists-page__loading {
   color: var(--color-text-secondary, #9E95A8);
 }
@@ -267,6 +521,92 @@ body.dark-mode .list-card__delete:hover {
   color: #f87171;
 }
 
+/* ── Dark Mode — Tabs ────────────────────────────────── */
+
+body.dark-mode .my-lists-page__tabs {
+  background: var(--color-bg-secondary, #1E1B24);
+  border-color: var(--color-border, #2D2A35);
+}
+
+body.dark-mode .my-lists-page__tab {
+  color: var(--color-text-secondary, #9E95A8);
+}
+
+body.dark-mode .my-lists-page__tab:hover {
+  color: var(--color-text-primary, #E2D9F3);
+  background: var(--color-bg-tertiary, #2D2A35);
+}
+
+body.dark-mode .my-lists-page__tab.active {
+  background: var(--gradient-primary, linear-gradient(135deg, #7C4DFF, #9575FF));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(124, 77, 255, 0.3);
+}
+
+body.dark-mode .my-lists-page__tab:not(.active) .my-lists-page__tab-count {
+  background: rgba(124, 77, 255, 0.15);
+  color: #9575FF;
+}
+
+/* ── Dark Mode — Saved Cards ─────────────────────────── */
+
+body.dark-mode .saved-list-card {
+  background: var(--color-bg-secondary, #1E1B24);
+  border-color: var(--color-border, #2D2A35);
+}
+
+body.dark-mode .saved-list-card:hover {
+  border-color: rgba(124, 77, 255, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .saved-list-card__owner {
+  color: #9575FF;
+}
+
+body.dark-mode .saved-list-card__expand-btn:hover {
+  background: rgba(124, 77, 255, 0.12);
+  color: #9575FF;
+}
+
+body.dark-mode .saved-list-card__unsave-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+body.dark-mode .saved-list-card__books {
+  border-top-color: var(--color-border, #2D2A35);
+}
+
+body.dark-mode .saved-list-card__book-row:hover {
+  background: var(--color-bg-tertiary, #2D2A35);
+}
+
+body.dark-mode .saved-list-card__book-title {
+  color: var(--color-text-primary, #E2D9F3);
+}
+
+body.dark-mode .saved-list-card__book-author {
+  color: var(--color-text-secondary, #9E95A8);
+}
+
+body.dark-mode .saved-list-card__add-btn {
+  border-color: rgba(124, 77, 255, 0.25);
+  background: rgba(124, 77, 255, 0.1);
+  color: #9575FF;
+}
+
+body.dark-mode .saved-list-card__add-btn:hover:not(:disabled) {
+  background: #7C4DFF;
+  color: #fff;
+  border-color: #7C4DFF;
+}
+
+body.dark-mode .saved-list-card__spinner {
+  border-color: rgba(124, 77, 255, 0.2);
+  border-top-color: #9575FF;
+}
+
 /* ── Mobile ──────────────────────────────────────────── */
 
 @media (max-width: 600px) {
@@ -275,8 +615,13 @@ body.dark-mode .list-card__delete:hover {
     gap: 14px;
   }
 
-  .my-lists-page__create-btn {
+  .my-lists-page__header-actions {
     width: 100%;
+  }
+
+  .my-lists-page__browse-btn,
+  .my-lists-page__create-btn {
+    flex: 1;
     text-align: center;
   }
 }

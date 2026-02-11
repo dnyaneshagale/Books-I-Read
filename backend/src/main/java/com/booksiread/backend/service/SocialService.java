@@ -578,6 +578,16 @@ public class SocialService {
         return reflections.map(r -> mapToReflectionResponse(r, viewerId));
     }
 
+    /**
+     * Search reflections by content, book title, author, or user name
+     */
+    @Transactional(readOnly = true)
+    public Page<ReflectionResponse> searchReflections(String query, Long viewerId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Reflection> reflections = reflectionRepository.searchReflections(query.trim(), pageable);
+        return reflections.map(r -> mapToReflectionResponse(r, viewerId));
+    }
+
     private ReflectionResponse mapToReflectionResponse(Reflection reflection, Long viewerId) {
         ReflectionResponse response = new ReflectionResponse();
         response.setId(reflection.getId());

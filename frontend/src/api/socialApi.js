@@ -289,6 +289,17 @@ const socialApi = {
     return axiosClient.get(`/social/reflections/user/${userId}`, { params: { page, size } });
   },
 
+  /**
+   * Search reflections by content, book, author, or user
+   * @param {string} query
+   * @param {number} page
+   * @param {number} size
+   * @returns {Promise} - Page<ReflectionResponse>
+   */
+  searchReflections: (query, page = 0, size = 20) => {
+    return axiosClient.get('/social/reflections/search', { params: { query, page, size } });
+  },
+
   // ============================================
   // Reflection Social Actions (LinkedIn-style)
   // ============================================

@@ -224,6 +224,18 @@ public class ReadingListService {
         return getList(listId, userId);
     }
 
+    // ─── Saved (Liked) Lists ────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<ReadingListResponse> getSavedLists(Long userId) {
+        return readingListLikeRepository.findByUserIdWithListDetails(userId).stream()
+                .map(ReadingListLike::getReadingList)
+                .filter(list -> !list.getUser().getId().equals(userId)) // exclude own lists
+                .distinct() // avoid duplicates from LEFT JOIN FETCH on items
+                .map(list -> ReadingListResponse.fromEntity(list, true, false))
+                .collect(Collectors.toList());
+    }
+
     // ─── Likes ──────────────────────────────────────────────────
 
     public ReadingListResponse toggleLike(Long userId, Long listId) {

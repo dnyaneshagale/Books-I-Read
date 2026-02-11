@@ -34,9 +34,13 @@
   border: none;
   cursor: pointer;
   color: var(--color-text-secondary, #64748b);
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-tap-highlight-color: transparent;
   position: relative;
+}
+
+.app-nav__item:active {
+  transform: scale(0.9);
 }
 
 .app-nav__item.active {
@@ -53,6 +57,7 @@
   height: 3px;
   background: var(--gradient-primary, linear-gradient(135deg, #6d28d9, #7c3aed));
   border-radius: 0 0 3px 3px;
+  animation: g-scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .app-nav__item:hover {

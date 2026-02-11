@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import listApi from '../api/listApi';
 import bookApi from '../api/bookApi';
 import CreateListModal from '../components/CreateListModal';
+import toast from 'react-hot-toast';
 import './ListDetailPage.css';
 
 export default function ListDetailPage() {
@@ -23,6 +24,7 @@ export default function ListDetailPage() {
   const [bookSearchQuery, setBookSearchQuery] = useState('');
   const [loadingBooks, setLoadingBooks] = useState(false);
   const [addingBookId, setAddingBookId] = useState(null);
+  const [addingToLibrary, setAddingToLibrary] = useState(null);
 
   useEffect(() => {
     loadList();
@@ -136,6 +138,30 @@ export default function ListDetailPage() {
     }
   };
 
+  const handleAddBookToLibrary = async (item) => {
+    const key = `${item.bookTitle}-${item.bookAuthor}`;
+    setAddingToLibrary(key);
+    try {
+      await bookApi.createBook({
+        title: item.bookTitle,
+        author: item.bookAuthor || 'Unknown',
+        status: 'WANT_TO_READ',
+        totalPages: 1,
+        pagesRead: 0,
+      });
+      toast.success(`"${item.bookTitle}" added to your library!`);
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.response?.data || '';
+      if (typeof msg === 'string' && msg.toLowerCase().includes('already')) {
+        toast.error('This book is already in your library');
+      } else {
+        toast.error('Failed to add book');
+      }
+    } finally {
+      setAddingToLibrary(null);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm('Delete this entire list? This cannot be undone.')) return;
     try {
@@ -146,11 +172,7 @@ export default function ListDetailPage() {
     }
   };
 
-  if (loading) {
-    return <div className="list-detail-page"><div className="list-detail-page__loading">Loading...</div></div>;
-  }
-
-  if (!list) {
+  if (!loading && !list) {
     return (
       <div className="list-detail-page">
         <div className="list-detail-page__not-found">
@@ -163,6 +185,10 @@ export default function ListDetailPage() {
 
   return (
     <div className="list-detail-page">
+      {loading ? (
+        <div className="list-detail-page__loading">Loading...</div>
+      ) : (
+      <>
       {/* Header */}
       <div className="list-detail-page__header">
         <button className="page-back-btn" onClick={() => navigate('/lists')}>
@@ -314,15 +340,34 @@ export default function ListDetailPage() {
                 <span className="list-item__author">by {item.bookAuthor}</span>
                 {item.note && <p className="list-item__note">"{item.note}"</p>}
               </div>
-              {list.ownedByViewer && (
-                <button
-                  className="list-item__remove"
-                  onClick={() => handleRemoveItem(item.id)}
-                  title="Remove from list"
-                >
-                  ✕
-                </button>
-              )}
+              <div className="list-item__actions">
+                {!list.ownedByViewer && (
+                  <button
+                    className="list-item__add-library"
+                    onClick={() => handleAddBookToLibrary(item)}
+                    disabled={addingToLibrary === `${item.bookTitle}-${item.bookAuthor}`}
+                    title="Add to my library"
+                  >
+                    {addingToLibrary === `${item.bookTitle}-${item.bookAuthor}` ? (
+                      <span className="list-item__spinner" />
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add
+                      </>
+                    )}
+                  </button>
+                )}
+                {list.ownedByViewer && (
+                  <button
+                    className="list-item__remove"
+                    onClick={() => handleRemoveItem(item.id)}
+                    title="Remove from list"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
           ))
         )}
@@ -339,6 +384,8 @@ export default function ListDetailPage() {
             coverEmoji: list.coverEmoji,
           }}
         />
+      )}
+      </>
       )}
     </div>
   );

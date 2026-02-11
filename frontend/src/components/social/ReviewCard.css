@@ -231,7 +231,11 @@ body.dark-mode .review-card__actions {
   align-items: center;
   gap: 6px;
   color: var(--color-text-secondary, #475569);
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.review-card__action-btn:active {
+  transform: scale(0.92);
 }
 
 .review-card__action-btn:hover {
@@ -250,6 +254,7 @@ body.dark-mode .review-card__action-btn:hover {
 
 .review-card__action-btn.liked {
   color: #ef4444;
+  animation: g-heartPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .review-card__action-btn.saved {
