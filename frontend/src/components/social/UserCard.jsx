@@ -1,16 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Lock } from 'lucide-react';
 import FollowButton from './FollowButton';
-import './UserCard.css';
 
 /**
  * UserCard - Compact user card for displaying in lists
- * 
- * @param {Object} props
- * @param {Object} props.user - User data
- * @param {boolean} props.showFollowButton - Show follow button
- * @param {boolean} props.isOwnProfile - Is this the current user
- * @param {function} props.onFollowChange - Callback when follow status changes
  */
 const UserCard = ({
   user,
@@ -28,46 +22,48 @@ const UserCard = ({
     onFollowChange?.(user.id, status);
   };
 
-  // Generate initials for avatar fallback
   const getInitials = () => {
     const name = user.displayName || user.username;
     return name.charAt(0).toUpperCase();
   };
 
   return (
-    <div className="user-card" onClick={handleCardClick}>
-      <div className="user-card__avatar">
+    <div
+      className="flex items-center gap-3 py-3 px-4 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)] cursor-pointer transition-all duration-200 hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-primary)] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(109,40,217,0.08)] dark:bg-[var(--color-bg)] dark:border-[var(--color-border)] dark:hover:bg-[var(--color-bg-secondary)] dark:hover:border-[var(--color-primary)]"
+      onClick={handleCardClick}
+    >
+      <div className="relative shrink-0 w-12 h-12">
         {user.profilePictureUrl ? (
-          <img src={user.profilePictureUrl} alt={user.username} />
+          <img src={user.profilePictureUrl} alt={user.username} className="w-full h-full rounded-full object-cover" />
         ) : (
-          <div className="user-card__avatar-fallback">
+          <div className="w-full h-full rounded-full bg-gradient-to-br from-[var(--color-primary)] to-purple-400 text-white flex items-center justify-center font-semibold text-xl">
             {getInitials()}
           </div>
         )}
         {!user.isPublic && (
-          <span className="user-card__private-badge" title="Private account">
-            🔒
+          <span className="absolute -bottom-0.5 -right-0.5 text-[0.7rem] bg-[var(--color-bg)] rounded-full p-0.5 leading-none dark:bg-[var(--color-bg)]" title="Private account">
+            <Lock className="w-3 h-3" />
           </span>
         )}
       </div>
 
-      <div className="user-card__info">
-        <div className="user-card__name">
+      <div className="flex-1 min-w-0">
+        <div className="font-semibold text-[0.9375rem] text-[var(--color-text-primary)] truncate dark:text-[var(--color-text-primary)]">
           {user.displayName || user.username}
         </div>
-        <div className="user-card__username">@{user.username}</div>
+        <div className="text-[0.8125rem] text-[var(--color-text-secondary)] mt-0.5 dark:text-[var(--color-text-secondary)]">@{user.username}</div>
         {user.bio && (
-          <div className="user-card__bio">{user.bio}</div>
+          <div className="text-[0.8125rem] text-[var(--color-text-secondary)] mt-1 line-clamp-2 leading-snug dark:text-[var(--color-text-secondary)]">{user.bio}</div>
         )}
-        <div className="user-card__stats">
+        <div className="flex items-center gap-1.5 mt-1.5 text-xs text-[var(--color-text-light)] dark:text-[var(--color-text-light)]">
           <span>{user.followersCount || 0} followers</span>
-          <span className="user-card__stats-divider">•</span>
+          <span className="opacity-50">•</span>
           <span>{user.booksCount || 0} books</span>
         </div>
       </div>
 
       {showFollowButton && !isOwnProfile && (
-        <div className="user-card__actions" onClick={(e) => e.stopPropagation()}>
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
           <FollowButton
             userId={user.id}
             isFollowing={user.isFollowing}

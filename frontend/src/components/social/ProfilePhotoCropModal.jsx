@@ -3,7 +3,6 @@ import Cropper from 'react-easy-crop';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '../../firebase';
 import toast from 'react-hot-toast';
-import './ProfilePhotoCropModal.css';
 
 /**
  * getCroppedImg — takes an image source + crop pixels and returns a Blob
@@ -196,20 +195,25 @@ const ProfilePhotoCropModal = ({ isOpen, onClose, onSave, userId, currentPhotoUr
 
   if (!isOpen) return null;
 
+  const headerBtnCls = "flex items-center justify-center w-9 h-9 border-none bg-transparent rounded-full cursor-pointer text-[var(--color-text-secondary,#64748b)] transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-[#2D2A35] dark:hover:text-[#E2D9F3]";
+  const btnPrimaryCls = "inline-flex items-center justify-center gap-2 py-[11px] px-5 border-none rounded-[10px] text-[0.88rem] font-semibold cursor-pointer transition-all duration-200 bg-gradient-to-br from-violet-700 to-violet-500 text-white shadow-[0_2px_8px_rgba(109,40,217,0.3)] hover:not-disabled:-translate-y-px hover:not-disabled:shadow-[0_4px_14px_rgba(109,40,217,0.4)] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none [&_svg]:w-[18px] [&_svg]:h-[18px]";
+  const btnGhostCls = "inline-flex items-center justify-center gap-2 py-[11px] px-5 rounded-[10px] text-[0.88rem] font-semibold cursor-pointer transition-all duration-200 bg-slate-100 dark:bg-[#2D2A35] text-slate-600 dark:text-[#9E95A8] border border-[var(--color-border,#e2e8f0)] dark:border-[#3b3670] hover:not-disabled:bg-[var(--color-border,#e2e8f0)] dark:hover:not-disabled:bg-[#3b3670] [&_svg]:w-[18px] [&_svg]:h-[18px]";
+  const btnDangerCls = "inline-flex items-center justify-center gap-2 py-[11px] px-5 rounded-[10px] text-[0.88rem] font-semibold cursor-pointer transition-all duration-200 bg-transparent text-red-500 dark:text-red-400 border border-red-500/30 dark:border-red-400/25 hover:not-disabled:bg-red-500/[0.08] hover:not-disabled:border-red-500/50 [&_svg]:w-[18px] [&_svg]:h-[18px]";
+
   return (
-    <div className="ppc-overlay" onClick={handleClose}>
-      <div className="ppc-modal" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/65 backdrop-blur-[6px] flex items-center justify-center z-[1100] p-6 animate-[g-fadeIn_0.15s_ease] max-[480px]:p-0 max-[480px]:items-end" onClick={handleClose}>
+      <div className="bg-[var(--color-bg,#ffffff)] dark:bg-[#1E1B24] dark:border dark:border-[#2D2A35] rounded-2xl max-w-[460px] w-full overflow-hidden animate-[g-fadeInScale_0.2s_ease] shadow-[0_25px_60px_rgba(0,0,0,0.3)] max-[480px]:max-w-full max-[480px]:rounded-b-none max-[480px]:max-h-[95vh]" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="ppc-modal__header">
+        <div className="flex items-center gap-3 py-4 px-5 border-b border-[var(--color-border,#e2e8f0)] dark:border-[#2D2A35]">
           {step === 'crop' && (
-            <button className="ppc-modal__back" onClick={handleBack} type="button">
+            <button className={headerBtnCls} onClick={handleBack} type="button">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
               </svg>
             </button>
           )}
-          <h2>{step === 'select' ? 'Profile Photo' : 'Crop Photo'}</h2>
-          <button className="ppc-modal__close" onClick={handleClose} type="button">
+          <h2 className="flex-1 text-[1.1rem] font-bold text-[var(--color-text,#0f172a)] dark:text-[#E2D9F3] m-0">{step === 'select' ? 'Profile Photo' : 'Crop Photo'}</h2>
+          <button className={`${headerBtnCls} ml-auto`} onClick={handleClose} type="button">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
             </svg>
@@ -218,22 +222,22 @@ const ProfilePhotoCropModal = ({ isOpen, onClose, onSave, userId, currentPhotoUr
 
         {/* Step 1: Select */}
         {step === 'select' && (
-          <div className="ppc-select">
+          <div className="flex flex-col items-center py-8 px-6 gap-6">
             {/* Current preview */}
-            <div className="ppc-select__preview">
-              <div className="ppc-select__avatar-ring">
+            <div className="relative">
+              <div className="w-40 h-40 rounded-full p-1 bg-gradient-to-br from-violet-700 via-purple-400 to-pink-500 flex items-center justify-center max-[480px]:w-[130px] max-[480px]:h-[130px]">
                 {currentPhotoUrl ? (
-                  <img src={currentPhotoUrl} alt="Current profile" className="ppc-select__avatar-img" />
+                  <img src={currentPhotoUrl} alt="Current profile" className="w-full h-full rounded-full object-cover border-[3px] border-[var(--color-bg,#fff)] dark:border-[#1E1B24]" />
                 ) : (
-                  <div className="ppc-select__avatar-fallback">
+                  <div className="w-full h-full rounded-full bg-slate-100 dark:bg-[#2D2A35] border-[3px] border-[var(--color-bg,#fff)] dark:border-[#1E1B24] flex items-center justify-center text-slate-400 dark:text-[#6b6580] [&_svg]:w-12 [&_svg]:h-12">
                     <CameraIcon />
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="ppc-select__actions">
-              <label className="ppc-btn ppc-btn--primary">
+            <div className="flex flex-col gap-2.5 w-full max-w-[260px]">
+              <label className={btnPrimaryCls}>
                 <CameraIcon />
                 <span>Upload Photo</span>
                 <input
@@ -246,7 +250,7 @@ const ProfilePhotoCropModal = ({ isOpen, onClose, onSave, userId, currentPhotoUr
 
               {currentPhotoUrl && (
                 <button
-                  className="ppc-btn ppc-btn--danger"
+                  className={btnDangerCls}
                   onClick={handleRemovePhoto}
                   disabled={uploading}
                   type="button"
@@ -257,7 +261,7 @@ const ProfilePhotoCropModal = ({ isOpen, onClose, onSave, userId, currentPhotoUr
               )}
             </div>
 
-            <p className="ppc-select__hint">
+            <p className="text-[0.78rem] text-slate-400 m-0">
               JPG, PNG or WebP · Max 10MB
             </p>
           </div>
@@ -265,8 +269,8 @@ const ProfilePhotoCropModal = ({ isOpen, onClose, onSave, userId, currentPhotoUr
 
         {/* Step 2: Crop */}
         {step === 'crop' && imageSrc && (
-          <div className="ppc-crop">
-            <div className="ppc-crop__area">
+          <div className="flex flex-col">
+            <div className="relative w-full h-[350px] bg-[#0a0a0a] max-[480px]:h-[300px]">
               <Cropper
                 image={imageSrc}
                 crop={crop}
@@ -281,7 +285,7 @@ const ProfilePhotoCropModal = ({ isOpen, onClose, onSave, userId, currentPhotoUr
             </div>
 
             {/* Zoom Slider */}
-            <div className="ppc-crop__controls">
+            <div className="flex items-center gap-3 py-4 px-6 border-t border-[var(--color-border,#e2e8f0)] dark:border-[#2D2A35] [&_svg]:text-slate-400 dark:![&_svg]:text-[#6b6580] [&_svg]:shrink-0">
               <ZoomOutIcon />
               <input
                 type="range"
@@ -290,15 +294,15 @@ const ProfilePhotoCropModal = ({ isOpen, onClose, onSave, userId, currentPhotoUr
                 step={0.01}
                 value={zoom}
                 onChange={e => setZoom(Number(e.target.value))}
-                className="ppc-crop__slider"
+                className="flex-1 appearance-none h-1 bg-[var(--color-border,#e2e8f0)] dark:bg-[#2D2A35] rounded outline-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:h-[18px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-violet-700 [&::-webkit-slider-thumb]:to-violet-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgba(0,0,0,0.2)] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-150 [&::-webkit-slider-thumb]:hover:scale-[1.15]"
               />
               <ZoomInIcon />
             </div>
 
             {/* Actions */}
-            <div className="ppc-crop__actions">
+            <div className="flex justify-end gap-2.5 py-3.5 px-5 border-t border-[var(--color-border,#e2e8f0)] dark:border-[#2D2A35]">
               <button
-                className="ppc-btn ppc-btn--ghost"
+                className={btnGhostCls}
                 onClick={handleBack}
                 disabled={uploading}
                 type="button"
@@ -306,14 +310,14 @@ const ProfilePhotoCropModal = ({ isOpen, onClose, onSave, userId, currentPhotoUr
                 Cancel
               </button>
               <button
-                className="ppc-btn ppc-btn--primary"
+                className={btnPrimaryCls}
                 onClick={handleSave}
                 disabled={uploading || !croppedAreaPixels}
                 type="button"
               >
                 {uploading ? (
                   <>
-                    <span className="ppc-spinner" />
+                    <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Uploading...
                   </>
                 ) : (

@@ -90,6 +90,19 @@ const bookApi = {
   },
 
   /**
+   * Delete multiple books in batch
+   * @param {Array<number>} bookIds - Array of book IDs to delete
+   * @returns {Promise} void
+   */
+  deleteBooksInBatch: async (bookIds) => {
+    try {
+      await axiosClient.delete('/books/batch', { data: bookIds });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Get all reading activity dates for streak calculation
    * @returns {Promise} Object with activityDates array
    */

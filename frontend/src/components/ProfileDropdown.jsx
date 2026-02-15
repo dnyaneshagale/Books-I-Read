@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './ProfileDropdown.css';
+import { User, Search, Newspaper, PenLine, BookMarked, Moon, Upload, Share2, LogOut } from 'lucide-react';
 
 function ProfileDropdown({ username, onImport, onShare, onLogout, isDarkMode, onToggleDarkMode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,18 +48,20 @@ function ProfileDropdown({ username, onImport, onShare, onLogout, isDarkMode, on
     navigate(path);
   };
 
+  const menuItemBase = "flex items-center gap-3 w-full py-2.5 px-3.5 bg-transparent border-none rounded-[var(--radius-md)] cursor-pointer transition-all duration-200 text-sm font-medium text-[var(--color-text-primary)] text-left hover:bg-[var(--color-bg-tertiary)] hover:translate-x-0.5 dark:text-[var(--color-text-primary)] dark:hover:bg-[var(--color-bg-secondary-dark)]";
+
   return (
-    <div className="profile-dropdown" ref={dropdownRef}>
+    <div className="relative flex items-center max-md:hidden" ref={dropdownRef}>
       <button
-        className="profile-trigger"
+        className="flex items-center gap-2 px-4 h-10 bg-[var(--color-bg)] border-[1.5px] border-[var(--color-border)] rounded-full cursor-pointer transition-all duration-200 text-sm font-medium text-[var(--color-text-primary)] whitespace-nowrap shadow-xs hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-primary)] hover:shadow-sm hover:-translate-y-px active:translate-y-0 dark:bg-[var(--color-bg-dark)] dark:border-[var(--color-border-dark)] dark:text-[var(--color-text-primary-dark)] dark:hover:bg-[var(--color-bg-secondary-dark)] dark:hover:border-[var(--color-primary)]"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span className="profile-icon">👤</span>
-        <span className="profile-name">{username}</span>
+        <User className="w-4 h-4" />
+        <span className="text-sm font-semibold text-[var(--color-text-primary)] dark:text-[var(--color-text-primary-dark)]">{username}</span>
         <svg 
-          className={`profile-chevron ${isOpen ? 'open' : ''}`}
+          className={`transition-transform duration-200 text-[var(--color-text-secondary)] ${isOpen ? 'rotate-180' : ''}`}
           width="12" 
           height="12" 
           viewBox="0 0 12 12" 
@@ -76,62 +78,65 @@ function ProfileDropdown({ username, onImport, onShare, onLogout, isDarkMode, on
       </button>
 
       {isOpen && (
-        <div className="profile-menu">
+        <div className="absolute top-[calc(100%+8px)] right-0 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12),0_2px_6px_rgba(0,0,0,0.08)] min-w-[200px] p-1.5 z-[1000] animate-fade-in dark:bg-[var(--color-bg-dark)] dark:border-[var(--color-border-dark)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4),0_2px_6px_rgba(0,0,0,0.2)]">
           {/* Social Navigation */}
-          <button className="profile-menu-item" onClick={() => handleNavigate('/profile')}>
-            <span className="menu-icon">👤</span>
+          <button className={menuItemBase} onClick={() => handleNavigate('/profile')}>
+            <User className="w-4 h-4 shrink-0" />
             <span>My Profile</span>
           </button>
           
-          <button className="profile-menu-item" onClick={() => handleNavigate('/discover')}>
-            <span className="menu-icon">🔍</span>
+          <button className={menuItemBase} onClick={() => handleNavigate('/discover')}>
+            <Search className="w-4 h-4 shrink-0" />
             <span>Discover</span>
           </button>
           
-          <button className="profile-menu-item" onClick={() => handleNavigate('/feed')}>
-            <span className="menu-icon">📰</span>
+          <button className={menuItemBase} onClick={() => handleNavigate('/feed')}>
+            <Newspaper className="w-4 h-4 shrink-0" />
             <span>Feed</span>
           </button>
           
-          <button className="profile-menu-item" onClick={() => handleNavigate('/reviews')}>
-            <span className="menu-icon">✍️</span>
+          <button className={menuItemBase} onClick={() => handleNavigate('/reviews')}>
+            <PenLine className="w-4 h-4 shrink-0" />
             <span>Reviews</span>
           </button>
           
-          <button className="profile-menu-item" onClick={() => handleNavigate('/lists')}>
-            <span className="menu-icon">📚</span>
+          <button className={menuItemBase} onClick={() => handleNavigate('/lists')}>
+            <BookMarked className="w-4 h-4 shrink-0" />
             <span>My Lists</span>
           </button>
           
-          <div className="profile-menu-divider"></div>
+          <div className="h-px bg-[var(--color-border)] my-1.5 dark:bg-[var(--color-border-dark)]"></div>
 
           {/* Dark Mode Toggle */}
-          <div className="profile-menu-item dark-mode-toggle" onClick={handleToggleDarkMode}>
-            <div className="dark-mode-label">
-              <span className="menu-icon">🌙</span>
+          <div
+            className={`${menuItemBase} justify-between`}
+            onClick={handleToggleDarkMode}
+          >
+            <div className="flex items-center gap-3">
+              <Moon className="w-4 h-4 shrink-0" />
               <span>Dark Mode</span>
             </div>
-            <div className={`toggle-switch ${isDarkMode ? 'active' : ''}`}>
-              <div className="toggle-slider"></div>
+            <div className={`w-11 h-6 rounded-xl relative transition-colors duration-300 shrink-0 ${isDarkMode ? 'bg-[var(--color-primary)]' : 'bg-gray-300'}`}>
+              <div className={`w-[18px] h-[18px] bg-white rounded-full absolute top-[3px] left-[3px] transition-transform duration-300 shadow-[0_2px_4px_rgba(0,0,0,0.2)] ${isDarkMode ? 'translate-x-5' : ''}`}></div>
             </div>
           </div>
           
-          <div className="profile-menu-divider"></div>
+          <div className="h-px bg-[var(--color-border)] my-1.5 dark:bg-[var(--color-border-dark)]"></div>
           
-          <button className="profile-menu-item" onClick={handleImport}>
-            <span className="menu-icon">📤</span>
+          <button className={menuItemBase} onClick={handleImport}>
+            <Upload className="w-4 h-4 shrink-0" />
             <span>Import Data</span>
           </button>
           
-          <button className="profile-menu-item" onClick={handleShare}>
-            <span className="menu-icon">🔗</span>
+          <button className={menuItemBase} onClick={handleShare}>
+            <Share2 className="w-4 h-4 shrink-0" />
             <span>Share Profile</span>
           </button>
           
-          <div className="profile-menu-divider"></div>
+          <div className="h-px bg-[var(--color-border)] my-1.5 dark:bg-[var(--color-border-dark)]"></div>
           
-          <button className="profile-menu-item logout" onClick={handleLogout}>
-            <span className="menu-icon">🚪</span>
+          <button className={`${menuItemBase} !text-[var(--color-danger)] hover:!bg-red-500/10`} onClick={handleLogout}>
+            <LogOut className="w-4 h-4 shrink-0" />
             <span>Logout</span>
           </button>
         </div>

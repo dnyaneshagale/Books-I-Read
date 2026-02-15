@@ -1,9 +1,115 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Lock } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import socialApi from '../api/socialApi';
 import toast from 'react-hot-toast';
-import './ReflectionDetailPage.css';
+
+// ── Tailwind class constants ──────────────────────────────────────────────────
+
+const shimmerCls = [
+  'bg-[linear-gradient(90deg,#e2e8f0_25%,#f1f5f9_50%,#e2e8f0_75%)]',
+  'bg-[length:200%_100%] animate-[rvd-shimmer_1.5s_ease-in-out_infinite]',
+  'dark:bg-[linear-gradient(90deg,#2D2A35_25%,#3a3644_50%,#2D2A35_75%)]',
+  'dark:bg-[length:200%_100%]',
+].join(' ');
+
+const pageCls = [
+  'min-h-screen bg-gradient-to-br from-slate-50 to-slate-100',
+  'p-6 px-4 pb-20 transition-[background] duration-300',
+  'md:pt-20 dark:from-[#1E1B24] dark:to-[#0F0C15]',
+  'max-[480px]:p-3 max-[480px]:px-2 max-[480px]:pb-20',
+].join(' ');
+
+const containerCls = 'max-w-[680px] mx-auto animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both] lg:max-w-[740px]';
+
+const actionIconCls = 'w-5 h-5 fill-current transition-transform duration-150';
+
+const actionBtnBase = [
+  'flex-1 flex items-center justify-center gap-2 py-3 px-1',
+  'border-none bg-transparent text-slate-500 text-xs font-semibold',
+  'cursor-pointer rounded-lg transition-all duration-200',
+  'hover:bg-slate-100 hover:text-slate-900',
+  'dark:text-[#9E95A8] dark:hover:bg-[#2D2A35] dark:hover:text-[#E2D9F3]',
+  'max-[480px]:[&>span]:hidden',
+].join(' ');
+
+const commentInputBase = [
+  'w-full border border-slate-200 outline-none box-border',
+  'transition-[border-color,box-shadow] duration-200',
+  'bg-slate-50 text-slate-900',
+  'focus:border-violet-700 focus:shadow-[0_0_0_3px_rgba(109,40,217,0.08)]',
+  'dark:bg-[#2D2A35] dark:border-[#3a3644] dark:text-[#E2D9F3]',
+  'dark:focus:border-[#7C4DFF] dark:focus:shadow-[0_0_0_3px_rgba(124,77,255,0.12)]',
+].join(' ');
+
+const mentionDropdownCls = [
+  'absolute bottom-full left-0 right-0 mb-1 z-[100]',
+  'bg-white border border-slate-200 rounded-xl',
+  'shadow-[0_10px_40px_rgba(15,23,42,0.12)] max-h-[200px] overflow-y-auto',
+  'animate-[rvd-fadeIn_0.15s_ease]',
+  'dark:bg-[#1E1B24] dark:border-[#2D2A35] dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)]',
+].join(' ');
+
+const mentionAvatarCls = [
+  'w-8 h-8 rounded-full bg-gradient-to-br from-violet-700 to-violet-500',
+  'text-white flex items-center justify-center text-[0.8rem] font-bold',
+  'overflow-hidden shrink-0',
+].join(' ');
+
+const commentAvatarCls = [
+  'w-8 h-8 rounded-full bg-gradient-to-br from-violet-700 to-violet-500',
+  'text-white flex items-center justify-center text-[0.78rem] font-bold',
+  'cursor-pointer overflow-hidden shrink-0',
+  'transition-transform duration-150 hover:scale-[1.08]',
+].join(' ');
+
+const commentBubbleCls = 'bg-slate-50 rounded-xl py-2 px-3 flex-1 min-w-0 dark:bg-[#2D2A35]';
+
+const commentAuthorCls = [
+  'font-bold text-[0.82rem] text-slate-900 cursor-pointer',
+  'transition-colors duration-150 hover:text-violet-700',
+  'dark:text-[#E2D9F3] dark:hover:text-[#7C4DFF]',
+].join(' ');
+
+const metaBtnCls = [
+  'bg-transparent border-none cursor-pointer text-xs font-bold',
+  'text-slate-500 p-0 transition-colors duration-150',
+  'hover:text-violet-700 dark:text-[#9E95A8] dark:hover:text-[#7C4DFF]',
+].join(' ');
+
+const deleteYesCls = [
+  'bg-red-500 border-none text-white font-bold cursor-pointer',
+  'text-[0.72rem] py-[3px] px-2.5 rounded-lg',
+  'transition-colors duration-150 hover:bg-red-600',
+].join(' ');
+
+const deleteNoCls = [
+  'bg-transparent border border-slate-200 text-slate-500 font-semibold',
+  'cursor-pointer text-[0.72rem] py-[3px] px-2.5 rounded-lg',
+  'transition-all duration-150 hover:border-violet-700 hover:text-violet-700',
+  'dark:border-[#2D2A35] dark:text-[#9E95A8]',
+  'dark:hover:border-[#7C4DFF] dark:hover:text-[#7C4DFF]',
+].join(' ');
+
+const loadMoreCls = [
+  'block w-full p-2.5 mt-3 bg-transparent',
+  'border border-slate-200 rounded-lg text-violet-700',
+  'text-[0.85rem] font-semibold cursor-pointer transition-all duration-200',
+  'hover:bg-violet-700/[0.04] hover:border-violet-700',
+  'disabled:opacity-60 disabled:cursor-default',
+  'dark:border-[#2D2A35] dark:text-[#7C4DFF]',
+  'dark:hover:bg-[rgba(124,77,255,0.08)] dark:hover:border-[#7C4DFF]',
+].join(' ');
+
+const ownerDangerBtnCls = [
+  'inline-flex items-center gap-1.5 bg-transparent',
+  'border border-slate-200 cursor-pointer py-2 px-3.5 rounded-lg',
+  'text-[0.82rem] font-semibold text-slate-500 transition-all duration-200',
+  'hover:bg-red-500/[0.06] hover:border-red-500/30 hover:text-red-500',
+  'dark:border-[#2D2A35] dark:text-[#9E95A8]',
+  'dark:hover:bg-red-500/[0.08] dark:hover:border-red-500/30 dark:hover:text-red-400',
+].join(' ');
 
 // ============================================
 // Helpers
@@ -33,7 +139,7 @@ const fullDate = (dateStr) =>
 // ============================================
 
 const HeartIcon = ({ filled }) => (
-  <svg viewBox="0 0 24 24" className="rd-action__icon">
+  <svg viewBox="0 0 24 24" className={actionIconCls}>
     <path d={filled
       ? "M7.24 2C4.37 2 2 4.43 2 7.35c0 5.6 6.25 10.27 10 12.65 3.75-2.38 10-7.05 10-12.65C22 4.43 19.63 2 16.76 2c-1.63 0-3.19.79-4.22 2.07L12 4.74l-.54-.67C10.43 2.79 8.87 2 7.24 2z"
       : "M7.24 2C4.37 2 2 4.43 2 7.35c0 5.6 6.25 10.27 10 12.65 3.75-2.38 10-7.05 10-12.65C22 4.43 19.63 2 16.76 2c-1.63 0-3.19.79-4.22 2.07L12 4.74l-.54-.67C10.43 2.79 8.87 2 7.24 2zM12 18.55l-.36-.24C7.39 15.42 4 11.85 4 7.35 4 5.56 5.45 4 7.24 4c1.18 0 2.31.65 2.98 1.69L12 7.99l1.78-2.3A3.505 3.505 0 0116.76 4C18.55 4 20 5.56 20 7.35c0 4.5-3.39 8.07-7.64 10.96L12 18.55z"
@@ -42,20 +148,20 @@ const HeartIcon = ({ filled }) => (
 );
 
 const CommentIcon = () => (
-  <svg viewBox="0 0 24 24" className="rd-action__icon">
+  <svg viewBox="0 0 24 24" className={actionIconCls}>
     <path d="M7 9h10v1.5H7V9zm0 4h7v1.5H7V13z" />
     <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14h-4.83L12 19.17 8.83 16H4V4h16v12z" />
   </svg>
 );
 
 const ShareIcon = () => (
-  <svg viewBox="0 0 24 24" className="rd-action__icon">
+  <svg viewBox="0 0 24 24" className={actionIconCls}>
     <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" />
   </svg>
 );
 
 const BookmarkIcon = ({ filled }) => (
-  <svg viewBox="0 0 24 24" className="rd-action__icon">
+  <svg viewBox="0 0 24 24" className={actionIconCls}>
     <path d={filled
       ? "M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"
       : "M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"
@@ -68,27 +174,27 @@ const BookmarkIcon = ({ filled }) => (
 // ============================================
 
 const SkeletonLoader = () => (
-  <div className="reflection-detail-page">
-    <div className="reflection-detail__container">
-      <div className="rd-skeleton__back" />
-      <div className="rd-skeleton__card">
-        <div className="rd-skeleton__header">
-          <div className="rd-skeleton__avatar" />
-          <div className="rd-skeleton__meta">
-            <div className="rd-skeleton__line rd-skeleton__line--name" />
-            <div className="rd-skeleton__line rd-skeleton__line--date" />
+  <div className={pageCls}>
+    <div className={containerCls}>
+      <div className={`w-[72px] h-8 rounded-lg mb-4 ${shimmerCls}`} />
+      <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-md dark:bg-[#1E1B24] dark:border-[#2D2A35]">
+        <div className="flex items-center gap-3 mb-6">
+          <div className={`w-12 h-12 rounded-full shrink-0 ${shimmerCls}`} />
+          <div className="flex-1 flex flex-col gap-2">
+            <div className={`w-[140px] h-3.5 rounded-md ${shimmerCls}`} />
+            <div className={`w-[90px] h-2.5 rounded-md ${shimmerCls}`} />
           </div>
         </div>
-        <div className="rd-skeleton__body">
-          <div className="rd-skeleton__line rd-skeleton__line--full" />
-          <div className="rd-skeleton__line rd-skeleton__line--full" />
-          <div className="rd-skeleton__line rd-skeleton__line--half" />
+        <div className="flex flex-col gap-2.5 mb-6">
+          <div className={`w-full h-3 rounded-md ${shimmerCls}`} />
+          <div className={`w-full h-3 rounded-md ${shimmerCls}`} />
+          <div className={`w-3/5 h-3 rounded-md ${shimmerCls}`} />
         </div>
-        <div className="rd-skeleton__actions">
-          <div className="rd-skeleton__btn" />
-          <div className="rd-skeleton__btn" />
-          <div className="rd-skeleton__btn" />
-          <div className="rd-skeleton__btn" />
+        <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-[#2D2A35]">
+          <div className={`flex-1 h-9 rounded-lg ${shimmerCls}`} />
+          <div className={`flex-1 h-9 rounded-lg ${shimmerCls}`} />
+          <div className={`flex-1 h-9 rounded-lg ${shimmerCls}`} />
+          <div className={`flex-1 h-9 rounded-lg ${shimmerCls}`} />
         </div>
       </div>
     </div>
@@ -110,7 +216,7 @@ const CommentMentionText = ({ content, navigate }) => {
         /^@\w+$/.test(part) ? (
           <span
             key={i}
-            className="rd-comments__mention"
+            className="text-violet-700 font-semibold cursor-pointer transition-opacity duration-150 hover:underline hover:opacity-85 dark:text-[#7C4DFF]"
             onClick={(e) => { e.stopPropagation(); navigate(`/profile/${part.slice(1)}`); }}
           >
             {part}
@@ -210,36 +316,41 @@ const ReflectionCommentInput = ({ reflectionId, onSubmit, placeholder, initialVa
   };
 
   return (
-    <div className="rd-comments__input-wrap">
+    <div className="relative mb-4">
       <input
         ref={inputRef}
         type="text"
-        className={`rd-comments__input ${isReply ? 'rd-comments__input--reply' : ''}`}
+        className={`${commentInputBase} ${isReply ? 'rounded-lg py-2 px-3 text-[0.82rem]' : 'rounded-full py-2.5 px-3.5 text-[0.88rem]'}`}
         placeholder={placeholder || 'Add a comment...'}
         value={text}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
       />
       {isReply && onCancel && (
-        <button className="rd-comments__cancel-reply" onClick={onCancel}>✕</button>
+        <button
+          className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-[0.9rem] text-slate-400 p-1 transition-colors duration-150 hover:text-red-500"
+          onClick={onCancel}
+        >
+          ✕
+        </button>
       )}
       {showMentions && mentionResults.length > 0 && (
-        <div className="rd-comments__mention-dropdown">
+        <div className={mentionDropdownCls}>
           {mentionResults.map((u, idx) => (
             <div
               key={u.id || u.username}
-              className={`rd-comments__mention-item ${idx === activeIndex ? 'active' : ''}`}
+              className={`flex items-center gap-2.5 py-2 px-3 cursor-pointer transition-colors duration-150 hover:bg-violet-700/[0.06] dark:hover:bg-[rgba(124,77,255,0.1)] ${idx === activeIndex ? 'bg-violet-700/[0.06] dark:bg-[rgba(124,77,255,0.1)]' : ''}`}
               onClick={() => insertMention(u.username)}
             >
-              <span className="rd-comments__mention-avatar">
+              <span className={mentionAvatarCls}>
                 {u.profilePictureUrl
-                  ? <img src={u.profilePictureUrl} alt="" />
+                  ? <img src={u.profilePictureUrl} alt="" className="w-full h-full object-cover" />
                   : (u.displayName || u.username || '?').charAt(0).toUpperCase()
                 }
               </span>
-              <span className="rd-comments__mention-info">
-                <span className="rd-comments__mention-name">{u.displayName || u.username}</span>
-                <span className="rd-comments__mention-handle">@{u.username}</span>
+              <span className="flex flex-col">
+                <span className="text-[0.82rem] font-semibold text-slate-900 dark:text-[#E2D9F3]">{u.displayName || u.username}</span>
+                <span className="text-xs text-slate-400">@{u.username}</span>
               </span>
             </div>
           ))}
@@ -301,62 +412,62 @@ const ReflectionCommentItem = ({ comment, reflectionId, depth, onReply, onDelete
   };
 
   return (
-    <div className={`rd-comments__item ${depth > 0 ? 'rd-comments__item--reply' : ''}`}>
-      <div className="rd-comments__item-body">
+    <div className={`py-2 animate-[rvd-fadeIn_0.2s_ease] ${depth > 0 ? 'ml-9 border-l-2 border-slate-200 pl-3 dark:border-[#2D2A35] max-[480px]:ml-5' : ''}`}>
+      <div className="flex items-start gap-2">
         <span
-          className="rd-comments__avatar"
+          className={commentAvatarCls}
           onClick={() => navigate(`/profile/${comment.user?.username}`)}
         >
           {comment.user?.profilePictureUrl
-            ? <img src={comment.user.profilePictureUrl} alt="" />
+            ? <img src={comment.user.profilePictureUrl} alt="" className="w-full h-full object-cover" />
             : (comment.user?.displayName || comment.user?.username || '?').charAt(0).toUpperCase()
           }
         </span>
-        <div className="rd-comments__bubble">
-          <div className="rd-comments__bubble-header">
+        <div className={commentBubbleCls}>
+          <div className="flex items-baseline gap-2 mb-0.5">
             <span
-              className="rd-comments__author"
+              className={commentAuthorCls}
               onClick={() => navigate(`/profile/${comment.user?.username}`)}
             >
               {comment.user?.displayName || comment.user?.username}
             </span>
-            <span className="rd-comments__time" title={fullDate(comment.createdAt)}>
+            <span className="text-[0.7rem] text-slate-400 whitespace-nowrap dark:text-[#7a7181]" title={fullDate(comment.createdAt)}>
               {timeAgo(comment.createdAt)}
             </span>
           </div>
-          <span className="rd-comments__text">
+          <span className="text-[0.85rem] text-slate-900 leading-normal break-words dark:text-[#E2D9F3]">
             <CommentMentionText content={comment.content} navigate={navigate} />
           </span>
         </div>
         {!confirmingDelete ? (
           <button
-            className="rd-comments__delete-btn"
+            className="bg-transparent border-none cursor-pointer p-1 opacity-50 transition-[opacity,color] duration-150 shrink-0 text-slate-500 flex items-center hover:opacity-100 hover:text-red-500 dark:text-[#9E95A8] dark:hover:text-red-400"
             title="Delete"
             onClick={() => setConfirmingDelete(true)}
           >
-            <svg viewBox="0 0 24 24" className="rd-comments__delete-icon">
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current">
               <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
             </svg>
           </button>
         ) : (
-          <span className="rd-comments__delete-confirm">
-            <button className="rd-comments__delete-yes" onClick={handleDeleteComment}>Delete</button>
-            <button className="rd-comments__delete-no" onClick={() => setConfirmingDelete(false)}>Cancel</button>
+          <span className="flex items-center gap-1 shrink-0 animate-[rvd-fadeIn_0.15s_ease]">
+            <button className={deleteYesCls} onClick={handleDeleteComment}>Delete</button>
+            <button className={deleteNoCls} onClick={() => setConfirmingDelete(false)}>Cancel</button>
           </span>
         )}
       </div>
 
-      <div className="rd-comments__meta">
-        <button className="rd-comments__reply-btn" onClick={() => setReplyingTo(!replyingTo)}>Reply</button>
+      <div className="flex items-center gap-3 pl-10 mt-1 max-[480px]:pl-7">
+        <button className={metaBtnCls} onClick={() => setReplyingTo(!replyingTo)}>Reply</button>
         {comment.replyCount > 0 && (
-          <button className="rd-comments__toggle-replies" onClick={handleToggleReplies}>
+          <button className={`${metaBtnCls} font-semibold`} onClick={handleToggleReplies}>
             ── {showReplies ? 'Hide replies' : `View ${comment.replyCount} ${comment.replyCount === 1 ? 'reply' : 'replies'}`}
           </button>
         )}
       </div>
 
       {replyingTo && (
-        <div className="rd-comments__reply-input-wrap">
+        <div className="ml-10 mt-2 max-[480px]:ml-7">
           <ReflectionCommentInput
             reflectionId={reflectionId}
             onSubmit={handleReplySubmit}
@@ -368,9 +479,9 @@ const ReflectionCommentItem = ({ comment, reflectionId, depth, onReply, onDelete
       )}
 
       {showReplies && (
-        <div className="rd-comments__replies">
+        <div className="mt-1">
           {loadingReplies ? (
-            <span className="rd-comments__loading">Loading replies...</span>
+            <span className="text-[0.78rem] text-slate-400 py-2 pl-10 block">Loading replies...</span>
           ) : (
             replies.map(reply => (
               <ReflectionCommentItem
@@ -539,12 +650,12 @@ const ReflectionDetailPage = () => {
   const commentsCount = reflection?.commentsCount || 0;
 
   return (
-    <div className="reflection-detail-page">
+    <div className={pageCls}>
       {loading ? (
         <SkeletonLoader />
       ) : (
       <>
-      <div className="reflection-detail__container">
+      <div className={containerCls}>
         {/* Back Button */}
         <button className="page-back-btn" onClick={() => navigate(-1)}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
@@ -552,37 +663,37 @@ const ReflectionDetailPage = () => {
         </button>
 
         {/* Reflection Card */}
-        <div className="reflection-detail__card">
+        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md animate-[rvd-fadeIn_0.35s_ease] dark:bg-[#1E1B24] dark:border-[#2D2A35] dark:shadow-[0_6px_24px_rgba(0,0,0,0.3)] max-[480px]:rounded-xl">
           {/* Author Header */}
-          <div className="reflection-detail__header">
+          <div className="flex justify-between items-start px-6 pt-5 max-[480px]:px-4 max-[480px]:pt-4 max-[480px]:flex-col max-[480px]:gap-3">
             <div
-              className="reflection-detail__author"
+              className="flex items-center gap-3 cursor-pointer group"
               onClick={() => navigate(`/profile/${reflection.user?.username}`)}
             >
-              <div className="reflection-detail__avatar-wrap">
+              <div className="w-[52px] h-[52px] rounded-full overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-105">
                 {reflection.user?.profilePictureUrl ? (
-                  <img src={reflection.user.profilePictureUrl} alt="" className="reflection-detail__avatar" />
+                  <img src={reflection.user.profilePictureUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="reflection-detail__avatar-placeholder">
+                  <div className="w-full h-full bg-gradient-to-br from-violet-700 to-violet-500 text-white flex items-center justify-center font-bold text-xl">
                     {(reflection.user?.displayName || reflection.user?.username || '?')[0].toUpperCase()}
                   </div>
                 )}
               </div>
-              <div className="reflection-detail__author-info">
-                <span className="reflection-detail__author-name">
+              <div className="flex flex-col">
+                <span className="font-bold text-[0.95rem] text-slate-900 transition-colors duration-150 leading-snug group-hover:text-violet-700 dark:text-[#E2D9F3] dark:group-hover:text-[#7C4DFF]">
                   {reflection.user?.displayName || reflection.user?.username}
                 </span>
-                <span className="reflection-detail__handle">@{reflection.user?.username}</span>
-                <span className="reflection-detail__date" title={fullDate(reflection.createdAt)}>
+                <span className="text-xs text-slate-500 leading-snug dark:text-[#9E95A8]">@{reflection.user?.username}</span>
+                <span className="text-xs text-slate-400 leading-snug dark:text-[#7a7181]" title={fullDate(reflection.createdAt)}>
                   {timeAgo(reflection.createdAt)}
-                  {reflection.visibleToFollowersOnly && <span className="reflection-detail__lock" title="Followers only"> 🔒</span>}
+                  {reflection.visibleToFollowersOnly && <span className="text-[0.7rem] inline-flex items-center ml-1" title="Followers only"><Lock className="w-3 h-3" /></span>}
                 </span>
               </div>
             </div>
 
             {isOwn && (
-              <div className="reflection-detail__owner-actions">
-                <button onClick={handleDelete} className="danger" title="Delete reflection">
+              <div className="flex gap-2 shrink-0">
+                <button onClick={handleDelete} className={ownerDangerBtnCls} title="Delete reflection">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                   </svg>
@@ -593,22 +704,35 @@ const ReflectionDetailPage = () => {
           </div>
 
           {/* Content */}
-          <div className="reflection-detail__content">
-            <p>{reflection.content}</p>
+          <div className="px-6 pt-[18px] pb-5 max-[480px]:px-4 max-[480px]:pt-3.5 max-[480px]:pb-4">
+            <p className="m-0 text-[0.95rem] text-slate-900 leading-[1.75] whitespace-pre-wrap break-words dark:text-[#E2D9F3]">
+              {reflection.content}
+            </p>
           </div>
 
           {/* Attached Book */}
           {reflection.book && (
-            <div className="reflection-detail__book-card">
-              <div className="reflection-detail__book-cover">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" className="reflection-detail__book-svg">
+            <div className={[
+              'flex items-center gap-3.5 mx-6 mb-4 py-3.5 px-4',
+              'bg-[linear-gradient(135deg,rgba(109,40,217,0.04),rgba(37,99,235,0.03))]',
+              'border border-slate-200 rounded-xl cursor-pointer transition-all duration-200',
+              'hover:bg-[linear-gradient(135deg,rgba(109,40,217,0.08),rgba(37,99,235,0.05))]',
+              'hover:border-violet-700/20 hover:-translate-y-px',
+              'dark:bg-[rgba(124,77,255,0.06)] dark:border-[#2D2A35]',
+              'dark:hover:bg-[rgba(124,77,255,0.1)] dark:hover:border-[rgba(124,77,255,0.2)]',
+              'max-[480px]:mx-4 max-[480px]:mb-3',
+            ].join(' ')}>
+              <div className="w-[42px] h-[42px] rounded-lg bg-gradient-to-br from-violet-700 to-violet-500 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" className="fill-white/90">
                   <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z" />
                 </svg>
               </div>
-              <div className="reflection-detail__book-info">
-                <span className="reflection-detail__book-title">{reflection.book.title}</span>
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="font-bold text-[0.92rem] text-slate-900 overflow-hidden text-ellipsis whitespace-nowrap dark:text-[#E2D9F3]">
+                  {reflection.book.title}
+                </span>
                 {reflection.book.author && (
-                  <span className="reflection-detail__book-author">by {reflection.book.author}</span>
+                  <span className="text-[0.8rem] text-slate-500 dark:text-[#9E95A8]">by {reflection.book.author}</span>
                 )}
               </div>
             </div>
@@ -616,10 +740,10 @@ const ReflectionDetailPage = () => {
 
           {/* Engagement Stats Row */}
           {(likesCount > 0 || commentsCount > 0 || savesCount > 0) && (
-            <div className="reflection-detail__stats">
+            <div className="flex items-center justify-between px-6 py-2.5 border-t border-slate-200 text-xs text-slate-500 dark:border-[#2D2A35] dark:text-[#9E95A8] max-[480px]:px-4">
               {likesCount > 0 && (
-                <span className="reflection-detail__stat">
-                  <span className="reflection-detail__stat-icon">
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center justify-center w-[18px] h-[18px] bg-gradient-to-br from-violet-700 to-violet-500 rounded-full leading-none">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="#fff">
                       <path d="M7.24 2C4.37 2 2 4.43 2 7.35c0 5.6 6.25 10.27 10 12.65 3.75-2.38 10-7.05 10-12.65C22 4.43 19.63 2 16.76 2c-1.63 0-3.19.79-4.22 2.07L12 4.74l-.54-.67C10.43 2.79 8.87 2 7.24 2z" />
                     </svg>
@@ -627,17 +751,17 @@ const ReflectionDetailPage = () => {
                   {likesCount}
                 </span>
               )}
-              <div className="reflection-detail__stat-right">
+              <div className="flex gap-3.5">
                 {commentsCount > 0 && (
                   <span
-                    className="reflection-detail__stat reflection-detail__stat--clickable"
+                    className="inline-flex items-center gap-1 cursor-pointer transition-colors duration-150 hover:text-violet-700 dark:hover:text-[#7C4DFF]"
                     onClick={() => setShowComments(!showComments)}
                   >
                     {commentsCount} comment{commentsCount !== 1 ? 's' : ''}
                   </span>
                 )}
                 {savesCount > 0 && (
-                  <span className="reflection-detail__stat">
+                  <span className="inline-flex items-center gap-1">
                     {savesCount} save{savesCount !== 1 ? 's' : ''}
                   </span>
                 )}
@@ -646,27 +770,27 @@ const ReflectionDetailPage = () => {
           )}
 
           {/* Actions Bar — LinkedIn-style SVG buttons */}
-          <div className="reflection-detail__actions">
+          <div className="flex border-t border-slate-200 px-3 py-1 dark:border-[#2D2A35] max-[480px]:px-2 max-[480px]:py-1">
             <button
-              className={`reflection-detail__action-btn ${liked ? 'active' : ''}`}
+              className={`${actionBtnBase} ${liked ? 'text-violet-700 dark:text-[#7C4DFF]' : ''}`}
               onClick={handleLike}
             >
               <HeartIcon filled={liked} />
               <span>Like</span>
             </button>
             <button
-              className={`reflection-detail__action-btn ${showComments ? 'active' : ''}`}
+              className={`${actionBtnBase} ${showComments ? 'text-violet-700 dark:text-[#7C4DFF]' : ''}`}
               onClick={() => setShowComments(!showComments)}
             >
               <CommentIcon />
               <span>Comment</span>
             </button>
-            <button className="reflection-detail__action-btn" onClick={handleShare}>
+            <button className={actionBtnBase} onClick={handleShare}>
               <ShareIcon />
               <span>Share</span>
             </button>
             <button
-              className={`reflection-detail__action-btn ${saved ? 'active' : ''}`}
+              className={`${actionBtnBase} ${saved ? 'text-violet-700 dark:text-[#7C4DFF]' : ''}`}
               onClick={handleSave}
             >
               <BookmarkIcon filled={saved} />
@@ -676,14 +800,14 @@ const ReflectionDetailPage = () => {
 
           {/* Comments Section */}
           {showComments && (
-            <div className="reflection-detail__comments">
+            <div className="px-6 pt-4 pb-5 animate-[rvd-fadeIn_0.25s_ease] max-[480px]:px-4 max-[480px]:pt-3 max-[480px]:pb-4">
               <ReflectionCommentInput
                 reflectionId={reflection.id}
                 onSubmit={handleAddComment}
                 placeholder="Add a comment..."
               />
 
-              <div className="rd-comments__list">
+              <div className="flex flex-col gap-0.5">
                 {comments.map(c => (
                   <ReflectionCommentItem
                     key={c.id}
@@ -699,7 +823,7 @@ const ReflectionDetailPage = () => {
 
               {hasMoreComments && (
                 <button
-                  className="rd-comments__load-more"
+                  className={loadMoreCls}
                   onClick={() => loadComments(commentsPage + 1)}
                   disabled={loadingComments}
                 >
@@ -708,9 +832,12 @@ const ReflectionDetailPage = () => {
               )}
 
               {!loadingComments && comments.length === 0 && (
-                <div className="rd-comments__empty">
-                  <CommentIcon />
-                  <p>No comments yet. Be the first!</p>
+                <div className="text-center py-6 px-4 text-slate-400 dark:text-[#7a7181]">
+                  <svg viewBox="0 0 24 24" className="w-7 h-7 fill-slate-400 opacity-50 mb-2 mx-auto dark:fill-[#7a7181]">
+                    <path d="M7 9h10v1.5H7V9zm0 4h7v1.5H7V13z" />
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14h-4.83L12 19.17 8.83 16H4V4h16v12z" />
+                  </svg>
+                  <p className="m-0 text-[0.85rem]">No comments yet. Be the first!</p>
                 </div>
               )}
             </div>

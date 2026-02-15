@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import { FileText, PenLine, BookOpen, Lightbulb, Save } from 'lucide-react';
 import bookApi from '../api/bookApi';
 import toast from 'react-hot-toast';
-import './NotesModal.css';
 
 /**
  * NotesModal Component
@@ -81,10 +81,10 @@ function NotesModal({ book, onClose, onUpdated }) {
   const renderNotesContent = () => {
     if (!currentNotes) {
       return (
-        <div className="notes-empty">
-          <div className="notes-empty-icon">📝</div>
-          <p className="notes-empty-title">No notes yet</p>
-          <p className="notes-empty-subtitle">
+        <div className="text-center py-[var(--spacing-2xl)] px-[var(--spacing-lg)]">
+          <div className="text-[64px] mb-[var(--spacing-md)] opacity-30"><FileText className="w-16 h-16 mx-auto" /></div>
+          <p className="text-[var(--font-size-lg)] font-[var(--font-weight-semibold)] text-[var(--color-text-primary)] m-0 mb-[var(--spacing-sm)]">No notes yet</p>
+          <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] m-0 leading-[1.6]">
             Click the Edit button to add your reading notes, quotes, or key takeaways.
           </p>
         </div>
@@ -92,14 +92,14 @@ function NotesModal({ book, onClose, onUpdated }) {
     }
 
     return (
-      <div className="notes-content">
-        <div className="notes-text">
+      <div className="bg-amber-400/5 border-l-4 border-l-amber-400 rounded-[var(--radius-md)] p-[var(--spacing-lg)] mb-[var(--spacing-lg)]">
+        <div className="text-[var(--font-size-md)] text-[var(--color-text-primary)] leading-[1.8]">
           {currentNotes.split('\n').map((paragraph, index) => {
             const trimmed = paragraph.trim();
             const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-');
             
             return (
-              <p key={index} className={isBullet ? 'notes-list-item' : ''}>
+              <p key={index} className={`m-0 mb-[var(--spacing-md)] last:mb-0 whitespace-pre-wrap break-words ${isBullet ? 'pl-[var(--spacing-md)]' : ''}`}>
                 {isBullet ? trimmed : paragraph}
               </p>
             );
@@ -110,19 +110,19 @@ function NotesModal({ book, onClose, onUpdated }) {
   };
 
   return (
-    <div className="notes-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="notes-modal-content">
-        <div className="notes-modal-header">
-          <h2>📝 Reading Notes</h2>
-          <button className="notes-close-btn" onClick={onClose}>×</button>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-[var(--spacing-md)] animate-[g-fadeIn_0.2s_ease] overflow-y-auto" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-[var(--color-bg)] rounded-[var(--radius-xl)] max-w-[700px] w-full max-h-[calc(100vh-40px)] flex flex-col animate-[g-slideUp_0.3s_ease] shadow-[var(--shadow-xl)] border-2 border-amber-400 m-auto max-md:max-w-full max-md:max-h-[calc(100vh-20px)]">
+        <div className="flex justify-between items-center p-[var(--spacing-lg)] border-b-2 border-b-amber-400 bg-gradient-to-br from-amber-400/10 to-amber-500/5 shrink-0 max-md:p-[var(--spacing-md)]">
+          <h2 className="text-[var(--font-size-xl)] font-[var(--font-weight-bold)] text-amber-500 m-0"><FileText className="w-5 h-5 inline mr-2" /> Reading Notes</h2>
+          <button className="bg-transparent border-none text-[28px] text-[var(--color-text-secondary)] cursor-pointer p-0 w-8 h-8 flex items-center justify-center rounded-[var(--radius-sm)] transition-all duration-200 hover:bg-amber-400/20 hover:text-amber-500" onClick={onClose}>×</button>
         </div>
 
-        <div className="notes-modal-body">
-          <div className="notes-book-info">
-            <h3>{book.title}</h3>
-            <p className="notes-author">by {book.author}</p>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-[var(--spacing-lg)] min-h-0 max-md:p-[var(--spacing-md)]" style={{ scrollbarWidth: 'thin', scrollbarColor: '#ffc107 transparent' }}>
+          <div className="text-center mb-[var(--spacing-xl)] pb-[var(--spacing-lg)] border-b border-[var(--color-border)]">
+            <h3 className="text-[var(--font-size-xl)] font-[var(--font-weight-bold)] text-[var(--color-text-primary)] m-0 mb-[var(--spacing-xs)] leading-[1.3] max-md:text-[var(--font-size-lg)]">{book.title}</h3>
+            <p className="text-[var(--font-size-md)] text-[var(--color-text-secondary)] m-0 mb-[var(--spacing-sm)] italic">by {book.author}</p>
             {book.startDate && (
-              <p className="notes-date">
+              <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] m-0">
                 Started: {formatDate(book.startDate)}
                 {book.completeDate && ` • Finished: ${formatDate(book.completeDate)}`}
               </p>
@@ -130,11 +130,11 @@ function NotesModal({ book, onClose, onUpdated }) {
           </div>
 
           {isEditing ? (
-            <div className="notes-edit-section">
-              <div className="notes-edit-header">
-                <label htmlFor="notes-textarea">✍️ Edit Notes</label>
+            <div className="mt-[var(--spacing-lg)]">
+              <div className="flex justify-between items-center mb-[var(--spacing-sm)]">
+                <label htmlFor="notes-textarea" className="font-[var(--font-weight-semibold)] text-[var(--color-text-primary)] text-[var(--font-size-md)] m-0"><PenLine className="w-4 h-4 inline mr-1" /> Edit Notes</label>
                 <button 
-                  className="btn-add-bullet" 
+                  className="py-[var(--spacing-xs)] px-[var(--spacing-md)] bg-gradient-to-br from-amber-400 to-amber-500 text-white border-none rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 shadow-[0_2px_6px_rgba(255,193,7,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_10px_rgba(255,193,7,0.4)] active:translate-y-0" 
                   onClick={handleAddBullet}
                   type="button"
                   title="Add bullet point"
@@ -148,11 +148,11 @@ function NotesModal({ book, onClose, onUpdated }) {
                 onChange={(e) => setEditedNotes(e.target.value)}
                 placeholder="Add your notes, quotes, or key takeaways...&#10;&#10;• Use bullet points for lists&#10;- Or dashes for notes&#10;&#10;Example:&#10;• Key theme: Character development&#10;• Favorite quote: &quot;...&quot;&#10;- Reminded me of..."
                 rows="12"
-                className="notes-textarea"
+                className="w-full p-[var(--spacing-md)] border-2 border-amber-400 rounded-[var(--radius-md)] text-[var(--font-size-md)] font-[inherit] leading-[1.8] resize-y transition-all duration-200 bg-amber-400/5 focus:outline-none focus:border-amber-500 focus:shadow-[0_0_0_3px_rgba(255,193,7,0.1)] focus:bg-white"
                 autoFocus
               />
-              <div className="notes-edit-hint">
-                💡 Tip: Start lines with • or - for bullet points
+              <div className="mt-[var(--spacing-sm)] py-[var(--spacing-sm)] px-[var(--spacing-md)] bg-amber-400/10 border-l-[3px] border-l-amber-400 rounded-[var(--radius-sm)] text-[var(--font-size-sm)] text-[var(--color-text-secondary)]">
+                <Lightbulb className="w-3.5 h-3.5 inline mr-1" /> Tip: Start lines with • or - for bullet points
               </div>
             </div>
           ) : (
@@ -160,27 +160,27 @@ function NotesModal({ book, onClose, onUpdated }) {
           )}
 
           {book.review && (
-            <div className="notes-review-section">
-              <h4>📖 Review</h4>
-              <div className="notes-review-content">{book.review}</div>
+            <div className="mt-[var(--spacing-lg)] pt-[var(--spacing-lg)] border-t border-[var(--color-border)]">
+              <h4 className="text-[var(--font-size-md)] font-[var(--font-weight-semibold)] text-[var(--color-primary)] m-0 mb-[var(--spacing-md)]"><BookOpen className="w-4 h-4 inline mr-1" /> Review</h4>
+              <div className="bg-[var(--color-bg-secondary)] border-l-4 border-l-[var(--color-primary)] rounded-[var(--radius-md)] p-[var(--spacing-md)] text-[var(--font-size-sm)] text-[var(--color-text-secondary)] italic leading-[1.7] whitespace-pre-wrap">{book.review}</div>
             </div>
           )}
         </div>
 
-        <div className="notes-modal-footer">
+        <div className="flex justify-between items-center p-[var(--spacing-lg)] border-t border-[var(--color-border)] bg-[var(--color-bg)] shrink-0 max-md:p-[var(--spacing-md)]">
           {isEditing ? (
-            <div className="notes-modal-actions">
-              <button className="btn-notes-cancel" onClick={handleCancel} disabled={isSaving}>
+            <div className="flex gap-[var(--spacing-sm)]">
+              <button className="py-[var(--spacing-sm)] px-[var(--spacing-lg)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:enabled:bg-[var(--color-bg-tertiary)] disabled:opacity-60 disabled:cursor-not-allowed" onClick={handleCancel} disabled={isSaving}>
                 Cancel
               </button>
-              <button className="btn-notes-save" onClick={handleSave} disabled={isSaving}>
-                {isSaving ? 'Saving...' : '💾 Save Notes'}
+              <button className="py-[var(--spacing-sm)] px-[var(--spacing-lg)] border-none rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)] hover:enabled:-translate-y-0.5 hover:enabled:shadow-[0_4px_12px_rgba(16,185,129,0.4)] disabled:opacity-60 disabled:cursor-not-allowed" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? 'Saving...' : <><Save className="w-4 h-4 inline mr-1" /> Save Notes</>}
               </button>
             </div>
           ) : (
             <>
-              <button className="btn-notes-close" onClick={onClose}>Close</button>
-              <button className="btn-notes-edit" onClick={() => setIsEditing(true)}>✏️ Edit Notes</button>
+              <button className="py-3 px-8 bg-gradient-to-br from-amber-400 to-amber-500 text-white border-none rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(255,193,7,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,193,7,0.4)] active:translate-y-0" onClick={onClose}>Close</button>
+              <button className="py-[var(--spacing-sm)] px-[var(--spacing-lg)] border-none rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-[0_2px_8px_rgba(255,193,7,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,193,7,0.4)]" onClick={() => setIsEditing(true)}>✏️ Edit Notes</button>
             </>
           )}
         </div>

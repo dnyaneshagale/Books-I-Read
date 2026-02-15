@@ -16,7 +16,6 @@ import MyListsPage from './pages/MyListsPage';
 import ListDetailPage from './pages/ListDetailPage';
 import BrowseListsPage from './pages/BrowseListsPage';
 import NavBar from './components/NavBar';
-import './App.css';
 
 /**
  * ProtectedRoute - Require authentication to access
@@ -65,7 +64,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="app">
+        <div className="min-h-screen">
           <Toaster
             position="top-right"
             toastOptions={{

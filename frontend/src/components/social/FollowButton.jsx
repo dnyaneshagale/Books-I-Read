@@ -1,23 +1,9 @@
 import React, { useState } from 'react';
 import socialApi from '../../api/socialApi';
 import toast from 'react-hot-toast';
-import './FollowButton.css';
 
 /**
  * FollowButton - Instagram-like follow/unfollow button
- * 
- * States:
- * - "Follow" - Not following, public account
- * - "Requested" - Pending follow request for private account
- * - "Following" - Currently following
- * 
- * @param {Object} props
- * @param {number} props.userId - Target user ID
- * @param {boolean} props.isFollowing - Initial following state
- * @param {boolean} props.hasPendingRequest - Has pending request
- * @param {boolean} props.isPublic - Target account is public
- * @param {function} props.onFollowChange - Callback when follow status changes
- * @param {string} props.size - 'small' | 'medium' | 'large'
  */
 const FollowButton = ({
   userId,
@@ -35,11 +21,9 @@ const FollowButton = ({
   const handleFollow = async () => {
     if (loading) return;
     setLoading(true);
-
     try {
       const response = await socialApi.followUser(userId);
       const status = response.data.status;
-
       if (status === 'followed') {
         setIsFollowing(true);
         setHasPendingRequest(false);
@@ -65,7 +49,6 @@ const FollowButton = ({
   const handleUnfollow = async () => {
     if (loading) return;
     setLoading(true);
-
     try {
       await socialApi.unfollowUser(userId);
       setIsFollowing(false);
@@ -84,7 +67,6 @@ const FollowButton = ({
   const handleCancelRequest = async () => {
     if (loading) return;
     setLoading(true);
-
     try {
       await socialApi.cancelFollowRequest(userId);
       setHasPendingRequest(false);
@@ -115,39 +97,41 @@ const FollowButton = ({
     return 'Follow';
   };
 
-  const getButtonClass = () => {
-    let classes = `follow-btn follow-btn--${size}`;
-    if (isFollowing) classes += ' follow-btn--following';
-    if (hasPendingRequest) classes += ' follow-btn--requested';
-    if (!isFollowing && !hasPendingRequest) classes += ' follow-btn--follow';
-    if (loading) classes += ' follow-btn--loading';
-    return classes;
+  const sizeClasses = {
+    small: 'py-1.5 px-3 text-xs',
+    medium: 'py-2 px-5 text-sm',
+    large: 'py-2.5 px-7 text-base',
   };
+
+  const stateClasses = isFollowing
+    ? 'bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] hover:bg-red-50 hover:border-red-200 hover:text-red-600 dark:bg-[var(--color-bg-secondary)] dark:text-[var(--color-text-primary)] dark:border-[var(--color-border)] dark:hover:bg-red-950 dark:hover:border-red-900 dark:hover:text-red-300'
+    : hasPendingRequest
+      ? 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-amber-50 hover:border-amber-200 hover:text-amber-600 dark:bg-[var(--color-bg-secondary)] dark:text-[var(--color-text-secondary)] dark:border-[var(--color-border)] dark:hover:bg-amber-950 dark:hover:border-amber-900 dark:hover:text-amber-300'
+      : 'bg-[var(--color-primary)] text-white border-none hover:bg-[var(--color-primary-hover)] hover:-translate-y-px';
 
   return (
     <>
       <button
-        className={getButtonClass()}
+        className={`font-semibold rounded-lg cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] inline-flex items-center justify-center whitespace-nowrap active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${sizeClasses[size]} ${stateClasses} ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
         onClick={handleButtonClick}
         disabled={loading}
       >
         {getButtonText()}
       </button>
 
-      {/* Unfollow Confirmation Modal */}
       {showUnfollowConfirm && (
-        <div className="unfollow-modal-overlay" onClick={() => setShowUnfollowConfirm(false)}>
-          <div className="unfollow-modal" onClick={(e) => e.stopPropagation()}>
-            <p>Unfollow this user?</p>
-            <div className="unfollow-modal-actions">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] animate-fade-in" onClick={() => setShowUnfollowConfirm(false)}>
+          <div className="bg-[var(--color-bg)] rounded-xl p-6 max-w-[320px] w-[90%] text-center animate-fade-in-up dark:bg-[var(--color-bg)] dark:border dark:border-[var(--color-border)]" onClick={(e) => e.stopPropagation()}>
+            <p className="mb-5 text-base font-medium text-[var(--color-text-primary)] dark:text-[var(--color-text-primary)]">Unfollow this user?</p>
+            <div className="flex gap-3 justify-center">
               <button
-                className="unfollow-modal-btn unfollow-modal-btn--cancel"
+                className="py-2.5 px-6 rounded-lg font-semibold text-sm cursor-pointer transition-all duration-200 bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] hover:bg-[var(--color-border)] dark:bg-[var(--color-bg-secondary)] dark:text-[var(--color-text-primary)] dark:border-[var(--color-border)] dark:hover:bg-[var(--color-border)]"
                 onClick={() => setShowUnfollowConfirm(false)}
               >
                 Cancel
               </button>
               <button
-                className="unfollow-modal-btn unfollow-modal-btn--unfollow"
+                className="py-2.5 px-6 rounded-lg font-semibold text-sm cursor-pointer transition-all duration-200 bg-red-600 text-white border-none hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={handleUnfollow}
                 disabled={loading}
               >

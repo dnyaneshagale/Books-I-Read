@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
+import { Library, Wand2, Newspaper, PenLine, BookMarked, Search, Sun, Moon, Download, Upload, LogOut, CheckCircle, BookOpen, FileText, Flame, Globe, BarChart3, Lightbulb, RefreshCw } from 'lucide-react';
 import BookCard from '../components/BookCard';
 import AddBookForm from '../components/AddBookForm';
 import UpdateProgressModal from '../components/UpdateProgressModal';
@@ -17,7 +18,407 @@ import ReviewForm from '../components/social/ReviewForm';
 import bookApi from '../api/bookApi';
 import toast from 'react-hot-toast';
 import { READING_QUOTES } from '../data/quotes';
-import './Dashboard.css';
+
+/* ─── Tailwind class constants ─────────────────────────── */
+
+const dashboardCls = [
+  'min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30',
+  'dark:from-[#0f0d15] dark:via-[#13111a] dark:to-[#0f0d15]',
+  'transition-colors duration-300'
+].join(' ');
+
+// ── Navbar ──
+const navbarCls = [
+  'sticky top-0 z-40',
+  'bg-white/80 dark:bg-[#1E1B24]/80',
+  'backdrop-blur-[20px] backdrop-saturate-[180%]',
+  'shadow-sm border-b border-gray-200/50 dark:border-white/5'
+].join(' ');
+
+const navContentCls = [
+  'max-w-[1400px] mx-auto flex items-center justify-between',
+  'gap-4 px-6 py-3',
+  'max-[768px]:px-4 max-[768px]:py-3 max-[768px]:relative max-[768px]:gap-2.5',
+  'max-[480px]:px-2 max-[480px]:py-[6px] max-[480px]:gap-1'
+].join(' ');
+
+const navBrandCls = [
+  'flex items-center gap-3 shrink min-w-0 flex-wrap',
+  'max-[768px]:gap-2.5 max-[480px]:gap-2'
+].join(' ');
+
+const brandIconCls = [
+  'text-[28px] leading-none flex items-center',
+  'drop-shadow-[0_2px_4px_rgba(99,102,241,0.3)]',
+  'animate-[db-float_3s_ease-in-out_infinite]',
+  'max-[768px]:text-[26px] max-[480px]:text-[22px]'
+].join(' ');
+
+const navBrandH1Cls = [
+  'text-xl font-bold',
+  'bg-gradient-to-br from-violet-700 to-purple-500',
+  'bg-clip-text text-transparent',
+  'tracking-[-0.5px] m-0 leading-none flex items-center whitespace-nowrap',
+  'max-[768px]:text-lg max-[768px]:tracking-[-0.5px]',
+  'max-[480px]:text-base'
+].join(' ');
+
+const navActionsCls = 'flex items-center gap-3 flex-nowrap max-[768px]:gap-2';
+
+// ── Navbar Buttons ──
+const btnAiRecommendCls = [
+  'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-900',
+  'border-2 border-amber-400 p-0 w-10 h-10 rounded-full',
+  'text-xl font-bold cursor-pointer transition-all duration-200',
+  'shadow-[0_2px_8px_rgba(251,191,36,0.3)]',
+  'flex items-center justify-center shrink-0',
+  'hover:scale-110 hover:shadow-[0_4px_16px_rgba(251,191,36,0.5)]',
+  'hover:from-amber-200 hover:to-amber-300',
+  'active:scale-105',
+  'dark:bg-none dark:bg-[rgba(255,215,0,0.1)] dark:text-[#FFD700]',
+  'dark:border-[rgba(255,215,0,0.3)] dark:shadow-[0_2px_8px_rgba(255,215,0,0.2)]',
+  'dark:hover:bg-[rgba(255,215,0,0.15)] dark:hover:shadow-[0_4px_16px_rgba(255,215,0,0.3)]',
+  'dark:hover:text-[#FFE55C]',
+  'max-[768px]:w-11 max-[768px]:h-11 max-[768px]:text-[22px]'
+].join(' ');
+
+const btnAddBookCls = [
+  'bg-violet-600/85 text-white',
+  'border-none px-5 h-10 rounded-full',
+  'text-xs font-bold cursor-pointer transition-all duration-500',
+  'shadow-[0_2px_8px_rgba(109,40,217,0.15)]',
+  'relative overflow-hidden tracking-wide whitespace-nowrap',
+  'flex items-center justify-center',
+  'hover:bg-violet-700 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(109,40,217,0.25)]',
+  'active:translate-y-0 active:shadow-sm',
+  'dark:bg-[#7C4DFF]/70 dark:hover:bg-[#7C4DFF]/90',
+  'max-[768px]:px-4 max-[768px]:h-11 max-[768px]:text-sm'
+].join(' ');
+
+const btnSocialIconCls = [
+  'bg-indigo-500/80 text-white',
+  'border-none p-0 w-10 h-10 rounded-full text-xl',
+  'cursor-pointer transition-all duration-200',
+  'shadow-[0_2px_8px_rgba(99,102,241,0.15)]',
+  'flex items-center justify-center shrink-0',
+  'hover:bg-indigo-600 hover:scale-110 hover:shadow-[0_4px_16px_rgba(99,102,241,0.3)]',
+  'active:scale-105',
+  'dark:bg-[rgba(99,102,241,0.25)] dark:text-indigo-300',
+  'dark:shadow-[0_2px_8px_rgba(99,102,241,0.1)]',
+  'dark:hover:bg-[rgba(99,102,241,0.4)] dark:hover:shadow-[0_4px_16px_rgba(99,102,241,0.2)]'
+].join(' ');
+
+const btnAnalyticsIconCls = [
+  'bg-transparent border-none p-0 w-10 h-10 rounded-full',
+  'text-xl cursor-pointer transition-all duration-200',
+  'flex items-center justify-center',
+  'text-gray-500 dark:text-slate-400',
+  'hover:bg-black/5 hover:scale-105 dark:hover:bg-white/10',
+  'active:scale-95'
+].join(' ');
+
+const desktopOnlyCls = 'inline-flex max-[768px]:!hidden';
+
+const btnHamburgerCls = [
+  'hidden max-[768px]:flex items-center justify-center',
+  'bg-violet-600/85 text-white',
+  'border-none px-3 py-2.5 rounded-lg text-xl font-bold',
+  'cursor-pointer transition-all duration-200 shadow-sm',
+  'min-w-[44px] min-h-[44px]',
+  'hover:bg-violet-700 hover:scale-105 hover:shadow-md',
+  'dark:bg-[#7C4DFF]/70 dark:hover:bg-[#7C4DFF]/90'
+].join(' ');
+
+// ── Mobile Dropdown ──
+const navDropdownCls = [
+  'hidden max-[768px]:block absolute top-full right-0',
+  'bg-white dark:bg-[#1E1B24]',
+  'border border-gray-200 dark:border-white/10',
+  'rounded-xl shadow-xl min-w-[200px] z-[1000] mt-2',
+  'opacity-0 -translate-y-2.5 pointer-events-none',
+  'transition-all duration-200'
+].join(' ');
+
+const navDropdownOpenCls = 'opacity-100 translate-y-0 pointer-events-auto';
+
+const navDropdownBtnCls = [
+  'block w-full text-left px-5 py-3.5',
+  'border-none bg-transparent',
+  'text-gray-800 dark:text-gray-200 text-sm font-medium',
+  'cursor-pointer transition-all duration-200',
+  'border-b border-gray-200 dark:border-white/10',
+  'hover:bg-gray-100 dark:hover:bg-white/5 hover:text-violet-700 dark:hover:text-violet-400',
+  'last:border-b-0 last:rounded-b-xl'
+].join(' ');
+
+// ── Main Content ──
+const mainContentCls = [
+  'max-w-[1400px] mx-auto px-8 py-8',
+  'transition-colors duration-300',
+  'animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both]',
+  'max-[768px]:px-4 max-[768px]:py-6'
+].join(' ');
+
+const addBookSectionCls = 'max-w-[600px] mx-auto';
+
+// ── Quote Banner ──
+const quoteBannerCls = 'mb-4';
+
+const quoteBannerContentCls = [
+  'bg-gradient-to-br from-violet-700/10 to-purple-500/5',
+  'dark:bg-[rgba(124,77,255,0.08)]',
+  'rounded-xl px-6 py-4 flex items-center gap-4',
+  'border-l-4 border-l-violet-700 dark:border-l-[#7C4DFF]',
+  'dark:border-t dark:border-t-white/5',
+  'transition-all duration-200',
+  'hover:border-l-[6px] hover:from-violet-700/[0.15] hover:to-purple-500/[0.08]',
+  'dark:hover:bg-[rgba(124,77,255,0.12)]',
+  'max-[768px]:px-4 max-[768px]:flex-wrap max-[768px]:gap-2'
+].join(' ');
+
+const quoteIconCls = 'text-xl shrink-0';
+
+const quoteTextWrapperCls = 'flex-1 flex flex-col gap-1 min-w-0 overflow-hidden';
+
+const quoteTextCompactCls = [
+  'text-sm text-gray-500 dark:text-gray-400 italic leading-relaxed',
+  'break-words [overflow-wrap:break-word] [word-break:break-word] [hyphens:auto]'
+].join(' ');
+
+const quoteAuthorCls = [
+  'text-xs text-gray-400 dark:text-gray-500 font-medium text-right',
+  'break-words [overflow-wrap:break-word]'
+].join(' ');
+
+const btnRefreshQuoteCls = [
+  'bg-transparent border-none text-lg cursor-pointer',
+  'px-2 py-1 rounded-lg transition-all duration-200 shrink-0',
+  'hover:enabled:bg-violet-700/10 hover:enabled:rotate-180',
+  'disabled:opacity-50 disabled:cursor-not-allowed',
+  'max-[768px]:min-w-[36px] max-[768px]:min-h-[36px]'
+].join(' ');
+
+// ── Stats Grid ──
+const statsGridCls = [
+  'grid grid-cols-2 min-[769px]:grid-cols-4 gap-4 mb-6'
+].join(' ');
+
+const statCardCls = [
+  'group relative overflow-hidden',
+  'bg-white dark:bg-[#1E1B24]',
+  'border border-gray-200',
+  'dark:border-x-0 dark:border-b-0 dark:border-t-white/[0.08]',
+  'rounded-xl px-6 py-6 flex items-center gap-4',
+  'transition-all duration-200 shadow-xs',
+  'dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)]',
+  'before:absolute before:top-0 before:left-0 before:w-[3px] before:h-full',
+  'before:bg-gradient-to-b before:from-violet-700 before:to-violet-400',
+  'before:scale-y-0 before:origin-bottom before:transition-transform before:duration-200',
+  'hover:before:scale-y-100 hover:before:origin-top',
+  'hover:border-violet-700 hover:-translate-y-0.5 hover:shadow-md',
+  'dark:hover:border-t-[rgba(124,77,255,0.3)]',
+  'dark:hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7),0_0_40px_-10px_rgba(124,77,255,0.2)]',
+  'max-[768px]:min-h-[100px]'
+].join(' ');
+
+const statIconCls = [
+  'text-[32px] shrink-0 transition-transform duration-200',
+  'group-hover:scale-110'
+].join(' ');
+
+const statContentCls = 'flex-1 min-w-0';
+
+const statValueCls = [
+  'text-2xl font-black',
+  'bg-gradient-to-br from-violet-700 to-violet-500',
+  'bg-clip-text text-transparent leading-tight mb-0.5'
+].join(' ');
+
+const statLabelCls = 'text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide';
+
+// ── Goal + Social Row ──
+const goalSocialRowCls = [
+  'grid grid-cols-[3fr_2fr] gap-4 mb-6 items-stretch',
+  'max-[600px]:grid-cols-1'
+].join(' ');
+
+const goalSocialColCls = 'min-w-0 flex [&>*]:flex-1 [&>*]:!mb-0';
+
+// ── Social Entry Card ──
+const socialEntryCardCls = [
+  'group relative flex items-center justify-between gap-4',
+  'bg-violet-600/80',
+  'dark:bg-violet-800/70',
+  'rounded-2xl px-6 py-7 cursor-pointer',
+  'transition-all duration-300 text-white',
+  'h-full box-border flex-1 overflow-hidden',
+  'hover:bg-violet-700/90 hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(109,40,217,0.2)]',
+  'dark:hover:bg-violet-700/80 dark:hover:shadow-[0_12px_32px_rgba(76,29,149,0.3)]',
+  'max-[480px]:px-4 max-[480px]:py-5'
+].join(' ');
+
+const socialGlowCls = [
+  'absolute -top-[30%] -right-[20%] w-40 h-40 rounded-full',
+  'bg-white/[0.08] pointer-events-none'
+].join(' ');
+
+const socialContentCls = 'flex items-center gap-4 relative z-[1]';
+
+const socialIconWrapCls = [
+  'w-12 h-12 rounded-[14px] bg-white/15 backdrop-blur-sm',
+  'flex items-center justify-center shrink-0',
+  'transition-colors duration-200',
+  'group-hover:bg-white/[0.22]',
+  'max-[480px]:w-10 max-[480px]:h-10 max-[480px]:rounded-[10px]',
+  'max-[480px]:[&_svg]:w-[22px] max-[480px]:[&_svg]:h-[22px]'
+].join(' ');
+
+const socialTextCls = 'flex flex-col gap-0.5';
+const socialTextH3Cls = 'm-0 text-[1.1rem] font-bold text-white tracking-tight';
+const socialTextPCls = 'm-0 text-[0.8rem] text-white/75 font-normal';
+
+const socialArrowCls = [
+  'relative z-[1] opacity-60 shrink-0',
+  'transition-all duration-200',
+  'group-hover:opacity-100 group-hover:translate-x-[3px]'
+].join(' ');
+
+// ── Filters Section ──
+const filtersSectionCls = 'mb-8 flex flex-col gap-2 max-[768px]:gap-4';
+
+const searchBarCls = 'relative w-full';
+
+const searchInputCls = [
+  'w-full py-4 pl-5 pr-12 border-2 border-slate-400',
+  'rounded-xl text-base font-medium',
+  'bg-white dark:bg-[#15121B]',
+  'text-gray-800 dark:text-gray-200',
+  'transition-all duration-200 shadow-xs',
+  'focus:outline-none focus:border-violet-700 focus:-translate-y-0.5',
+  'focus:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_0_0_4px_rgba(99,102,241,0.1)]',
+  'dark:border-white/10',
+  'dark:focus:border-[rgba(124,77,255,0.5)]',
+  'dark:focus:shadow-[0_4px_12px_rgba(0,0,0,0.3),0_0_0_4px_rgba(124,77,255,0.15)]',
+  'placeholder:text-gray-400 dark:placeholder:text-gray-500',
+  'max-[768px]:pl-4 max-[768px]:min-h-[52px]'
+].join(' ');
+
+const clearSearchCls = [
+  'absolute right-3 top-1/2 -translate-y-1/2',
+  'bg-gray-100 dark:bg-gray-700 border-none',
+  'text-2xl text-gray-500 cursor-pointer',
+  'p-2 leading-none rounded-lg transition-all duration-200',
+  'hover:bg-violet-700 hover:text-white hover:rotate-90',
+  'max-[768px]:text-[22px] max-[768px]:min-w-[44px] max-[768px]:min-h-[44px]'
+].join(' ');
+
+const filterTabsCls = [
+  'flex gap-3 overflow-x-auto p-0 flex-nowrap',
+  '[scrollbar-width:none] [-ms-overflow-style:none]',
+  '[&::-webkit-scrollbar]:hidden',
+  'max-[768px]:flex-wrap max-[768px]:p-1.5 max-[768px]:gap-1.5'
+].join(' ');
+
+const filterTabBaseCls = [
+  'bg-white dark:bg-[#1E1B24] border border-gray-200 dark:border-white/10',
+  'px-3.5 py-1.5 rounded-full text-sm font-medium',
+  'text-gray-500 dark:text-gray-400 cursor-pointer',
+  'transition-all duration-200 flex items-center justify-center',
+  'gap-1.5 whitespace-nowrap shrink-0 shadow-xs min-h-8 h-8',
+  'hover:border-violet-700 hover:text-violet-700',
+  'hover:-translate-y-px hover:shadow-sm',
+  'max-[768px]:flex-[1_1_calc(50%-6px)] max-[768px]:min-w-0',
+  'max-[768px]:px-2.5 max-[768px]:py-3 max-[768px]:text-xs max-[768px]:min-h-[44px] max-[768px]:h-auto',
+  'max-[400px]:text-[10px] max-[400px]:px-1.5 max-[400px]:py-2'
+].join(' ');
+
+const filterTabActiveCls = [
+  '!bg-violet-600/85 !text-white',
+  '!border-transparent shadow-[0_2px_8px_rgba(109,40,217,0.15)]',
+  'dark:!bg-[#7C4DFF]/70'
+].join(' ');
+
+const filterCountCls = [
+  'text-xs px-2 py-0.5 rounded-full font-bold min-w-[20px] text-center',
+  'max-[768px]:text-[11px] max-[768px]:px-[7px] max-[768px]:py-[3px] max-[768px]:min-w-[22px]'
+].join(' ');
+
+// ── Tag Filter ──
+const tagFilterSectionCls = 'mt-2';
+const tagFilterLabelCls = 'text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wide';
+const tagFilterChipsCls = 'flex flex-wrap gap-2 max-[768px]:gap-2';
+
+const tagFilterChipBaseCls = [
+  'px-5 py-2.5 bg-white dark:bg-[#1E1B24] text-gray-500 dark:text-gray-400',
+  'border-2 border-gray-200 dark:border-white/10 rounded-full',
+  'text-sm font-semibold cursor-pointer transition-all duration-200 shadow-xs',
+  'hover:-translate-y-[3px] hover:shadow-md hover:border-violet-700 hover:text-violet-700',
+  'max-[768px]:px-3.5 max-[768px]:py-2 max-[768px]:text-xs max-[768px]:min-h-[36px]'
+].join(' ');
+
+const tagFilterChipActiveCls = [
+  '!bg-violet-600/85 !text-white',
+  '!border-transparent !shadow-md',
+  'dark:!bg-[#7C4DFF]/70'
+].join(' ');
+
+// ── Books Section ──
+const booksSectionCls = 'min-h-[400px]';
+
+const booksGridCls = [
+  'grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6',
+  'max-[768px]:grid-cols-1 max-[768px]:gap-4'
+].join(' ');
+
+// ── Loading & Empty States ──
+const loadingStateCls = 'flex flex-col items-center justify-center px-6 py-12 text-center';
+
+const spinnerCls = [
+  'w-10 h-10 border-[3px] border-gray-200 dark:border-white/10',
+  'border-t-violet-700 rounded-full',
+  'animate-[g-spin_0.8s_linear_infinite] mb-4'
+].join(' ');
+
+const emptyStateCls = 'flex flex-col items-center justify-center px-6 py-12 text-center';
+const emptyIconCls = 'text-[64px] mb-4 opacity-50';
+const emptyTitleCls = 'text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2';
+const emptyTextCls = 'text-base text-gray-500 dark:text-gray-400 mt-2';
+
+// ── Selection Mode & Bulk Actions ──
+const selectionBarCls = [
+  'fixed bottom-6 left-1/2 -translate-x-1/2 z-50',
+  'bg-white dark:bg-[#1E1B24] shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]',
+  'rounded-2xl px-6 py-4 flex items-center gap-4',
+  'border border-gray-200 dark:border-white/10',
+  'backdrop-blur-xl transition-all duration-300'
+].join(' ');
+
+const selectionBarTextCls = 'font-semibold text-gray-900 dark:text-white';
+
+const btnSelectModeCls = [
+  'px-4 py-2 rounded-xl font-medium transition-all duration-200',
+  'bg-violet-600/85 hover:bg-violet-700 text-white',
+  'shadow-[0_2px_8px_rgba(109,40,217,0.15)]',
+  'dark:bg-[#7C4DFF]/70 dark:hover:bg-[#7C4DFF]/90',
+  'active:scale-95'
+].join(' ');
+
+const btnCancelSelectionCls = [
+  'px-4 py-2 rounded-xl font-medium transition-all duration-200',
+  'bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20',
+  'text-gray-700 dark:text-gray-300 active:scale-95'
+].join(' ');
+
+const btnBatchDeleteCls = [
+  'px-4 py-2 rounded-xl font-medium transition-all duration-200',
+  'bg-red-600 hover:bg-red-700 text-white',
+  'active:scale-95'
+].join(' ');
+
+const selectAllContainerCls = 'flex items-center gap-2 mb-4';
+const selectAllLabelCls = 'text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none';
+
+/* ─────────────────────────────────────────────────────── */
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -52,6 +453,8 @@ function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [goalRefreshKey, setGoalRefreshKey] = useState(0);
   const [reviewBook, setReviewBook] = useState(null);
+  const [selectedBookIds, setSelectedBookIds] = useState(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   // Function to get a random quote from local collection
   const getRandomQuote = () => {
@@ -281,6 +684,53 @@ function Dashboard() {
     }
   };
 
+  // Toggle selection mode
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedBookIds(new Set()); // Clear selections when toggling mode
+  };
+
+  // Toggle individual book selection
+  const toggleBookSelection = (bookId) => {
+    setSelectedBookIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(bookId)) {
+        newSet.delete(bookId);
+      } else {
+        newSet.add(bookId);
+      }
+      return newSet;
+    });
+  };
+
+  // Select all filtered books
+  const selectAllBooks = () => {
+    if (selectedBookIds.size === filteredBooks.length) {
+      setSelectedBookIds(new Set()); // Deselect all if all are selected
+    } else {
+      setSelectedBookIds(new Set(filteredBooks.map(book => book.id)));
+    }
+  };
+
+  // Handle batch delete
+  const handleBatchDelete = async () => {
+    const count = selectedBookIds.size;
+    if (count === 0) return;
+
+    if (window.confirm(`Are you sure you want to delete ${count} book${count > 1 ? 's' : ''}? This will also remove all related activities.`)) {
+      try {
+        await bookApi.deleteBooksInBatch(Array.from(selectedBookIds));
+        fetchBooks();
+        toast.success(`🗑️ ${count} book${count > 1 ? 's' : ''} deleted successfully!`);
+        setSelectedBookIds(new Set());
+        setIsSelectionMode(false);
+      } catch (error) {
+        console.error('Batch delete error:', error);
+        toast.error('Failed to delete books. Please try again.');
+      }
+    }
+  };
+
   const handleUpdate = (book) => {
     setSelectedBook(book);
   };
@@ -495,27 +945,27 @@ function Dashboard() {
   const stats = calculateStats();
 
   return (
-    <div className="dashboard">
+    <div className={dashboardCls}>
       {/* Navbar */}
-      <nav className="navbar">
-        <div className="nav-content">
-          <div className="nav-brand">
-            <span className="brand-icon">📚</span>
-            <h1>Books I Read</h1>
+      <nav className={navbarCls}>
+        <div className={navContentCls}>
+          <div className={navBrandCls}>
+            <span className={brandIconCls}><Library className="w-6 h-6" /></span>
+            <h1 className={navBrandH1Cls}>Books I Read</h1>
           </div>
-          <div className="nav-actions">
+          <div className={navActionsCls}>
             {/* AI Magic Wand - Icon only */}
             <button
-              className="btn-ai-recommend"
+              className={btnAiRecommendCls}
               onClick={() => setShowRecommendationModal(true)}
               title="Get AI Recommendations"
             >
-              🪄
+              <Wand2 className="w-5 h-5" />
             </button>
 
             {/* Add Book - Primary action */}
             <button
-              className="btn-add-book"
+              className={btnAddBookCls}
               onClick={() => setShowAddForm(!showAddForm)}
             >
               {showAddForm ? '← Back' : '+ Add Book'}
@@ -523,24 +973,24 @@ function Dashboard() {
 
             {/* Social - Icon only (desktop) */}
             <button
-              className="btn-social-icon desktop-only"
+              className={`${btnSocialIconCls} ${desktopOnlyCls}`}
               onClick={() => navigate('/feed')}
               title="Social"
             >
-              🌐
+              <Globe className="w-5 h-5" />
             </button>
 
             {/* Analytics - Icon only (desktop) */}
             <button
-              className="btn-analytics-icon desktop-only"
+              className={`${btnAnalyticsIconCls} ${desktopOnlyCls}`}
               onClick={() => setShowAnalyticsModal(true)}
               title="View Analytics"
             >
-              📊
+              <BarChart3 className="w-5 h-5" />
             </button>
 
             {/* Notification Bell (desktop) */}
-            <div className="desktop-only">
+            <div className={desktopOnlyCls}>
               <NotificationBell />
             </div>
 
@@ -556,7 +1006,7 @@ function Dashboard() {
             
             {/* Hamburger Menu (mobile) */}
             <button 
-              className="btn-hamburger"
+              className={btnHamburgerCls}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
             >
@@ -564,18 +1014,18 @@ function Dashboard() {
             </button>
 
             {/* Mobile Dropdown Menu */}
-            <div className={`nav-dropdown ${menuOpen ? 'open' : ''}`}>
+            <div className={`${navDropdownCls} ${menuOpen ? navDropdownOpenCls : ''}`}>
               <button
-                className="btn-analytics-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   setShowAnalyticsModal(true);
                   setMenuOpen(false);
                 }}
               >
-                📊 Analytics
+                <BarChart3 className="w-4 h-4 inline mr-2" />Analytics
               </button>
               <button
-                className="btn-nav-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   navigate('/profile');
                   setMenuOpen(false);
@@ -584,94 +1034,94 @@ function Dashboard() {
                 👤 My Profile
               </button>
               <button
-                className="btn-nav-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   navigate('/feed');
                   setMenuOpen(false);
                 }}
               >
-                📰 Feed
+                <Newspaper className="w-4 h-4 inline-block mr-2" /> Feed
               </button>
               <button
-                className="btn-nav-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   navigate('/reviews');
                   setMenuOpen(false);
                 }}
               >
-                ✍️ Reviews
+                <PenLine className="w-4 h-4 inline-block mr-2" /> Reviews
               </button>
               <button
-                className="btn-nav-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   navigate('/lists');
                   setMenuOpen(false);
                 }}
               >
-                📚 Lists
+                <BookMarked className="w-4 h-4 inline-block mr-2" /> Lists
               </button>
               <button
-                className="btn-nav-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   navigate('/lists/browse');
                   setMenuOpen(false);
                 }}
               >
-                🔍 Browse Lists
+                <Search className="w-4 h-4 inline-block mr-2" /> Browse Lists
               </button>
               <button
-                className="btn-nav-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   navigate('/discover');
                   setMenuOpen(false);
                 }}
               >
-                🔍 Discover
+                <Search className="w-4 h-4 inline-block mr-2" /> Discover
               </button>
               <button
-                className="btn-theme-toggle-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   setIsDarkMode(!isDarkMode);
                   setMenuOpen(false);
                 }}
               >
-                {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+                {isDarkMode ? <><Sun className="w-4 h-4 inline-block mr-2" /> Light Mode</> : <><Moon className="w-4 h-4 inline-block mr-2" /> Dark Mode</>}
               </button>
               <button
-                className="btn-import-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   setShowImportModal(true);
                   setMenuOpen(false);
                 }}
               >
-                📥 Import
+                <Download className="w-4 h-4 inline-block mr-2" /> Import
               </button>
               <button
-                className="btn-share-mobile"
+                className={navDropdownBtnCls}
                 onClick={() => {
                   setShowShareModal(true);
                   setMenuOpen(false);
                 }}
               >
-                📤 Share
+                <Upload className="w-4 h-4 inline-block mr-2" /> Share
               </button>
               <button 
-                className="btn-logout-mobile" 
+                className={navDropdownBtnCls}
                 onClick={() => {
                   handleLogout();
                   setMenuOpen(false);
                 }}
               >
-                🚪 Logout
+                <LogOut className="w-4 h-4 inline-block mr-2" /> Logout
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      <div className="main-content">
+      <div className={mainContentCls}>
         {showAddForm ? (
-          <div className="add-book-section">
+          <div className={addBookSectionCls}>
             <AddBookForm
               onBookAdded={() => {
                 fetchBooks();
@@ -684,74 +1134,74 @@ function Dashboard() {
           <>
             {/* Compact Quote Banner */}
             {randomQuote && (
-              <div className="quote-banner">
-                <div className="quote-banner-content">
-                  <span className="quote-icon">💡</span>
-                  <div className="quote-text-wrapper">
-                    <span className="quote-text-compact">
+              <div className={quoteBannerCls}>
+                <div className={quoteBannerContentCls}>
+                  <span className={quoteIconCls}><Lightbulb className="w-5 h-5" /></span>
+                  <div className={quoteTextWrapperCls}>
+                    <span className={quoteTextCompactCls}>
                       {quoteLoading ? 'Loading...' : `"${randomQuote.text}"`}
                     </span>
                     {!quoteLoading && (
-                      <span className="quote-author">— {randomQuote.author}</span>
+                      <span className={quoteAuthorCls}>— {randomQuote.author}</span>
                     )}
                   </div>
                   <button 
-                    className="btn-refresh-quote-compact" 
+                    className={btnRefreshQuoteCls}
                     onClick={getNewQuote}
                     disabled={quoteLoading}
                     title="New quote"
                   >
-                    🔄
+                    <RefreshCw className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             )}
 
             {/* Statistics Cards - 2x2 Grid */}
-            <div className="stats-grid-2x2">
-              <div className="stat-card-compact">
-                <div className="stat-icon">✅</div>
-                <div className="stat-content">
-                  <div className="stat-value">{stats.completed}</div>
-                  <div className="stat-label">Completed</div>
+            <div className={statsGridCls}>
+              <div className={statCardCls}>
+                <div className={statIconCls}><CheckCircle className="w-6 h-6" /></div>
+                <div className={statContentCls}>
+                  <div className={statValueCls}>{stats.completed}</div>
+                  <div className={statLabelCls}>Completed</div>
                 </div>
               </div>
 
-              <div className="stat-card-compact">
-                <div className="stat-icon">📖</div>
-                <div className="stat-content">
-                  <div className="stat-value">{stats.reading}</div>
-                  <div className="stat-label">Reading</div>
+              <div className={statCardCls}>
+                <div className={statIconCls}><BookOpen className="w-6 h-6" /></div>
+                <div className={statContentCls}>
+                  <div className={statValueCls}>{stats.reading}</div>
+                  <div className={statLabelCls}>Reading</div>
                 </div>
               </div>
 
-              <div className="stat-card-compact">
-                <div className="stat-icon">📄</div>
-                <div className="stat-content">
-                  <div className="stat-value">{stats.totalPagesRead.toLocaleString()}</div>
-                  <div className="stat-label">Pages Read</div>
+              <div className={statCardCls}>
+                <div className={statIconCls}><FileText className="w-6 h-6" /></div>
+                <div className={statContentCls}>
+                  <div className={statValueCls}>{stats.totalPagesRead.toLocaleString()}</div>
+                  <div className={statLabelCls}>Pages Read</div>
                 </div>
               </div>
 
-              <div className="stat-card-compact">
-                <div className="stat-icon">🔥</div>
-                <div className="stat-content">
-                  <div className="stat-value">{stats.currentStreak}</div>
-                  <div className="stat-label">Streak</div>
+              <div className={statCardCls}>
+                <div className={statIconCls}><Flame className="w-6 h-6" /></div>
+                <div className={statContentCls}>
+                  <div className={statValueCls}>{stats.currentStreak}</div>
+                  <div className={statLabelCls}>Streak</div>
                 </div>
               </div>
             </div>
 
             {/* Goal + Social Row */}
-            <div className="goal-social-row">
-              <div className="goal-social-row__col">
+            <div className={goalSocialRowCls}>
+              <div className={goalSocialColCls}>
                 <ReadingGoalWidget refreshKey={goalRefreshKey} />
               </div>
-              <div className="goal-social-row__col">
-                <div className="social-entry-card" onClick={() => navigate('/feed')}>
-                  <div className="social-entry-card__glow"></div>
-                  <div className="social-entry-card__content">
-                    <div className="social-entry-card__icon-wrap">
+              <div className={goalSocialColCls}>
+                <div className={socialEntryCardCls} onClick={() => navigate('/feed')}>
+                  <div className={socialGlowCls}></div>
+                  <div className={socialContentCls}>
+                    <div className={socialIconWrapCls}>
                       <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                         <circle cx="9" cy="7" r="4" />
@@ -759,12 +1209,12 @@ function Dashboard() {
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                       </svg>
                     </div>
-                    <div className="social-entry-card__text">
-                      <h3>Social</h3>
-                      <p>See what friends are reading</p>
+                    <div className={socialTextCls}>
+                      <h3 className={socialTextH3Cls}>Social</h3>
+                      <p className={socialTextPCls}>See what friends are reading</p>
                     </div>
                   </div>
-                  <div className="social-entry-card__arrow">
+                  <div className={socialArrowCls}>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
@@ -774,18 +1224,18 @@ function Dashboard() {
             </div>
 
             {/* Filters */}
-            <div className="filters-section">
-              <div className="search-bar">
+            <div className={filtersSectionCls}>
+              <div className={searchBarCls}>
                 <input
                   type="text"
                   placeholder="Search by title or author..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="search-input"
+                  className={searchInputCls}
                 />
                 {searchQuery && (
                   <button
-                    className="clear-search"
+                    className={clearSearchCls}
                     onClick={() => setSearchQuery('')}
                     title="Clear search"
                   >
@@ -794,7 +1244,7 @@ function Dashboard() {
                 )}
               </div>
 
-              <div className="filter-tabs">
+              <div className={filterTabsCls}>
                 {['All', 'Want to Read', 'Reading', 'Finished'].map(filter => {
                   const statusMap = {
                     'All': null,
@@ -807,14 +1257,18 @@ function Dashboard() {
                     ? books.length
                     : books.filter(b => b.status === statusMap[filter]).length;
                   
+                  const isActive = activeFilter === filter;
+
                   return (
                     <button
                       key={filter}
-                      className={`filter-tab ${activeFilter === filter ? 'active' : ''}`}
+                      className={`${filterTabBaseCls} ${isActive ? filterTabActiveCls : ''}`}
                       onClick={() => setActiveFilter(filter)}
                     >
                       {filter}
-                      <span className="filter-count">{count}</span>
+                      <span className={`${filterCountCls} ${isActive ? 'bg-white/25' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'}`}>
+                        {count}
+                      </span>
                     </button>
                   );
                 })}
@@ -822,11 +1276,11 @@ function Dashboard() {
 
               {/* Tag Filter */}
               {getAllTags().length > 0 && (
-                <div className="tag-filter-section">
-                  <div className="tag-filter-label">Filter by Tag:</div>
-                  <div className="tag-filter-chips">
+                <div className={tagFilterSectionCls}>
+                  <div className={tagFilterLabelCls}>Filter by Tag:</div>
+                  <div className={tagFilterChipsCls}>
                     <button
-                      className={`tag-filter-chip ${selectedTag === null ? 'active' : ''}`}
+                      className={`${tagFilterChipBaseCls} ${selectedTag === null ? tagFilterChipActiveCls : ''}`}
                       onClick={() => setSelectedTag(null)}
                     >
                       All Tags
@@ -834,7 +1288,7 @@ function Dashboard() {
                     {getAllTags().map((tag, index) => (
                       <button
                         key={index}
-                        className={`tag-filter-chip ${selectedTag === tag ? 'active' : ''}`}
+                        className={`${tagFilterChipBaseCls} ${selectedTag === tag ? tagFilterChipActiveCls : ''}`}
                         onClick={() => setSelectedTag(tag)}
                       >
                         {tag}
@@ -843,27 +1297,54 @@ function Dashboard() {
                   </div>
                 </div>
               )}
+
+              {/* Selection Mode Controls */}
+              {filteredBooks.length > 0 && (
+                <div className="flex items-center justify-between gap-4 mt-4 flex-wrap">
+                  <button
+                    onClick={toggleSelectionMode}
+                    className={btnSelectModeCls}
+                  >
+                    {isSelectionMode ? 'Cancel Selection' : 'Select Books'}
+                  </button>
+
+                  {isSelectionMode && (
+                    <div className={selectAllContainerCls}>
+                      <input
+                        type="checkbox"
+                        id="select-all"
+                        checked={selectedBookIds.size === filteredBooks.length && filteredBooks.length > 0}
+                        onChange={selectAllBooks}
+                        className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
+                      />
+                      <label htmlFor="select-all" className={selectAllLabelCls}>
+                        Select All ({filteredBooks.length})
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Books Grid */}
-            <div className="books-section">
+            <div className={booksSectionCls}>
               {loading ? (
-                <div className="loading-state">
-                  <div className="spinner"></div>
-                  <p>Loading your library...</p>
+                <div className={loadingStateCls}>
+                  <div className={spinnerCls}></div>
+                  <p className="text-gray-500 dark:text-gray-400 text-base mt-2">Loading your library...</p>
                 </div>
               ) : filteredBooks.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">📚</div>
-                  <h3>No books found</h3>
-                  <p>
+                <div className={emptyStateCls}>
+                  <div className={emptyIconCls}><Library className="w-16 h-16" /></div>
+                  <h3 className={emptyTitleCls}>No books found</h3>
+                  <p className={emptyTextCls}>
                     {activeFilter === 'All'
                       ? 'Start building your reading library by adding your first book!'
                       : `No books with status "${activeFilter}"`}
                   </p>
                   {activeFilter === 'All' && (
                     <button
-                      className="btn-primary"
+                      className="btn-primary mt-6"
                       onClick={() => setShowAddForm(true)}
                     >
                       Add Your First Book
@@ -871,7 +1352,7 @@ function Dashboard() {
                   )}
                 </div>
               ) : (
-                <div className="books-grid">
+                <div className={booksGridCls}>
                   {filteredBooks.map(book => (
                     <BookCard
                       key={book.id}
@@ -885,9 +1366,12 @@ function Dashboard() {
                         try {
                           await bookApi.togglePrivacy(id, isPublic);
                           fetchBooks();
-                          toast.success(isPublic ? '🌍 Book is now public' : '🔒 Book is now private');
+                          toast.success(isPublic ? 'Book is now public' : 'Book is now private');
                         } catch { toast.error('Failed to update privacy'); }
                       }}
+                      isSelectionMode={isSelectionMode}
+                      isSelected={selectedBookIds.has(book.id)}
+                      onToggleSelection={() => toggleBookSelection(book.id)}
                     />
                   ))}
                 </div>
@@ -896,6 +1380,27 @@ function Dashboard() {
           </>
         )}
       </div>
+
+      {/* Bulk Action Bar */}
+      {isSelectionMode && selectedBookIds.size > 0 && (
+        <div className={selectionBarCls}>
+          <span className={selectionBarTextCls}>
+            {selectedBookIds.size} book{selectedBookIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <button
+            onClick={handleBatchDelete}
+            className={btnBatchDeleteCls}
+          >
+            Delete Selected
+          </button>
+          <button
+            onClick={toggleSelectionMode}
+            className={btnCancelSelectionCls}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       {/* Update Progress Modal */}
       {selectedBook && (

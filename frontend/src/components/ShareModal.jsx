@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import './ShareModal.css';
+import { CheckCircle, BookOpen, Library, FileText, FileCode, Database, BarChart3, Download, Mail } from 'lucide-react';
 
 /**
  * ShareModal Component
@@ -15,10 +15,10 @@ function ShareModal({ books, onClose, filterInfo }) {
 
   const getStatusEmoji = (status) => {
     switch (status) {
-      case 'FINISHED': return '✅';
-      case 'READING': return '📖';
-      case 'WANT_TO_READ': return '📚';
-      default: return '';
+      case 'FINISHED': return <CheckCircle className="w-3 h-3 inline" />;
+      case 'READING': return <BookOpen className="w-3 h-3 inline" />;
+      case 'WANT_TO_READ': return <Library className="w-3 h-3 inline" />;
+      default: return null;
     }
   };
 
@@ -226,95 +226,89 @@ function ShareModal({ books, onClose, filterInfo }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content share-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content max-w-[600px] max-h-[90vh] overflow-y-auto max-md:max-w-[calc(100vw-var(--spacing-lg))] max-md:m-2 max-md:p-6 max-[400px]:p-4" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>📤 Share Reading List</h2>
+          <h2 className="max-md:text-xl max-[400px]:text-lg"><Upload className="w-5 h-5 inline mr-2" />Share Reading List</h2>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
 
-        <div className="share-modal-body">
-          <div className="share-info">
-            <p>Share {books.length} book{books.length !== 1 ? 's' : ''} {filterInfo && `(${filterInfo})`}</p>
+        <div className="p-[var(--spacing-lg)]">
+          <div className="bg-[var(--color-bg-secondary)] p-[var(--spacing-md)] rounded-[var(--radius-md)] mb-[var(--spacing-lg)] text-center">
+            <p className="m-0 text-[var(--color-text-secondary)] text-sm">Share {books.length} book{books.length !== 1 ? 's' : ''} {filterInfo && `(${filterInfo})`}</p>
           </div>
 
           {/* Format Selection */}
-          <div className="format-selection">
-            <label className="section-label">Export Format</label>
-            <div className="format-options">
-              <button
-                className={`format-btn ${selectedFormat === 'text' ? 'active' : ''}`}
-                onClick={() => setSelectedFormat('text')}
-              >
-                📄 Plain Text
-              </button>
-              <button
-                className={`format-btn ${selectedFormat === 'markdown' ? 'active' : ''}`}
-                onClick={() => setSelectedFormat('markdown')}
-              >
-                📝 Markdown
-              </button>
-              <button
-                className={`format-btn ${selectedFormat === 'json' ? 'active' : ''}`}
-                onClick={() => setSelectedFormat('json')}
-              >
-                💾 JSON
-              </button>
-              <button
-                className={`format-btn ${selectedFormat === 'csv' ? 'active' : ''}`}
-                onClick={() => setSelectedFormat('csv')}
-              >
-                📊 CSV
-              </button>
+          <div className="mb-[var(--spacing-lg)]">
+            <label className="block text-sm font-semibold text-[var(--color-text-primary)] mb-[var(--spacing-sm)]">Export Format</label>
+            <div className="grid grid-cols-4 gap-[var(--spacing-sm)] max-md:grid-cols-1">
+              {[
+                { key: 'text', icon: FileText, label: 'Plain Text' },
+                { key: 'markdown', icon: FileCode, label: 'Markdown' },
+                { key: 'json', icon: Database, label: 'JSON' },
+                { key: 'csv', icon: BarChart3, label: 'CSV' },
+              ].map(({ key, icon: Icon, label }) => (
+                <button
+                  key={key}
+                  className={`p-[var(--spacing-md)] border-2 rounded-[var(--radius-md)] text-sm font-medium cursor-pointer transition-all duration-200 text-center ${
+                    selectedFormat === key
+                      ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white'
+                      : 'bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)]'
+                  }`}
+                  onClick={() => setSelectedFormat(key)}
+                >
+                  <Icon className="w-4 h-4 inline mr-1" /> {label}
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Options */}
-          <div className="share-options">
-            <label className="section-label">Include in Export</label>
-            <div className="checkbox-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={includeProgress}
-                  onChange={(e) => setIncludeProgress(e.target.checked)}
-                />
-                <span>Reading Progress</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={includeRatings}
-                  onChange={(e) => setIncludeRatings(e.target.checked)}
-                />
-                <span>Ratings</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={includeTags}
-                  onChange={(e) => setIncludeTags(e.target.checked)}
-                />
-                <span>Tags</span>
-              </label>
+          <div className="mb-[var(--spacing-lg)]">
+            <label className="block text-sm font-semibold text-[var(--color-text-primary)] mb-[var(--spacing-sm)]">Include in Export</label>
+            <div className="flex flex-col gap-[var(--spacing-sm)]">
+              {[
+                { checked: includeProgress, onChange: setIncludeProgress, label: 'Reading Progress' },
+                { checked: includeRatings, onChange: setIncludeRatings, label: 'Ratings' },
+                { checked: includeTags, onChange: setIncludeTags, label: 'Tags' },
+              ].map(({ checked, onChange, label }) => (
+                <label key={label} className="flex items-center gap-[var(--spacing-sm)] cursor-pointer p-[var(--spacing-sm)] rounded-[var(--radius-sm)] transition-colors duration-200 hover:bg-[var(--color-bg-secondary)]">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => onChange(e.target.checked)}
+                    className="w-[18px] h-[18px] cursor-pointer"
+                  />
+                  <span className="text-sm text-[var(--color-text-primary)]">{label}</span>
+                </label>
+              ))}
             </div>
           </div>
 
           {/* Preview */}
-          <div className="share-preview">
-            <label className="section-label">Preview</label>
-            <pre className="preview-content">{generateContent().substring(0, 500)}...</pre>
+          <div className="mb-[var(--spacing-lg)]">
+            <label className="block text-sm font-semibold text-[var(--color-text-primary)] mb-[var(--spacing-sm)]">Preview</label>
+            <pre className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-[var(--spacing-md)] font-mono text-xs text-[var(--color-text-secondary)] overflow-x-auto whitespace-pre-wrap break-words max-h-[200px] overflow-y-auto">{generateContent().substring(0, 500)}...</pre>
           </div>
 
           {/* Actions */}
-          <div className="share-actions">
-            <button className="share-action-btn primary" onClick={handleCopyToClipboard}>
+          <div className="flex flex-col gap-[var(--spacing-sm)] pt-[var(--spacing-lg)] border-t border-[var(--color-border)] max-md:flex-col-reverse">
+            <button
+              className="p-[var(--spacing-md)] rounded-[var(--radius-md)] text-sm font-semibold cursor-pointer transition-all duration-200 border-none bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)] max-md:w-full max-md:py-3.5 max-md:px-[18px]"
+              onClick={handleCopyToClipboard}
+            >
               📋 Copy to Clipboard
             </button>
-            <button className="share-action-btn secondary" onClick={handleDownload}>
-              📥 Download File
+            <button
+              className="p-[var(--spacing-md)] rounded-[var(--radius-md)] text-sm font-semibold cursor-pointer transition-all duration-200 bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] hover:border-[var(--color-primary)] hover:-translate-y-0.5 max-md:w-full max-md:py-3.5 max-md:px-[18px]"
+              onClick={handleDownload}
+            >
+              <Download className="w-4 h-4 inline mr-1" />Download File
             </button>
-            <button className="share-action-btn tertiary" onClick={handleShareViaEmail}>
-              ✉️ Share via Email
+            <button
+              className="p-[var(--spacing-md)] rounded-[var(--radius-md)] text-sm font-semibold cursor-pointer transition-all duration-200 bg-white text-[var(--color-primary)] border-2 border-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white hover:-translate-y-0.5 max-md:w-full max-md:py-3.5 max-md:px-[18px]"
+              onClick={handleShareViaEmail}
+            >
+              <Mail className="w-4 h-4 inline mr-1" />Share via Email
             </button>
           </div>
         </div>

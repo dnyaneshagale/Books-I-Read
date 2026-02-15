@@ -44,6 +44,7 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final CustomUserDetailsService userDetailsService;
     private final ReadingActivityRepository readingActivityRepository;
+    private final UserActivityRepository userActivityRepository;
     private final AiNotesService aiNotesService;
     private final SocialService socialService;
     private final ReadingGoalService readingGoalService;
@@ -55,12 +56,14 @@ public class BookServiceImpl implements BookService {
     public BookServiceImpl(BookRepository bookRepository, 
                           CustomUserDetailsService userDetailsService,
                           ReadingActivityRepository readingActivityRepository,
+                          UserActivityRepository userActivityRepository,
                           AiNotesService aiNotesService,
                           SocialService socialService,
                           ReadingGoalService readingGoalService) {
         this.bookRepository = bookRepository;
         this.userDetailsService = userDetailsService;
         this.readingActivityRepository = readingActivityRepository;
+        this.userActivityRepository = userActivityRepository;
         this.aiNotesService = aiNotesService;
         this.socialService = socialService;
         this.readingGoalService = readingGoalService;
@@ -320,11 +323,32 @@ public class BookServiceImpl implements BookService {
         Book book = bookRepository.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
 
-        // Delete associated reading activities first
+        // Delete associated user activities first (social feed entries)
+        userActivityRepository.deleteByBookId(id);
+        
+        // Delete associated reading activities
         readingActivityRepository.deleteByBookId(id);
         
         // Then delete the book
         bookRepository.delete(book);
+    }
+
+    @Override
+    @Transactional
+    public void deleteBooksInBatch(List<Long> bookIds) {
+        if (bookIds == null || bookIds.isEmpty()) {
+            return;
+        }
+        
+        // Delete each book individually (ensures proper validation and cascade deletes)
+        for (Long bookId : bookIds) {
+            try {
+                deleteBook(bookId);
+            } catch (ResourceNotFoundException e) {
+                // Skip books that don't exist or don't belong to user
+                // Could log this if needed, but we'll silently skip
+            }
+        }
     }
 
     /**

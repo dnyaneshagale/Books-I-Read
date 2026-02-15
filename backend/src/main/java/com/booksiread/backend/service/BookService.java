@@ -51,4 +51,10 @@ public interface BookService {
      * @throws ResourceNotFoundException if book not found
      */
     void deleteBook(Long id);
+
+    /**
+     * Delete multiple books in batch
+     * @param bookIds - list of book IDs to delete
+     */
+    void deleteBooksInBatch(List<Long> bookIds);
 }
