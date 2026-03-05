@@ -65,7 +65,7 @@ const ReviewForm = ({ bookId, bookTitle, existingReview, onClose, onSaved }) => 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000] p-4 animate-[g-fadeIn_0.2s] max-[480px]:items-end max-[480px]:p-0" onClick={handleBackdropClick}>
-      <div className="bg-white rounded-2xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto p-6 animate-[g-slideUp_0.25s_ease-out] dark:bg-[#1e1e2e] max-[480px]:max-h-[95vh] max-[480px]:rounded-b-none max-[480px]:fixed max-[480px]:bottom-0 max-[480px]:left-0 max-[480px]:right-0 max-[480px]:max-w-none">
+      <div className="bg-white rounded-2xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto p-6 animate-[g-slideUp_0.25s_ease-out] dark:bg-[#1e1e2e] max-[480px]:max-h-[100dvh] max-[480px]:rounded-b-none max-[480px]:fixed max-[480px]:bottom-0 max-[480px]:left-0 max-[480px]:right-0 max-[480px]:max-w-none max-[480px]:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
         <div className="flex justify-between items-center mb-2">
           <h2 className="m-0 text-[1.2rem] font-bold text-[#111] dark:text-[#e0e0e0]">{isEditing ? 'Edit Review' : 'Write a Review'}</h2>
           <button className="bg-transparent border-none text-[1.2rem] cursor-pointer text-[#999] py-1 px-2 rounded-md transition-colors duration-150 hover:bg-black/[0.06] dark:text-[#666] dark:hover:bg-white/[0.08]" onClick={onClose}>✕</button>

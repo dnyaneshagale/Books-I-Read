@@ -79,7 +79,7 @@ export default function BrowseListsPage() {
   };
 
   return (
-    <div className="browse-lists-page max-w-[900px] mx-auto py-8 px-5 pb-20 min-h-screen animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both] lg:max-w-[960px]">
+    <div className="browse-lists-page max-w-[900px] mx-auto py-8 px-5 min-h-screen animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both] lg:max-w-[960px]">
       <button className="page-back-btn" onClick={() => navigate(-1)}>← Back</button>
       <div className="mb-7">
         <h1 className="m-0 text-[1.6rem] font-[var(--font-weight-extrabold,800)] text-[var(--color-text-primary,#0f172a)] tracking-[-0.01em] dark:text-[var(--color-text-primary,#E2D9F3)]"><Search className="w-6 h-6 inline mr-2" /> Discover Lists</h1>

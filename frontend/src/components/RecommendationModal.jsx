@@ -194,7 +194,7 @@ function RecommendationModal({ onClose, userBooks, onAddToWishlist }) {
 
   const modalContent = (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-[4px] flex items-center justify-center z-[9999] p-6 animate-[g-fadeIn_0.2s_ease] max-md:p-0 max-md:items-end" onClick={onClose}>
-      <div className="bg-[var(--color-bg)] rounded-[20px] w-full max-w-[700px] max-h-[90vh] flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-[var(--color-border)] animate-[g-fadeInScale_0.3s_ease] overflow-hidden relative z-[10000] dark:bg-[#1a1a1a] dark:border-[#333] max-md:max-w-full max-md:max-h-screen max-md:h-screen max-md:rounded-none max-md:animate-[slideUpMobile_0.3s_ease]" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[var(--color-bg)] rounded-[20px] w-full max-w-[700px] max-h-[90vh] flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-[var(--color-border)] animate-[g-fadeInScale_0.3s_ease] overflow-hidden relative z-[10000] dark:bg-[#1a1a1a] dark:border-[#333] max-md:max-w-full max-md:max-h-[100dvh] max-md:h-[100dvh] max-md:rounded-none max-md:animate-[slideUpMobile_0.3s_ease] max-md:pb-[env(safe-area-inset-bottom,0px)] max-md:pt-[env(safe-area-inset-top,0px)]" onClick={(e) => e.stopPropagation()}>
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b-2 border-[var(--color-border)] bg-[var(--color-bg)] shrink-0 dark:bg-[#1a1a1a] dark:border-[#333] max-md:p-4 max-md:sticky max-md:top-0 max-md:z-10">

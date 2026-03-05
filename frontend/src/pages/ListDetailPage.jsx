@@ -6,7 +6,7 @@ import bookApi from '../api/bookApi';
 import CreateListModal from '../components/CreateListModal';
 import toast from 'react-hot-toast';
 
-const pageCls = 'list-detail-page max-w-[700px] lg:max-w-[760px] mx-auto px-5 pt-8 pb-20 min-h-screen animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both]';
+const pageCls = 'list-detail-page max-w-[700px] lg:max-w-[760px] mx-auto px-5 pt-8 min-h-screen animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both]';
 
 const actionBtnCls = 'px-[18px] py-2 rounded-xl text-[0.85rem] font-semibold cursor-pointer transition-all duration-200 border border-slate-200 bg-white text-slate-500 dark:bg-[#1E1B24] dark:border-[#2D2A35] dark:text-[#9E95A8]';
 

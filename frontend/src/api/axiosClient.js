@@ -1,13 +1,12 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://books-backend-746512873369.us-central1.run.app/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 const axiosClient = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
   timeout: 60000, // 60 seconds for AI operations
 });
 
@@ -55,6 +54,13 @@ axiosClient.interceptors.response.use(
         
         // Emit logout event for AuthContext to handle + redirect
         window.dispatchEvent(new CustomEvent('auth:logout', { detail: { expired: true } }));
+
+        // Fallback redirect if event listener hasn't navigated within 500ms
+        setTimeout(() => {
+          if (window.location.pathname !== '/login') {
+            window.location.replace('/login');
+          }
+        }, 500);
       }
     }
     return Promise.reject(error);

@@ -21,16 +21,42 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Decode JWT expiry (returns ms timestamp, or null if invalid)
+  const getTokenExpiry = (jwt) => {
+    try {
+      const payload = JSON.parse(atob(jwt.split('.')[1]));
+      return payload.exp ? payload.exp * 1000 : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Force session-expired redirect
+  const forceExpiredLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    toast.error('Session expired. Please log in again.');
+    navigate('/login', { replace: true });
+  };
+
   // Load user from localStorage on mount
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
 
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      // Set axios header immediately
-      axiosClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+      const expiry = getTokenExpiry(storedToken);
+      if (expiry && Date.now() >= expiry) {
+        // Token already expired — clear immediately
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } else {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+        axiosClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+      }
     }
     
     setLoading(false);
@@ -47,7 +73,37 @@ export const AuthProvider = ({ children }) => {
 
     window.addEventListener('auth:logout', handleLogout);
     return () => window.removeEventListener('auth:logout', handleLogout);
-  }, []);
+  }, [navigate]);
+
+  // Proactive token expiry timer + visibility check
+  useEffect(() => {
+    if (!token) return;
+
+    const expiry = getTokenExpiry(token);
+    if (!expiry) return;
+
+    // Set a timeout to auto-logout when token expires
+    const msUntilExpiry = expiry - Date.now();
+    if (msUntilExpiry <= 0) {
+      forceExpiredLogout();
+      return;
+    }
+
+    const timerId = setTimeout(forceExpiredLogout, msUntilExpiry);
+
+    // Also check when the user returns to the tab (e.g. after phone sleep)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && Date.now() >= expiry) {
+        forceExpiredLogout();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearTimeout(timerId);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [token]);
 
   // Add token to axios requests
   useEffect(() => {

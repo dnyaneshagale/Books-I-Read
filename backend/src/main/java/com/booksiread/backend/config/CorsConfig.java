@@ -24,9 +24,8 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Split comma-separated origins and add them
-        List<String> origins = Arrays.asList(allowedOrigins.split(","));
-        configuration.setAllowedOrigins(origins);
+        // Allow all origins (safe — no credentials/cookies are used)
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         
         // Allow all HTTP methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
@@ -34,8 +33,11 @@ public class CorsConfig {
         // Allow all headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
         
-        // Allow credentials (cookies, authorization headers)
-        configuration.setAllowCredentials(true);
+        // Expose Authorization header to frontend
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        
+        // No credentials needed (JWT sent via Authorization header, not cookies)
+        configuration.setAllowCredentials(false);
         
         // Cache preflight response for 1 hour
         configuration.setMaxAge(3600L);

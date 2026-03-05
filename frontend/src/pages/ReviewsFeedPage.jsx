@@ -78,7 +78,7 @@ const ReviewsFeedPage = () => {
   };
 
   return (
-    <div className="reviews-feed-page min-h-screen bg-gradient-to-br from-[var(--color-bg-secondary,#f8fafc)] to-[var(--color-bg-tertiary,#f1f5f9)] py-6 px-4 pb-20 transition-[background] duration-300 md:pt-20 dark:from-[var(--color-bg-secondary,#1E1B24)] dark:to-[var(--color-bg,#0F0C15)]">
+    <div className="reviews-feed-page min-h-screen bg-gradient-to-br from-[var(--color-bg-secondary,#f8fafc)] to-[var(--color-bg-tertiary,#f1f5f9)] py-6 px-4 transition-[background] duration-300 dark:from-[var(--color-bg-secondary,#1E1B24)] dark:to-[var(--color-bg,#0F0C15)]">
       <div className="max-w-[680px] mx-auto animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both] lg:max-w-[740px]">
         {/* Header */}
         <div className="flex items-center gap-3.5 mb-6">

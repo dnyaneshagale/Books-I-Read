@@ -241,6 +241,12 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* Mobile touch: remove 300ms tap delay, prevent double-tap zoom on interactive elements */
+  button, a, [role="button"], input, select, textarea {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 /* ── Reduced Motion ──────────────────────────────────── */
@@ -565,7 +571,7 @@ body.dark-mode .page-back-btn:hover {
 .my-lists-page,
 .browse-lists-page,
 .list-detail-page {
-  padding-bottom: 80px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 769px) {
@@ -577,7 +583,8 @@ body.dark-mode .page-back-btn:hover {
   .my-lists-page,
   .browse-lists-page,
   .list-detail-page {
-    padding-top: 72px;
+    padding-top: calc(72px + env(safe-area-inset-top, 0px));
+    padding-bottom: 0;
   }
 }
 

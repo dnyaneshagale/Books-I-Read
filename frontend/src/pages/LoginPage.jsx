@@ -72,7 +72,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-8 max-sm:p-4">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-[var(--bg-primary)] p-8 max-sm:p-4">
       <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl py-14 px-12 max-w-[440px] w-full shadow-lg max-sm:py-8 max-sm:px-6">
         <h1 className="text-[2rem] font-bold text-[var(--text-primary)] mb-2.5 text-center tracking-tight max-sm:text-[1.625rem]">Books I Read</h1>
         <p className="text-[var(--text-secondary)] text-center mb-10 text-base leading-normal">Track your reading journey</p>

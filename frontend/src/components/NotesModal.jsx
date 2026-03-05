@@ -111,7 +111,7 @@ function NotesModal({ book, onClose, onUpdated }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-[var(--spacing-md)] animate-[g-fadeIn_0.2s_ease] overflow-y-auto" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-[var(--color-bg)] rounded-[var(--radius-xl)] max-w-[700px] w-full max-h-[calc(100vh-40px)] flex flex-col animate-[g-slideUp_0.3s_ease] shadow-[var(--shadow-xl)] border-2 border-amber-400 m-auto max-md:max-w-full max-md:max-h-[calc(100vh-20px)]">
+      <div className="bg-[var(--color-bg)] rounded-[var(--radius-xl)] max-w-[700px] w-full max-h-[calc(100dvh-40px)] flex flex-col animate-[g-slideUp_0.3s_ease] shadow-[var(--shadow-xl)] border-2 border-amber-400 m-auto max-md:max-w-full max-md:max-h-[calc(100dvh-20px)]">
         <div className="flex justify-between items-center p-[var(--spacing-lg)] border-b-2 border-b-amber-400 bg-gradient-to-br from-amber-400/10 to-amber-500/5 shrink-0 max-md:p-[var(--spacing-md)]">
           <h2 className="text-[var(--font-size-xl)] font-[var(--font-weight-bold)] text-amber-500 m-0"><FileText className="w-5 h-5 inline mr-2" /> Reading Notes</h2>
           <button className="bg-transparent border-none text-[28px] text-[var(--color-text-secondary)] cursor-pointer p-0 w-8 h-8 flex items-center justify-center rounded-[var(--radius-sm)] transition-all duration-200 hover:bg-amber-400/20 hover:text-amber-500" onClick={onClose}>×</button>

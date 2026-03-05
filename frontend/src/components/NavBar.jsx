@@ -26,7 +26,7 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[1000] bg-white/92 border-t border-[var(--color-border)] pb-[env(safe-area-inset-bottom,4px)] pt-1 backdrop-blur-[12px] md:top-0 md:bottom-auto md:border-t-0 md:border-b md:border-b-slate-200/60 md:p-0 md:bg-white/80 md:backdrop-blur-[20px] md:backdrop-saturate-[180%] md:shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.02)] dark:bg-[rgba(15,12,21,0.88)] dark:border-t-[var(--color-border)] dark:backdrop-blur-[20px] dark:backdrop-saturate-[180%] md:dark:bg-[rgba(15,12,21,0.85)] md:dark:border-b-[rgba(45,42,74,0.6)] md:dark:shadow-[0_1px_3px_rgba(0,0,0,0.2),0_4px_12px_rgba(0,0,0,0.15)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-[1000] bg-white/92 border-t border-[var(--color-border)] pb-[env(safe-area-inset-bottom,4px)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pt-1 backdrop-blur-[12px] md:top-0 md:bottom-auto md:border-t-0 md:border-b md:border-b-slate-200/60 md:pt-[env(safe-area-inset-top,0px)] md:pb-0 md:bg-white/80 md:backdrop-blur-[20px] md:backdrop-saturate-[180%] md:shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.02)] dark:bg-[rgba(15,12,21,0.88)] dark:border-t-[var(--color-border)] dark:backdrop-blur-[20px] dark:backdrop-saturate-[180%] md:dark:bg-[rgba(15,12,21,0.85)] md:dark:border-b-[rgba(45,42,74,0.6)] md:dark:shadow-[0_1px_3px_rgba(0,0,0,0.2),0_4px_12px_rgba(0,0,0,0.15)]">
       <div className="flex justify-around items-center max-w-[600px] mx-auto md:max-w-[800px] md:gap-1 md:px-4">
         {navItems.map((item) => (
           <button
@@ -34,6 +34,7 @@ const NavBar = () => {
             className={`
               flex flex-col items-center gap-0.5 py-1.5 px-3 bg-transparent border-none cursor-pointer
               transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none relative
+              touch-manipulation
               md:flex-row md:gap-2 md:py-3.5 md:px-5 md:rounded-[10px]
               active:scale-90
               ${isActive(item.path)

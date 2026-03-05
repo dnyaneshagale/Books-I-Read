@@ -184,7 +184,7 @@ const ReviewDetailPage = () => {
   const commentsCount = review?.commentsCount || 0;
 
   return (
-    <div className="review-detail-page min-h-screen bg-gradient-to-br from-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary,#f1f5f9)] p-6 px-4 pb-20 transition-[background] duration-300 md:pt-20 dark:from-[var(--color-bg-secondary)] dark:to-[var(--color-bg)] max-[480px]:p-3 max-[480px]:px-2 max-[480px]:pb-20">
+    <div className="review-detail-page min-h-screen bg-gradient-to-br from-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary,#f1f5f9)] p-6 px-4 transition-[background] duration-300 dark:from-[var(--color-bg-secondary)] dark:to-[var(--color-bg)] max-[480px]:p-3 max-[480px]:px-2">
       {loading ? (
         <SkeletonLoader />
       ) : (

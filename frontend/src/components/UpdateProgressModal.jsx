@@ -12,7 +12,7 @@ const modalCls = [
   'flex flex-col animate-[g-slideUp_0.3s_ease]',
   'shadow-xl border border-slate-200 mx-auto',
   'dark:bg-[#0F0C15] dark:border-[#2D2A35]',
-  'max-[480px]:max-w-full max-[480px]:max-h-screen max-[480px]:m-0 max-[480px]:rounded-none',
+  'max-[480px]:max-w-full max-[480px]:max-h-[100dvh] max-[480px]:m-0 max-[480px]:rounded-none max-[480px]:pb-[env(safe-area-inset-bottom,0px)]',
   'min-[481px]:max-[768px]:max-w-[90%]',
 ].join(' ');
 

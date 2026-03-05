@@ -6,7 +6,7 @@ import CreateListModal from '../components/CreateListModal';
 import toast from 'react-hot-toast';
 import { Library, Search, BookOpen, Heart, Globe, Lock, Trash2, Bookmark } from 'lucide-react';
 
-const pageCls = 'my-lists-page max-w-[800px] lg:max-w-[860px] mx-auto px-5 pt-8 pb-20 min-h-screen animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both]';
+const pageCls = 'my-lists-page max-w-[800px] lg:max-w-[860px] mx-auto px-5 pt-8 min-h-screen animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both]';
 
 const browseBtnCls = 'py-2.5 px-5 border border-slate-300 bg-white text-slate-700 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap hover:border-violet-400 hover:text-violet-700 hover:bg-violet-50 hover:-translate-y-px hover:shadow-[0_2px_8px_rgba(109,40,217,0.1)] dark:bg-[#1E1B24] dark:border-[#2D2A35] dark:text-[#E2D9F3] dark:hover:border-[#7C4DFF] dark:hover:text-[#9575FF] dark:hover:bg-[rgba(124,77,255,0.08)] max-[600px]:flex-1 max-[600px]:text-center';
 

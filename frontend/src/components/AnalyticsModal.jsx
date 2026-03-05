@@ -8,7 +8,7 @@ const overlayCls =
   'fixed inset-0 bg-black/60 backdrop-blur-[8px] flex items-center justify-center z-[9999] p-6 animate-[g-fadeIn_0.2s_ease_both] max-sm:p-0';
 
 const contentCls =
-  'bg-white rounded-2xl p-8 max-w-[900px] w-full max-h-[90vh] overflow-y-auto shadow-xl border border-slate-200 animate-[g-slideUp_0.3s_ease_both] relative z-[10000] max-sm:w-[95%] max-sm:max-h-[80vh] max-sm:p-6 max-sm:mx-auto max-sm:rounded-xl dark:bg-[#1E1B24] dark:border-[#2D2A35]';
+  'bg-white rounded-2xl p-8 max-w-[900px] w-full max-h-[90vh] overflow-y-auto shadow-xl border border-slate-200 animate-[g-slideUp_0.3s_ease_both] relative z-[10000] max-sm:w-[95%] max-sm:max-h-[85dvh] max-sm:p-6 max-sm:mx-auto max-sm:rounded-xl dark:bg-[#1E1B24] dark:border-[#2D2A35]';
 
 const closeBtnCls =
   'bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl text-lg cursor-pointer transition-all duration-200 text-slate-600 hover:bg-red-500 hover:text-white hover:border-red-500 hover:scale-105 dark:bg-[#2D2A35] dark:border-[#3a3642] dark:text-[#9E95A8]';

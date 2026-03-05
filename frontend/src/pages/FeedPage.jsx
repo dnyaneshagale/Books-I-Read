@@ -11,10 +11,10 @@ import toast from 'react-hot-toast';
 const feedCls = [
   'feed-page',
   'min-h-screen bg-gradient-to-br from-slate-50 to-slate-100',
-  'px-4 py-6 pb-20 transition-all duration-300',
+  'px-4 py-6 transition-all duration-300',
   'dark:from-[#1E1B24] dark:to-[#0F0C15]',
-  'md:pt-20 md:pb-10',
-  'max-[640px]:px-2 max-[640px]:py-3 max-[640px]:pb-20',
+  'md:pb-10',
+  'max-[640px]:px-2 max-[640px]:py-3',
 ].join(' ');
 
 const containerCls = 'max-w-[620px] mx-auto animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both] lg:max-w-[680px]';

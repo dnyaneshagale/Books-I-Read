@@ -16,6 +16,7 @@ import MyListsPage from './pages/MyListsPage';
 import ListDetailPage from './pages/ListDetailPage';
 import BrowseListsPage from './pages/BrowseListsPage';
 import NavBar from './components/NavBar';
+import LandingPage from './pages/LandingPage';
 
 /**
  * ProtectedRoute - Require authentication to access
@@ -29,6 +30,10 @@ const ProtectedRoute = ({ children, hideNavBar }) => {
   }
 
   if (!isAuthenticated) {
+    // Root path goes to landing page; other paths preserve the redirect target
+    if (location.pathname === '/') {
+      return <Navigate to="/welcome" replace />;
+    }
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
@@ -64,7 +69,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="min-h-screen">
+        <div className="min-h-[100dvh]">
           <Toaster
             position="top-right"
             toastOptions={{
@@ -179,6 +184,14 @@ function App() {
                 <ProtectedRoute>
                   <ListDetailPage />
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/welcome"
+              element={
+                <PublicRoute>
+                  <LandingPage />
+                </PublicRoute>
               }
             />
             <Route

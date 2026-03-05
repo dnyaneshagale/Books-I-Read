@@ -24,12 +24,14 @@ import { READING_QUOTES } from '../data/quotes';
 const dashboardCls = [
   'min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30',
   'dark:from-[#0f0d15] dark:via-[#13111a] dark:to-[#0f0d15]',
-  'transition-colors duration-300'
+  'transition-colors duration-300',
+  'pb-[env(safe-area-inset-bottom,0px)]'
 ].join(' ');
 
 // ── Navbar ──
 const navbarCls = [
   'sticky top-0 z-40',
+  'pt-[env(safe-area-inset-top,0px)]',
   'bg-white/80 dark:bg-[#1E1B24]/80',
   'backdrop-blur-[20px] backdrop-saturate-[180%]',
   'shadow-sm border-b border-gray-200/50 dark:border-white/5'
@@ -124,26 +126,28 @@ const btnHamburgerCls = [
   'bg-violet-600/85 text-white',
   'border-none px-3 py-2.5 rounded-lg text-xl font-bold',
   'cursor-pointer transition-all duration-200 shadow-sm',
-  'min-w-[44px] min-h-[44px]',
+  'min-w-[44px] min-h-[44px] touch-manipulation',
   'hover:bg-violet-700 hover:scale-105 hover:shadow-md',
   'dark:bg-[#7C4DFF]/70 dark:hover:bg-[#7C4DFF]/90'
 ].join(' ');
 
 // ── Mobile Dropdown ──
 const navDropdownCls = [
-  'hidden max-[768px]:block absolute top-full right-0',
+  'hidden max-[768px]:block fixed top-[60px] right-4',
   'bg-white dark:bg-[#1E1B24]',
   'border border-gray-200 dark:border-white/10',
-  'rounded-xl shadow-xl min-w-[200px] z-[1000] mt-2',
-  'opacity-0 -translate-y-2.5 pointer-events-none',
-  'transition-all duration-200'
+  'rounded-xl shadow-xl min-w-[200px] z-[1000]',
+  'transition-all duration-200',
+  'max-h-[80vh] overflow-y-auto',
+  'max-[480px]:top-[48px] max-[480px]:right-2'
 ].join(' ');
 
+const navDropdownClosedCls = 'opacity-0 -translate-y-2.5 pointer-events-none';
 const navDropdownOpenCls = 'opacity-100 translate-y-0 pointer-events-auto';
 
 const navDropdownBtnCls = [
   'block w-full text-left px-5 py-3.5',
-  'border-none bg-transparent',
+  'border-none bg-transparent touch-manipulation',
   'text-gray-800 dark:text-gray-200 text-sm font-medium',
   'cursor-pointer transition-all duration-200',
   'border-b border-gray-200 dark:border-white/10',
@@ -386,7 +390,7 @@ const emptyTextCls = 'text-base text-gray-500 dark:text-gray-400 mt-2';
 
 // ── Selection Mode & Bulk Actions ──
 const selectionBarCls = [
-  'fixed bottom-6 left-1/2 -translate-x-1/2 z-50',
+  'fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-50',
   'bg-white dark:bg-[#1E1B24] shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]',
   'rounded-2xl px-6 py-4 flex items-center gap-4',
   'border border-gray-200 dark:border-white/10',
@@ -1012,9 +1016,20 @@ function Dashboard() {
             >
               {menuOpen ? '✕' : '☰'}
             </button>
+          </div>
+        </div>
+      </nav>
 
-            {/* Mobile Dropdown Menu */}
-            <div className={`${navDropdownCls} ${menuOpen ? navDropdownOpenCls : ''}`}>
+      {/* Mobile menu backdrop */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-[999] md:hidden"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Dropdown Menu — outside nav to avoid backdrop-filter clipping */}
+      <div className={`${navDropdownCls} ${menuOpen ? navDropdownOpenCls : navDropdownClosedCls}`}>
               <button
                 className={navDropdownBtnCls}
                 onClick={() => {
@@ -1114,10 +1129,7 @@ function Dashboard() {
               >
                 <LogOut className="w-4 h-4 inline-block mr-2" /> Logout
               </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      </div>
 
       <div className={mainContentCls}>
         {showAddForm ? (

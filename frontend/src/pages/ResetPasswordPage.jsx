@@ -33,7 +33,7 @@ function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-400 to-purple-600 p-5">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-indigo-400 to-purple-600 p-5">
         <div className="w-full max-w-[450px]">
           <div className="bg-white rounded-2xl py-12 px-10 shadow-[0_20px_60px_rgba(0,0,0,0.3)] text-center max-sm:py-8 max-sm:px-6">
             <div className="text-[64px] mb-6 max-sm:text-[52px]">❌</div>
@@ -52,7 +52,7 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-400 to-purple-600 p-5">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-indigo-400 to-purple-600 p-5">
       <div className="w-full max-w-[450px]">
         <div className="bg-white rounded-2xl py-12 px-10 shadow-[0_20px_60px_rgba(0,0,0,0.3)] text-center max-sm:py-8 max-sm:px-6">
           <div className="text-[64px] mb-6 animate-bounce max-sm:text-[52px]">🔐</div>

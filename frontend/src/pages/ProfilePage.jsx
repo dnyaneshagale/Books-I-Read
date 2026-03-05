@@ -16,7 +16,8 @@ import toast from 'react-hot-toast';
 // ============================================
 
 const pageCls = [
-  'min-h-screen px-4 py-6 pb-20 md:pt-20 md:pb-10',
+  'profile-page',
+  'min-h-screen px-4 py-6 md:pb-10',
   'bg-gradient-to-br from-slate-50 to-slate-100',
   'dark:from-[#1E1B24] dark:to-[#0F0C15]',
   'transition-[background] duration-300',

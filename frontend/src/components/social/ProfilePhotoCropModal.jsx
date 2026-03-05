@@ -202,7 +202,7 @@ const ProfilePhotoCropModal = ({ isOpen, onClose, onSave, userId, currentPhotoUr
 
   return (
     <div className="fixed inset-0 bg-black/65 backdrop-blur-[6px] flex items-center justify-center z-[1100] p-6 animate-[g-fadeIn_0.15s_ease] max-[480px]:p-0 max-[480px]:items-end" onClick={handleClose}>
-      <div className="bg-[var(--color-bg,#ffffff)] dark:bg-[#1E1B24] dark:border dark:border-[#2D2A35] rounded-2xl max-w-[460px] w-full overflow-hidden animate-[g-fadeInScale_0.2s_ease] shadow-[0_25px_60px_rgba(0,0,0,0.3)] max-[480px]:max-w-full max-[480px]:rounded-b-none max-[480px]:max-h-[95vh]" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--color-bg,#ffffff)] dark:bg-[#1E1B24] dark:border dark:border-[#2D2A35] rounded-2xl max-w-[460px] w-full overflow-hidden animate-[g-fadeInScale_0.2s_ease] shadow-[0_25px_60px_rgba(0,0,0,0.3)] max-[480px]:max-w-full max-[480px]:rounded-b-none max-[480px]:max-h-[95dvh] max-[480px]:pb-[env(safe-area-inset-bottom,0px)]" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center gap-3 py-4 px-5 border-b border-[var(--color-border,#e2e8f0)] dark:border-[#2D2A35]">
           {step === 'crop' && (

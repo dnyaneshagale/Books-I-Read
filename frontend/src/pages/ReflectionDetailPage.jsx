@@ -16,9 +16,9 @@ const shimmerCls = [
 
 const pageCls = [
   'min-h-screen bg-gradient-to-br from-slate-50 to-slate-100',
-  'p-6 px-4 pb-20 transition-[background] duration-300',
-  'md:pt-20 dark:from-[#1E1B24] dark:to-[#0F0C15]',
-  'max-[480px]:p-3 max-[480px]:px-2 max-[480px]:pb-20',
+  'p-6 px-4 pb-[calc(80px+env(safe-area-inset-bottom,0px))] transition-[background] duration-300',
+  'md:pt-20 md:pb-6 dark:from-[#1E1B24] dark:to-[#0F0C15]',
+  'max-[480px]:p-3 max-[480px]:px-2 max-[480px]:pb-[calc(80px+env(safe-area-inset-bottom,0px))]',
 ].join(' ');
 
 const containerCls = 'max-w-[680px] mx-auto animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both] lg:max-w-[740px]';
