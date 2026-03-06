@@ -1,0 +1,23 @@
+{
+  "name": "Books I Read",
+  "short_name": "Books I Read",
+  "description": "Track your reading journey — organize books, write reviews, and connect with fellow readers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/BooksIReadLogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/BooksIReadLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

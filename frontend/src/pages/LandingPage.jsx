@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import {
-  BookOpen,
   Users,
   BarChart3,
   Search,
@@ -11,11 +10,13 @@ import {
   Sparkles,
   Library,
   ArrowRight,
+  BookOpen,
   BookMarked,
   PenLine,
   Globe,
   ChevronDown,
 } from 'lucide-react';
+import appLogo from '../assets/BooksIReadLogo.svg';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -78,9 +79,7 @@ const LandingPage = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-[var(--color-bg)]/80 backdrop-blur-xl border-b border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-violet-600 flex items-center justify-center">
-              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-white" strokeWidth={2.5} />
-            </div>
+            <img src={appLogo} alt="Books I Read" className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover" />
             <span className="text-base sm:text-lg font-bold text-[var(--color-text-primary)] tracking-tight">Books I Read</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -337,9 +336,7 @@ const LandingPage = () => {
       <footer className="py-6 sm:py-8 px-4 sm:px-6 border-t border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto flex items-center justify-between flex-col sm:flex-row gap-3 sm:gap-0">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
+            <img src={appLogo} alt="Books I Read" className="w-7 h-7 rounded-lg object-cover" />
             <span className="text-sm font-semibold text-[var(--color-text-primary)]">Books I Read</span>
           </div>
           <p className="text-sm text-[var(--color-text-light)] m-0">

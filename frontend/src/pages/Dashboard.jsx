@@ -940,10 +940,11 @@ function Dashboard() {
     const totalDays = Math.max(1, Math.ceil((todayIST - earliestStart) / (1000 * 60 * 60 * 24)) + 1);
     
     // Calculate total pages read across all books
-    const totalPagesRead = books.reduce((sum, b) => sum + b.pagesRead, 0);
+    const totalPagesRead = books.reduce((sum, b) => sum + (b.pagesRead || 0), 0);
     
-    // Pages per day (rounded)
-    return Math.round(totalPagesRead / totalDays);
+    // Pages per day (1 decimal place)
+    const pace = totalPagesRead / totalDays;
+    return Math.round(pace * 10) / 10;
   };
 
   const stats = calculateStats();
