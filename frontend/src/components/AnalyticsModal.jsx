@@ -1,7 +1,8 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { BarChart3, Calendar } from 'lucide-react';
 import { useAuth } from '../AuthContext';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 /* ── Tailwind class constants ── */
 const overlayCls =
@@ -45,24 +46,10 @@ const INTENSITY_HOVER = {
 
 function AnalyticsModal({ stats, dailyStats = [], activityDates = [], activityDetails = [], onClose }) {
   const { user } = useAuth();
-  
-  // Add safety check and default values
-  if (!stats) {
-    return null;
-  }
+  useBodyScrollLock();
 
   // Track current month being displayed (0 = most recent month)
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
-
-  // Prevent background scroll when modal is open
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    
-    return () => {
-      document.body.style.overflow = originalOverflow || 'unset';
-    };
-  }, []);
 
   // Calculate pages read for different periods from stats with safety checks
   const pagesThisWeek = stats?.pagesThisWeek || 0;
@@ -216,6 +203,10 @@ function AnalyticsModal({ stats, dailyStats = [], activityDates = [], activityDe
 
   const maxPages = Math.max(...last7Days.map(d => d?.pages || 0), 1);
   const hasData = last7Days.some(d => d?.pages > 0);
+
+  if (!stats) {
+    return null;
+  }
 
   const modalContent = (
     <div className={overlayCls} onClick={onClose}>

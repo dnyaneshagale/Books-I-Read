@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../AuthContext';
 import reviewApi from '../api/reviewApi';
 import CommentSection from '../components/social/CommentSection';
@@ -109,39 +110,63 @@ const ReviewDetailPage = () => {
   const { reviewId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [review, setReview] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
+  const queryClient = useQueryClient();
   const [showEditForm, setShowEditForm] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [showComments, setShowComments] = useState(true);
 
-  useEffect(() => {
-    fetchReview();
-  }, [reviewId]);
-
-  const fetchReview = async () => {
-    setLoading(true);
-    try {
+  const reviewQuery = useQuery({
+    queryKey: ['review', reviewId],
+    queryFn: async () => {
       const res = await reviewApi.getReview(reviewId);
-      setReview(res.data);
-      setLiked(res.data.likedByViewer || false);
-      setLikesCount(res.data.likesCount || 0);
-      setSaved(res.data.savedByViewer || false);
-    } catch {
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const toggleLikeMutation = useMutation({
+    mutationFn: () => reviewApi.toggleLike(reviewId),
+    onSuccess: (res) => {
+      queryClient.setQueryData(['review', reviewId], (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          likedByViewer: res.data.liked,
+          likesCount: res.data.likesCount,
+        };
+      });
+    },
+  });
+
+  const toggleSaveMutation = useMutation({
+    mutationFn: () => reviewApi.toggleSave(reviewId),
+    onSuccess: (res) => {
+      queryClient.setQueryData(['review', reviewId], (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          savedByViewer: res.data.saved,
+        };
+      });
+      toast.success(res.data.saved ? 'Review saved!' : 'Review unsaved');
+    },
+  });
+
+  const review = reviewQuery.data;
+  const loading = reviewQuery.isLoading;
+  const liked = review?.likedByViewer || false;
+  const likesCount = review?.likesCount || 0;
+  const saved = review?.savedByViewer || false;
+
+  useEffect(() => {
+    if (reviewQuery.isError) {
       toast.error('Review not found');
       navigate(-1);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [navigate, reviewQuery.isError]);
 
   const handleLike = async () => {
     try {
-      const res = await reviewApi.toggleLike(reviewId);
-      setLiked(res.data.liked);
-      setLikesCount(res.data.likesCount);
+      await toggleLikeMutation.mutateAsync();
     } catch {
       toast.error('Failed to like');
     }
@@ -170,13 +195,13 @@ const ReviewDetailPage = () => {
 
   const handleSave = async () => {
     try {
-      const res = await reviewApi.toggleSave(reviewId);
-      setSaved(res.data.saved);
-      toast.success(res.data.saved ? 'Review saved!' : 'Review unsaved');
+      await toggleSaveMutation.mutateAsync();
     } catch {
       toast.error('Failed to save review');
     }
   };
+
+  if (reviewQuery.isError) return null;
 
   if (!loading && !review) return null;
 
@@ -331,7 +356,7 @@ const ReviewDetailPage = () => {
           bookTitle={review.bookTitle}
           existingReview={review}
           onClose={() => setShowEditForm(false)}
-          onSaved={fetchReview}
+          onSaved={() => reviewQuery.refetch()}
         />
       )}
       </>

@@ -1,48 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import goalApi from '../api/goalApi';
 import { Target, Edit3 } from 'lucide-react';
 
 export default function ReadingGoalWidget({ refreshKey }) {
-  const [goal, setGoal] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [targetInput, setTargetInput] = useState('');
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
 
   const currentYear = new Date().getFullYear();
 
-  useEffect(() => {
-    loadGoal();
-  }, [refreshKey]);
-
-  const loadGoal = async () => {
-    try {
+  const goalQuery = useQuery({
+    queryKey: ['goals', 'current', refreshKey],
+    queryFn: async () => {
       const res = await goalApi.getCurrentGoal();
-      if (res.status === 204 || !res.data) {
-        setGoal(null);
-      } else {
-        setGoal(res.data);
-        setTargetInput(res.data.targetBooks.toString());
-      }
-    } catch {
-      setGoal(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (res.status === 204 || !res.data) return null;
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const saveGoalMutation = useMutation({
+    mutationFn: (target) => goalApi.setGoal(currentYear, target),
+    onSuccess: (res) => {
+      queryClient.setQueryData(['goals', 'current', refreshKey], res.data);
+      setTargetInput(res.data.targetBooks.toString());
+      setEditing(false);
+    },
+  });
+
+  const goal = goalQuery.data ?? null;
+  const loading = goalQuery.isLoading;
+  const saving = saveGoalMutation.isPending;
 
   const handleSave = async () => {
     const target = parseInt(targetInput);
     if (!target || target < 1) return;
-    setSaving(true);
     try {
-      const res = await goalApi.setGoal(currentYear, target);
-      setGoal(res.data);
-      setEditing(false);
+      await saveGoalMutation.mutateAsync(target);
     } catch (err) {
       console.error('Failed to save goal:', err);
-    } finally {
-      setSaving(false);
     }
   };
 

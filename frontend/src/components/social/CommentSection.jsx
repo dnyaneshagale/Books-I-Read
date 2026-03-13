@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Trash2 } from 'lucide-react';
 import reviewApi from '../../api/reviewApi';
-import socialApi from '../../api/socialApi';
+import { fetchUserSearchResults, userSearchQueryKeys, USER_SEARCH_STALE_TIME_MS } from '../../userSearchQuery';
 import toast from 'react-hot-toast';
 
 /**
@@ -36,13 +37,13 @@ const CommentText = ({ content, navigate }) => {
  * Comment input with @mention autocomplete
  */
 const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRef }) => {
-  const [mentionQuery, setMentionQuery] = useState('');
   const [mentionResults, setMentionResults] = useState([]);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [cursorPos, setCursorPos] = useState(0);
   const searchTimeout = useRef(null);
   const mentionListRef = useRef(null);
+  const queryClient = useQueryClient();
 
   const handleChange = (e) => {
     const val = e.target.value;
@@ -56,13 +57,15 @@ const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRe
 
     if (mentionMatch) {
       const query = mentionMatch[1];
-      setMentionQuery(query);
       if (query.length >= 1) {
         clearTimeout(searchTimeout.current);
         searchTimeout.current = setTimeout(async () => {
           try {
-            const res = await socialApi.searchUsers(query, 0, 6);
-            const users = res.data.content || res.data || [];
+            const users = await queryClient.fetchQuery({
+              queryKey: userSearchQueryKeys.list(query, 0, 6),
+              queryFn: () => fetchUserSearchResults({ query, page: 0, size: 6 }),
+              staleTime: USER_SEARCH_STALE_TIME_MS,
+            });
             setMentionResults(users);
             setShowMentions(users.length > 0);
             setMentionIndex(0);
@@ -353,11 +356,7 @@ const CommentSection = ({ reviewId, currentUserId }) => {
   const navigate = useNavigate();
   const mainInputRef = useRef(null);
 
-  useEffect(() => {
-    fetchComments();
-  }, [reviewId]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setLoading(true);
     try {
       const res = await reviewApi.getComments(reviewId);
@@ -367,7 +366,11 @@ const CommentSection = ({ reviewId, currentUserId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [reviewId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const handlePost = async (e) => {
     e?.preventDefault();
@@ -379,7 +382,7 @@ const CommentSection = ({ reviewId, currentUserId }) => {
       setNewComment('');
       fetchComments();
       toast.success('Comment added');
-    } catch (err) {
+    } catch {
       toast.error('Failed to post comment');
     } finally {
       setPosting(false);

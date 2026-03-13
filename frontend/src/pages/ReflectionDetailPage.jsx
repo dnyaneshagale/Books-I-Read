@@ -1,23 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import socialApi from '../api/socialApi';
+import {
+  addReplyToCache,
+  addTopLevelCommentToCache,
+  reflectionCommentKeys,
+  removeCommentFromCache,
+  updateReflectionCaches,
+  updateReflectionCommentCountCaches,
+} from '../reflectionCommentCache';
+import { fetchUserSearchResults, userSearchQueryKeys, USER_SEARCH_STALE_TIME_MS } from '../userSearchQuery';
 import toast from 'react-hot-toast';
 
-// ── Tailwind class constants ──────────────────────────────────────────────────
+// â”€â”€ Tailwind class constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const shimmerCls = [
   'bg-[linear-gradient(90deg,#e2e8f0_25%,#f1f5f9_50%,#e2e8f0_75%)]',
   'bg-[length:200%_100%] animate-[rvd-shimmer_1.5s_ease-in-out_infinite]',
-  'dark:bg-[linear-gradient(90deg,#2D2A35_25%,#3a3644_50%,#2D2A35_75%)]',
+  'dark:bg-[linear-gradient(90deg,var(--color-border)_25%,var(--color-border-light)_50%,var(--color-border)_75%)]',
   'dark:bg-[length:200%_100%]',
 ].join(' ');
 
 const pageCls = [
   'min-h-screen bg-gradient-to-br from-slate-50 to-slate-100',
   'p-6 px-4 pb-[calc(80px+env(safe-area-inset-bottom,0px))] transition-[background] duration-300',
-  'md:pt-20 md:pb-6 dark:from-[#1E1B24] dark:to-[#0F0C15]',
+  'md:pt-20 md:pb-6 dark:from-[var(--color-bg-secondary)] dark:to-[var(--color-bg)]',
   'max-[480px]:p-3 max-[480px]:px-2 max-[480px]:pb-[calc(80px+env(safe-area-inset-bottom,0px))]',
 ].join(' ');
 
@@ -30,7 +40,7 @@ const actionBtnBase = [
   'border-none bg-transparent text-slate-500 text-xs font-semibold',
   'cursor-pointer rounded-lg transition-all duration-200',
   'hover:bg-slate-100 hover:text-slate-900',
-  'dark:text-[#9E95A8] dark:hover:bg-[#2D2A35] dark:hover:text-[#E2D9F3]',
+  'dark:text-[var(--color-text-secondary)] dark:hover:bg-[var(--color-border)] dark:hover:text-[var(--color-text-primary)]',
   'max-[480px]:[&>span]:hidden',
 ].join(' ');
 
@@ -39,8 +49,8 @@ const commentInputBase = [
   'transition-[border-color,box-shadow] duration-200',
   'bg-slate-50 text-slate-900',
   'focus:border-violet-700 focus:shadow-[0_0_0_3px_rgba(109,40,217,0.08)]',
-  'dark:bg-[#2D2A35] dark:border-[#3a3644] dark:text-[#E2D9F3]',
-  'dark:focus:border-[#7C4DFF] dark:focus:shadow-[0_0_0_3px_rgba(124,77,255,0.12)]',
+  'dark:bg-[var(--color-border)] dark:border-[var(--color-border-light)] dark:text-[var(--color-text-primary)]',
+  'dark:focus:border-[var(--color-primary)] dark:focus:shadow-[0_0_0_3px_rgba(124,77,255,0.12)]',
 ].join(' ');
 
 const mentionDropdownCls = [
@@ -48,7 +58,7 @@ const mentionDropdownCls = [
   'bg-white border border-slate-200 rounded-xl',
   'shadow-[0_10px_40px_rgba(15,23,42,0.12)] max-h-[200px] overflow-y-auto',
   'animate-[rvd-fadeIn_0.15s_ease]',
-  'dark:bg-[#1E1B24] dark:border-[#2D2A35] dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)]',
+  'dark:bg-[var(--color-bg-secondary)] dark:border-[var(--color-border)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)]',
 ].join(' ');
 
 const mentionAvatarCls = [
@@ -64,18 +74,18 @@ const commentAvatarCls = [
   'transition-transform duration-150 hover:scale-[1.08]',
 ].join(' ');
 
-const commentBubbleCls = 'bg-slate-50 rounded-xl py-2 px-3 flex-1 min-w-0 dark:bg-[#2D2A35]';
+const commentBubbleCls = 'bg-slate-50 rounded-xl py-2 px-3 flex-1 min-w-0 dark:bg-[var(--color-border)]';
 
 const commentAuthorCls = [
   'font-bold text-[0.82rem] text-slate-900 cursor-pointer',
   'transition-colors duration-150 hover:text-violet-700',
-  'dark:text-[#E2D9F3] dark:hover:text-[#7C4DFF]',
+  'dark:text-[var(--color-text-primary)] dark:hover:text-[var(--color-primary)]',
 ].join(' ');
 
 const metaBtnCls = [
   'bg-transparent border-none cursor-pointer text-xs font-bold',
   'text-slate-500 p-0 transition-colors duration-150',
-  'hover:text-violet-700 dark:text-[#9E95A8] dark:hover:text-[#7C4DFF]',
+  'hover:text-violet-700 dark:text-[var(--color-text-secondary)] dark:hover:text-[var(--color-primary)]',
 ].join(' ');
 
 const deleteYesCls = [
@@ -88,8 +98,8 @@ const deleteNoCls = [
   'bg-transparent border border-slate-200 text-slate-500 font-semibold',
   'cursor-pointer text-[0.72rem] py-[3px] px-2.5 rounded-lg',
   'transition-all duration-150 hover:border-violet-700 hover:text-violet-700',
-  'dark:border-[#2D2A35] dark:text-[#9E95A8]',
-  'dark:hover:border-[#7C4DFF] dark:hover:text-[#7C4DFF]',
+  'dark:border-[var(--color-border)] dark:text-[var(--color-text-secondary)]',
+  'dark:hover:border-[var(--color-primary)] dark:hover:text-[var(--color-primary)]',
 ].join(' ');
 
 const loadMoreCls = [
@@ -98,8 +108,8 @@ const loadMoreCls = [
   'text-[0.85rem] font-semibold cursor-pointer transition-all duration-200',
   'hover:bg-violet-700/[0.04] hover:border-violet-700',
   'disabled:opacity-60 disabled:cursor-default',
-  'dark:border-[#2D2A35] dark:text-[#7C4DFF]',
-  'dark:hover:bg-[rgba(124,77,255,0.08)] dark:hover:border-[#7C4DFF]',
+  'dark:border-[var(--color-border)] dark:text-[var(--color-primary)]',
+  'dark:hover:bg-[rgba(124,77,255,0.08)] dark:hover:border-[var(--color-primary)]',
 ].join(' ');
 
 const ownerDangerBtnCls = [
@@ -107,7 +117,7 @@ const ownerDangerBtnCls = [
   'border border-slate-200 cursor-pointer py-2 px-3.5 rounded-lg',
   'text-[0.82rem] font-semibold text-slate-500 transition-all duration-200',
   'hover:bg-red-500/[0.06] hover:border-red-500/30 hover:text-red-500',
-  'dark:border-[#2D2A35] dark:text-[#9E95A8]',
+  'dark:border-[var(--color-border)] dark:text-[var(--color-text-secondary)]',
   'dark:hover:bg-red-500/[0.08] dark:hover:border-red-500/30 dark:hover:text-red-400',
 ].join(' ');
 
@@ -115,7 +125,7 @@ const ownerDangerBtnCls = [
 // Helpers
 // ============================================
 
-/** Relative time — "just now", "2h", "3d", "Jan 4" */
+/** Relative time â€” "just now", "2h", "3d", "Jan 4" */
 const timeAgo = (dateStr) => {
   const now = new Date();
   const d = new Date(dateStr);
@@ -177,7 +187,7 @@ const SkeletonLoader = () => (
   <div className={pageCls}>
     <div className={containerCls}>
       <div className={`w-[72px] h-8 rounded-lg mb-4 ${shimmerCls}`} />
-      <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-md dark:bg-[#1E1B24] dark:border-[#2D2A35]">
+      <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-md dark:bg-[var(--color-bg-secondary)] dark:border-[var(--color-border)]">
         <div className="flex items-center gap-3 mb-6">
           <div className={`w-12 h-12 rounded-full shrink-0 ${shimmerCls}`} />
           <div className="flex-1 flex flex-col gap-2">
@@ -190,7 +200,7 @@ const SkeletonLoader = () => (
           <div className={`w-full h-3 rounded-md ${shimmerCls}`} />
           <div className={`w-3/5 h-3 rounded-md ${shimmerCls}`} />
         </div>
-        <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-[#2D2A35]">
+        <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-[var(--color-border)]">
           <div className={`flex-1 h-9 rounded-lg ${shimmerCls}`} />
           <div className={`flex-1 h-9 rounded-lg ${shimmerCls}`} />
           <div className={`flex-1 h-9 rounded-lg ${shimmerCls}`} />
@@ -206,7 +216,7 @@ const SkeletonLoader = () => (
 // ============================================
 
 /**
- * CommentMentionText — Renders @mentions as clickable purple links
+ * CommentMentionText â€” Renders @mentions as clickable purple links
  */
 const CommentMentionText = ({ content, navigate }) => {
   const parts = content.split(/(@\w+)/g);
@@ -216,7 +226,7 @@ const CommentMentionText = ({ content, navigate }) => {
         /^@\w+$/.test(part) ? (
           <span
             key={i}
-            className="text-violet-700 font-semibold cursor-pointer transition-opacity duration-150 hover:underline hover:opacity-85 dark:text-[#7C4DFF]"
+            className="text-violet-700 font-semibold cursor-pointer transition-opacity duration-150 hover:underline hover:opacity-85 dark:text-[var(--color-primary)]"
             onClick={(e) => { e.stopPropagation(); navigate(`/profile/${part.slice(1)}`); }}
           >
             {part}
@@ -230,15 +240,16 @@ const CommentMentionText = ({ content, navigate }) => {
 };
 
 /**
- * ReflectionCommentInput — Input with @mention autocomplete dropdown
+ * ReflectionCommentInput â€” Input with @mention autocomplete dropdown
  */
-const ReflectionCommentInput = ({ reflectionId, onSubmit, placeholder, initialValue = '', isReply = false, onCancel }) => {
+const ReflectionCommentInput = ({ onSubmit, placeholder, initialValue = '', isReply = false, onCancel }) => {
   const [text, setText] = useState(initialValue);
   const [mentionResults, setMentionResults] = useState([]);
   const [showMentions, setShowMentions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
   const debounceRef = useRef(null);
+  const queryClient = useQueryClient();
 
   const handleChange = (e) => {
     const val = e.target.value;
@@ -253,8 +264,11 @@ const ReflectionCommentInput = ({ reflectionId, onSubmit, placeholder, initialVa
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(async () => {
           try {
-            const res = await socialApi.searchUsers(query, 0, 6);
-            const users = res.data?.content || res.data || [];
+            const users = await queryClient.fetchQuery({
+              queryKey: userSearchQueryKeys.list(query, 0, 6),
+              queryFn: () => fetchUserSearchResults({ query, page: 0, size: 6 }),
+              staleTime: USER_SEARCH_STALE_TIME_MS,
+            });
             setMentionResults(users);
             setShowMentions(users.length > 0);
             setActiveIndex(0);
@@ -331,7 +345,7 @@ const ReflectionCommentInput = ({ reflectionId, onSubmit, placeholder, initialVa
           className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-[0.9rem] text-slate-400 p-1 transition-colors duration-150 hover:text-red-500"
           onClick={onCancel}
         >
-          ✕
+          âœ•
         </button>
       )}
       {showMentions && mentionResults.length > 0 && (
@@ -349,7 +363,7 @@ const ReflectionCommentInput = ({ reflectionId, onSubmit, placeholder, initialVa
                 }
               </span>
               <span className="flex flex-col">
-                <span className="text-[0.82rem] font-semibold text-slate-900 dark:text-[#E2D9F3]">{u.displayName || u.username}</span>
+                <span className="text-[0.82rem] font-semibold text-slate-900 dark:text-[var(--color-text-primary)]">{u.displayName || u.username}</span>
                 <span className="text-xs text-slate-400">@{u.username}</span>
               </span>
             </div>
@@ -361,50 +375,40 @@ const ReflectionCommentInput = ({ reflectionId, onSubmit, placeholder, initialVa
 };
 
 /**
- * ReflectionCommentItem — Single comment with threaded replies (recursive)
+ * ReflectionCommentItem â€” Single comment with threaded replies (recursive)
  */
 const ReflectionCommentItem = ({ comment, reflectionId, depth, onReply, onDelete, navigate }) => {
   const [showReplies, setShowReplies] = useState(false);
-  const [replies, setReplies] = useState(comment.replies || []);
-  const [loadingReplies, setLoadingReplies] = useState(false);
   const [replyingTo, setReplyingTo] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  const loadReplies = async () => {
-    setLoadingReplies(true);
-    try {
+  const repliesQuery = useQuery({
+    queryKey: reflectionCommentKeys.replies(comment.id),
+    queryFn: async () => {
       const res = await socialApi.getReflectionCommentReplies(comment.id);
-      setReplies(res.data || []);
-    } catch {
-      toast.error('Failed to load replies');
-    } finally {
-      setLoadingReplies(false);
-    }
-  };
+      return res.data || [];
+    },
+    enabled: showReplies && (comment.replyCount > 0 || (comment.replies || []).length > 0),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const replies = repliesQuery.data || comment.replies || [];
+  const loadingReplies = repliesQuery.isLoading;
 
   const handleToggleReplies = () => {
-    if (!showReplies && replies.length === 0 && comment.replyCount > 0) {
-      loadReplies();
-    }
     setShowReplies(!showReplies);
   };
 
   const handleReplySubmit = async (text) => {
-    try {
-      const res = await socialApi.addReflectionComment(reflectionId, text, comment.id);
-      setReplies(prev => [...prev, res.data]);
-      setShowReplies(true);
-      setReplyingTo(false);
-      comment.replyCount = (comment.replyCount || 0) + 1;
-    } catch {
-      toast.error('Failed to post reply');
-    }
+    await onReply(text, comment.id);
+    setShowReplies(true);
+    setReplyingTo(false);
   };
 
   const handleDeleteComment = async () => {
     try {
       await socialApi.deleteReflectionComment(comment.id);
-      onDelete(comment.id);
+      onDelete(comment.id, comment.parentId || null);
     } catch {
       toast.error('Failed to delete comment');
     }
@@ -412,7 +416,7 @@ const ReflectionCommentItem = ({ comment, reflectionId, depth, onReply, onDelete
   };
 
   return (
-    <div className={`py-2 animate-[rvd-fadeIn_0.2s_ease] ${depth > 0 ? 'ml-9 border-l-2 border-slate-200 pl-3 dark:border-[#2D2A35] max-[480px]:ml-5' : ''}`}>
+    <div className={`py-2 animate-[rvd-fadeIn_0.2s_ease] ${depth > 0 ? 'ml-9 border-l-2 border-slate-200 pl-3 dark:border-[var(--color-border)] max-[480px]:ml-5' : ''}`}>
       <div className="flex items-start gap-2">
         <span
           className={commentAvatarCls}
@@ -431,17 +435,17 @@ const ReflectionCommentItem = ({ comment, reflectionId, depth, onReply, onDelete
             >
               {comment.user?.displayName || comment.user?.username}
             </span>
-            <span className="text-[0.7rem] text-slate-400 whitespace-nowrap dark:text-[#7a7181]" title={fullDate(comment.createdAt)}>
+            <span className="text-[0.7rem] text-slate-400 whitespace-nowrap dark:text-[var(--color-text-light)]" title={fullDate(comment.createdAt)}>
               {timeAgo(comment.createdAt)}
             </span>
           </div>
-          <span className="text-[0.85rem] text-slate-900 leading-normal break-words dark:text-[#E2D9F3]">
+          <span className="text-[0.85rem] text-slate-900 leading-normal break-words dark:text-[var(--color-text-primary)]">
             <CommentMentionText content={comment.content} navigate={navigate} />
           </span>
         </div>
         {!confirmingDelete ? (
           <button
-            className="bg-transparent border-none cursor-pointer p-1 opacity-50 transition-[opacity,color] duration-150 shrink-0 text-slate-500 flex items-center hover:opacity-100 hover:text-red-500 dark:text-[#9E95A8] dark:hover:text-red-400"
+            className="bg-transparent border-none cursor-pointer p-1 opacity-50 transition-[opacity,color] duration-150 shrink-0 text-slate-500 flex items-center hover:opacity-100 hover:text-red-500 dark:text-[var(--color-text-secondary)] dark:hover:text-red-400"
             title="Delete"
             onClick={() => setConfirmingDelete(true)}
           >
@@ -461,7 +465,7 @@ const ReflectionCommentItem = ({ comment, reflectionId, depth, onReply, onDelete
         <button className={metaBtnCls} onClick={() => setReplyingTo(!replyingTo)}>Reply</button>
         {comment.replyCount > 0 && (
           <button className={`${metaBtnCls} font-semibold`} onClick={handleToggleReplies}>
-            ── {showReplies ? 'Hide replies' : `View ${comment.replyCount} ${comment.replyCount === 1 ? 'reply' : 'replies'}`}
+            â”€â”€ {showReplies ? 'Hide replies' : `View ${comment.replyCount} ${comment.replyCount === 1 ? 'reply' : 'replies'}`}
           </button>
         )}
       </div>
@@ -490,10 +494,7 @@ const ReflectionCommentItem = ({ comment, reflectionId, depth, onReply, onDelete
                 reflectionId={reflectionId}
                 depth={depth + 1}
                 onReply={onReply}
-                onDelete={(id) => {
-                  setReplies(prev => prev.filter(r => r.id !== id));
-                  comment.replyCount = Math.max(0, (comment.replyCount || 1) - 1);
-                }}
+                onDelete={onDelete}
                 navigate={navigate}
               />
             ))
@@ -512,98 +513,96 @@ const ReflectionDetailPage = () => {
   const { reflectionId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [reflection, setReflection] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
-  const [saved, setSaved] = useState(false);
-  const [savesCount, setSavesCount] = useState(0);
+  const queryClient = useQueryClient();
   const [showComments, setShowComments] = useState(true);
 
-  // Comments state
-  const [comments, setComments] = useState([]);
-  const [commentsPage, setCommentsPage] = useState(0);
-  const [hasMoreComments, setHasMoreComments] = useState(true);
-  const [loadingComments, setLoadingComments] = useState(false);
+  const reflectionQuery = useQuery({
+    queryKey: reflectionCommentKeys.detail(reflectionId),
+    queryFn: async () => {
+      const res = await socialApi.getReflection(reflectionId);
+      return res.data;
+    },
+    enabled: Boolean(reflectionId),
+  });
+
+  const commentsQuery = useInfiniteQuery({
+    queryKey: reflectionCommentKeys.comments(reflectionId),
+    queryFn: async ({ pageParam = 0 }) => {
+      const res = await socialApi.getReflectionComments(reflectionId, pageParam, 20);
+      return res.data;
+    },
+    initialPageParam: 0,
+    enabled: Boolean(reflectionId) && showComments,
+    getNextPageParam: (lastPage) => {
+      const pageInfo = lastPage?.page;
+      if (!pageInfo || pageInfo.number == null || pageInfo.totalPages == null) return undefined;
+      return pageInfo.number < pageInfo.totalPages - 1 ? pageInfo.number + 1 : undefined;
+    },
+  });
+
+  const reflection = reflectionQuery.data || null;
+  const loading = reflectionQuery.isLoading;
+  const comments = commentsQuery.data?.pages?.flatMap((page) => page?.content || []) || [];
+  const hasMoreComments = commentsQuery.hasNextPage;
+  const loadingComments = commentsQuery.isFetchingNextPage;
 
   useEffect(() => {
-    fetchReflection();
-  }, [reflectionId]);
-
-  const fetchReflection = async () => {
-    setLoading(true);
-    try {
-      const res = await socialApi.getReflection(reflectionId);
-      setReflection(res.data);
-      setLiked(res.data.hasLiked || false);
-      setLikesCount(res.data.likesCount || 0);
-      setSaved(res.data.hasSaved || false);
-      setSavesCount(res.data.savesCount || 0);
-      if (res.data.recentComments) {
-        setComments(res.data.recentComments);
-      }
-    } catch {
+    if (reflectionQuery.isError) {
       toast.error('Reflection not found');
       navigate(-1);
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const loadComments = async (pg = 0, reset = false) => {
-    setLoadingComments(true);
-    try {
-      const res = await socialApi.getReflectionComments(reflectionId, pg, 20);
-      const content = res.data?.content || [];
-      const pageInfo = res.data?.page || {};
-      if (reset) {
-        setComments(content);
-      } else {
-        setComments(prev => [...prev, ...content]);
-      }
-      setCommentsPage(pg);
-      setHasMoreComments(pageInfo.number != null && pageInfo.totalPages != null
-        ? pageInfo.number < pageInfo.totalPages - 1
-        : false);
-    } catch {
-      toast.error('Failed to load comments');
-    } finally {
-      setLoadingComments(false);
-    }
-  };
-
-  useEffect(() => {
-    if (reflection) {
-      loadComments(0, true);
-    }
-  }, [reflection?.id]);
+  }, [navigate, reflectionQuery.isError]);
 
   const handleLike = async () => {
-    const wasLiked = liked;
-    setLiked(!wasLiked);
-    setLikesCount(prev => wasLiked ? prev - 1 : prev + 1);
+    if (!reflection) return;
+
+    const previousReflection = reflection;
+    updateReflectionCaches(queryClient, reflectionId, (item) => ({
+      ...item,
+      hasLiked: !item.hasLiked,
+      likesCount: item.hasLiked ? Math.max(0, (item.likesCount || 0) - 1) : (item.likesCount || 0) + 1,
+    }));
+
     try {
       const res = await socialApi.toggleLikeReflection(reflectionId);
-      setLiked(res.data.hasLiked);
-      setLikesCount(res.data.likesCount);
+      updateReflectionCaches(queryClient, reflectionId, (item) => ({
+        ...item,
+        ...res.data,
+      }));
     } catch {
-      setLiked(wasLiked);
-      setLikesCount(prev => wasLiked ? prev + 1 : prev - 1);
+      queryClient.setQueryData(reflectionCommentKeys.detail(reflectionId), previousReflection);
+      updateReflectionCaches(queryClient, reflectionId, (item) => ({
+        ...item,
+        hasLiked: previousReflection.hasLiked,
+        likesCount: previousReflection.likesCount,
+      }));
       toast.error('Failed to like');
     }
   };
 
   const handleSave = async () => {
-    const wasSaved = saved;
-    setSaved(!wasSaved);
-    setSavesCount(prev => wasSaved ? prev - 1 : prev + 1);
+    if (!reflection) return;
+
+    const previousReflection = reflection;
+    updateReflectionCaches(queryClient, reflectionId, (item) => ({
+      ...item,
+      hasSaved: !item.hasSaved,
+      savesCount: item.hasSaved ? Math.max(0, (item.savesCount || 0) - 1) : (item.savesCount || 0) + 1,
+    }));
+
     try {
       const res = await socialApi.toggleSaveReflection(reflectionId);
-      setSaved(res.data.hasSaved);
-      setSavesCount(res.data.savesCount);
+      updateReflectionCaches(queryClient, reflectionId, (item) => ({
+        ...item,
+        ...res.data,
+      }));
     } catch {
-      setSaved(wasSaved);
-      setSavesCount(prev => wasSaved ? prev + 1 : prev - 1);
+      queryClient.setQueryData(reflectionCommentKeys.detail(reflectionId), previousReflection);
+      updateReflectionCaches(queryClient, reflectionId, (item) => ({
+        ...item,
+        hasSaved: previousReflection.hasSaved,
+        savesCount: previousReflection.savesCount,
+      }));
       toast.error('Failed to save');
     }
   };
@@ -622,6 +621,8 @@ const ReflectionDetailPage = () => {
     if (!window.confirm('Delete this reflection? This cannot be undone.')) return;
     try {
       await socialApi.deleteReflection(reflectionId);
+      queryClient.removeQueries({ queryKey: reflectionCommentKeys.detail(reflectionId) });
+      queryClient.removeQueries({ queryKey: reflectionCommentKeys.comments(reflectionId) });
       toast.success('Reflection deleted');
       navigate(-1);
     } catch {
@@ -632,22 +633,36 @@ const ReflectionDetailPage = () => {
   const handleAddComment = async (text) => {
     try {
       const res = await socialApi.addReflectionComment(reflectionId, text, null);
-      setComments(prev => [...prev, res.data]);
-      setReflection(prev => prev ? { ...prev, commentsCount: (prev.commentsCount || 0) + 1 } : prev);
+      addTopLevelCommentToCache(queryClient, reflectionId, res.data);
+      updateReflectionCommentCountCaches(queryClient, reflectionId, 1);
     } catch {
       toast.error('Failed to add comment');
     }
   };
 
-  const handleDeleteComment = (commentId) => {
-    setComments(prev => prev.filter(c => c.id !== commentId));
-    setReflection(prev => prev ? { ...prev, commentsCount: Math.max(0, (prev.commentsCount || 1) - 1) } : prev);
+  const handleReply = async (text, parentId) => {
+    try {
+      const res = await socialApi.addReflectionComment(reflectionId, text, parentId);
+      addReplyToCache(queryClient, reflectionId, parentId, res.data);
+      updateReflectionCommentCountCaches(queryClient, reflectionId, 1);
+    } catch {
+      toast.error('Failed to post reply');
+    }
+  };
+
+  const handleDeleteComment = (commentId, parentId = null) => {
+    removeCommentFromCache(queryClient, reflectionId, commentId, parentId);
+    updateReflectionCommentCountCaches(queryClient, reflectionId, -1);
   };
 
   if (!loading && !reflection) return null;
 
   const isOwn = user && reflection?.user?.id === user.id;
+  const liked = reflection?.hasLiked || false;
+  const likesCount = reflection?.likesCount || 0;
   const commentsCount = reflection?.commentsCount || 0;
+  const saved = reflection?.hasSaved || false;
+  const savesCount = reflection?.savesCount || 0;
 
   return (
     <div className={pageCls}>
@@ -663,7 +678,7 @@ const ReflectionDetailPage = () => {
         </button>
 
         {/* Reflection Card */}
-        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md animate-[rvd-fadeIn_0.35s_ease] dark:bg-[#1E1B24] dark:border-[#2D2A35] dark:shadow-[0_6px_24px_rgba(0,0,0,0.3)] max-[480px]:rounded-xl">
+        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md animate-[rvd-fadeIn_0.35s_ease] dark:bg-[var(--color-bg-secondary)] dark:border-[var(--color-border)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.3)] max-[480px]:rounded-xl">
           {/* Author Header */}
           <div className="flex justify-between items-start px-6 pt-5 max-[480px]:px-4 max-[480px]:pt-4 max-[480px]:flex-col max-[480px]:gap-3">
             <div
@@ -680,11 +695,11 @@ const ReflectionDetailPage = () => {
                 )}
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-[0.95rem] text-slate-900 transition-colors duration-150 leading-snug group-hover:text-violet-700 dark:text-[#E2D9F3] dark:group-hover:text-[#7C4DFF]">
+                <span className="font-bold text-[0.95rem] text-slate-900 transition-colors duration-150 leading-snug group-hover:text-violet-700 dark:text-[var(--color-text-primary)] dark:group-hover:text-[var(--color-primary)]">
                   {reflection.user?.displayName || reflection.user?.username}
                 </span>
-                <span className="text-xs text-slate-500 leading-snug dark:text-[#9E95A8]">@{reflection.user?.username}</span>
-                <span className="text-xs text-slate-400 leading-snug dark:text-[#7a7181]" title={fullDate(reflection.createdAt)}>
+                <span className="text-xs text-slate-500 leading-snug dark:text-[var(--color-text-secondary)]">@{reflection.user?.username}</span>
+                <span className="text-xs text-slate-400 leading-snug dark:text-[var(--color-text-light)]" title={fullDate(reflection.createdAt)}>
                   {timeAgo(reflection.createdAt)}
                   {reflection.visibleToFollowersOnly && <span className="text-[0.7rem] inline-flex items-center ml-1" title="Followers only"><Lock className="w-3 h-3" /></span>}
                 </span>
@@ -705,7 +720,7 @@ const ReflectionDetailPage = () => {
 
           {/* Content */}
           <div className="px-6 pt-[18px] pb-5 max-[480px]:px-4 max-[480px]:pt-3.5 max-[480px]:pb-4">
-            <p className="m-0 text-[0.95rem] text-slate-900 leading-[1.75] whitespace-pre-wrap break-words dark:text-[#E2D9F3]">
+            <p className="m-0 text-[0.95rem] text-slate-900 leading-[1.75] whitespace-pre-wrap break-words dark:text-[var(--color-text-primary)]">
               {reflection.content}
             </p>
           </div>
@@ -718,7 +733,7 @@ const ReflectionDetailPage = () => {
               'border border-slate-200 rounded-xl cursor-pointer transition-all duration-200',
               'hover:bg-[linear-gradient(135deg,rgba(109,40,217,0.08),rgba(37,99,235,0.05))]',
               'hover:border-violet-700/20 hover:-translate-y-px',
-              'dark:bg-[rgba(124,77,255,0.06)] dark:border-[#2D2A35]',
+              'dark:bg-[rgba(124,77,255,0.06)] dark:border-[var(--color-border)]',
               'dark:hover:bg-[rgba(124,77,255,0.1)] dark:hover:border-[rgba(124,77,255,0.2)]',
               'max-[480px]:mx-4 max-[480px]:mb-3',
             ].join(' ')}>
@@ -728,11 +743,11 @@ const ReflectionDetailPage = () => {
                 </svg>
               </div>
               <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="font-bold text-[0.92rem] text-slate-900 overflow-hidden text-ellipsis whitespace-nowrap dark:text-[#E2D9F3]">
+                <span className="font-bold text-[0.92rem] text-slate-900 overflow-hidden text-ellipsis whitespace-nowrap dark:text-[var(--color-text-primary)]">
                   {reflection.book.title}
                 </span>
                 {reflection.book.author && (
-                  <span className="text-[0.8rem] text-slate-500 dark:text-[#9E95A8]">by {reflection.book.author}</span>
+                  <span className="text-[0.8rem] text-slate-500 dark:text-[var(--color-text-secondary)]">by {reflection.book.author}</span>
                 )}
               </div>
             </div>
@@ -740,7 +755,7 @@ const ReflectionDetailPage = () => {
 
           {/* Engagement Stats Row */}
           {(likesCount > 0 || commentsCount > 0 || savesCount > 0) && (
-            <div className="flex items-center justify-between px-6 py-2.5 border-t border-slate-200 text-xs text-slate-500 dark:border-[#2D2A35] dark:text-[#9E95A8] max-[480px]:px-4">
+            <div className="flex items-center justify-between px-6 py-2.5 border-t border-slate-200 text-xs text-slate-500 dark:border-[var(--color-border)] dark:text-[var(--color-text-secondary)] max-[480px]:px-4">
               {likesCount > 0 && (
                 <span className="inline-flex items-center gap-1">
                   <span className="inline-flex items-center justify-center w-[18px] h-[18px] bg-gradient-to-br from-violet-700 to-violet-500 rounded-full leading-none">
@@ -754,7 +769,7 @@ const ReflectionDetailPage = () => {
               <div className="flex gap-3.5">
                 {commentsCount > 0 && (
                   <span
-                    className="inline-flex items-center gap-1 cursor-pointer transition-colors duration-150 hover:text-violet-700 dark:hover:text-[#7C4DFF]"
+                    className="inline-flex items-center gap-1 cursor-pointer transition-colors duration-150 hover:text-violet-700 dark:hover:text-[var(--color-primary)]"
                     onClick={() => setShowComments(!showComments)}
                   >
                     {commentsCount} comment{commentsCount !== 1 ? 's' : ''}
@@ -769,17 +784,17 @@ const ReflectionDetailPage = () => {
             </div>
           )}
 
-          {/* Actions Bar — LinkedIn-style SVG buttons */}
-          <div className="flex border-t border-slate-200 px-3 py-1 dark:border-[#2D2A35] max-[480px]:px-2 max-[480px]:py-1">
+          {/* Actions Bar â€” LinkedIn-style SVG buttons */}
+          <div className="flex border-t border-slate-200 px-3 py-1 dark:border-[var(--color-border)] max-[480px]:px-2 max-[480px]:py-1">
             <button
-              className={`${actionBtnBase} ${liked ? 'text-violet-700 dark:text-[#7C4DFF]' : ''}`}
+              className={`${actionBtnBase} ${liked ? 'text-violet-700 dark:text-[var(--color-primary)]' : ''}`}
               onClick={handleLike}
             >
               <HeartIcon filled={liked} />
               <span>Like</span>
             </button>
             <button
-              className={`${actionBtnBase} ${showComments ? 'text-violet-700 dark:text-[#7C4DFF]' : ''}`}
+              className={`${actionBtnBase} ${showComments ? 'text-violet-700 dark:text-[var(--color-primary)]' : ''}`}
               onClick={() => setShowComments(!showComments)}
             >
               <CommentIcon />
@@ -790,7 +805,7 @@ const ReflectionDetailPage = () => {
               <span>Share</span>
             </button>
             <button
-              className={`${actionBtnBase} ${saved ? 'text-violet-700 dark:text-[#7C4DFF]' : ''}`}
+              className={`${actionBtnBase} ${saved ? 'text-violet-700 dark:text-[var(--color-primary)]' : ''}`}
               onClick={handleSave}
             >
               <BookmarkIcon filled={saved} />
@@ -814,7 +829,7 @@ const ReflectionDetailPage = () => {
                     comment={c}
                     reflectionId={reflection.id}
                     depth={0}
-                    onReply={() => {}}
+                    onReply={handleReply}
                     onDelete={handleDeleteComment}
                     navigate={navigate}
                   />
@@ -824,7 +839,7 @@ const ReflectionDetailPage = () => {
               {hasMoreComments && (
                 <button
                   className={loadMoreCls}
-                  onClick={() => loadComments(commentsPage + 1)}
+                  onClick={() => commentsQuery.fetchNextPage()}
                   disabled={loadingComments}
                 >
                   {loadingComments ? 'Loading...' : 'Load more comments'}
@@ -832,8 +847,8 @@ const ReflectionDetailPage = () => {
               )}
 
               {!loadingComments && comments.length === 0 && (
-                <div className="text-center py-6 px-4 text-slate-400 dark:text-[#7a7181]">
-                  <svg viewBox="0 0 24 24" className="w-7 h-7 fill-slate-400 opacity-50 mb-2 mx-auto dark:fill-[#7a7181]">
+                <div className="text-center py-6 px-4 text-slate-400 dark:text-[var(--color-text-light)]">
+                  <svg viewBox="0 0 24 24" className="w-7 h-7 fill-slate-400 opacity-50 mb-2 mx-auto dark:fill-[var(--color-text-light)]">
                     <path d="M7 9h10v1.5H7V9zm0 4h7v1.5H7V13z" />
                     <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14h-4.83L12 19.17 8.83 16H4V4h16v12z" />
                   </svg>
@@ -851,3 +866,5 @@ const ReflectionDetailPage = () => {
 };
 
 export default ReflectionDetailPage;
+
+

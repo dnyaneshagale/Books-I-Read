@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Wand2, Library, Search, Target, Sparkles } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 /**
  * Custom Select Component
@@ -69,6 +70,8 @@ function CustomSelect({ value, onChange, options, placeholder }) {
  * - Custom Mode: Discover books based on preferences
  */
 function RecommendationModal({ onClose, userBooks, onAddToWishlist }) {
+  useBodyScrollLock();
+
   const [activeTab, setActiveTab] = useState('library'); // 'library' or 'custom'
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
@@ -172,20 +175,6 @@ function RecommendationModal({ onClose, userBooks, onAddToWishlist }) {
     // Mark as added
     setAddedBooks(prev => new Set([...prev, bookKey]));
   };
-
-  // Prevent background scroll when modal is open
-  useEffect(() => {
-    // Save current overflow value
-    const originalOverflow = document.body.style.overflow;
-    
-    // Disable scroll
-    document.body.style.overflow = 'hidden';
-    
-    // Cleanup: restore scroll on unmount
-    return () => {
-      document.body.style.overflow = originalOverflow || 'unset';
-    };
-  }, []);
 
   const tabBase = 'flex-1 py-3 px-4 bg-transparent border-none rounded-[10px] text-base font-medium cursor-pointer transition-all duration-300 relative whitespace-nowrap overflow-hidden text-ellipsis max-sm:text-xs max-sm:py-2.5 max-sm:px-2 max-md:min-h-12';
   const tabActive = 'bg-white text-violet-700 font-semibold shadow-[0_2px_4px_rgba(0,0,0,0.1)] scale-[1.02] dark:bg-[#1a1a1a] dark:text-violet-700';

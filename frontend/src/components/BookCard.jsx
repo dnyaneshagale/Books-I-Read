@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FileText, Sparkles, PenLine, Globe, Lock } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 /* ── Tag gradient palettes ── */
 const TAG_GRADIENTS = [
@@ -93,38 +92,6 @@ function BookCard({
         ))}
       </div>
     );
-  };
-
-  const handleShare = async () => {
-    const getStatusEmoji = (status) => {
-      switch (status) {
-        case 'FINISHED': return '✅';
-        case 'READING': return '📖';
-        case 'WANT_TO_READ': return '📚';
-        default: return '';
-      }
-    };
-
-    let shareText = `${getStatusEmoji(book.status)} ${book.title} by ${book.author}\n`;
-    
-    if (book.rating) {
-      shareText += `Rating: ${'★'.repeat(book.rating)}${'☆'.repeat(5 - book.rating)}\n`;
-    }
-    
-    if (book.status === 'FINISHED' && book.review) {
-      shareText += `\n"${book.review}"\n`;
-    }
-    
-    if (book.tags && book.tags.length > 0) {
-      shareText += `\nTags: ${book.tags.join(', ')}`;
-    }
-
-    try {
-      await navigator.clipboard.writeText(shareText);
-      toast.success('📋 Book recommendation copied to clipboard!');
-    } catch (error) {
-      toast.error('Failed to copy recommendation');
-    }
   };
 
   const isDark = document.body.classList.contains('dark-mode');

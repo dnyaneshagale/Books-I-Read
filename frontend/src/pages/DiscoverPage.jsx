@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search, Library } from 'lucide-react';
 import socialApi from '../api/socialApi';
+import { fetchUserSearchResults, userSearchQueryKeys, USER_SEARCH_STALE_TIME_MS } from '../userSearchQuery';
 import UserCard from '../components/social/UserCard';
 import FollowButton from '../components/social/FollowButton';
-import toast from 'react-hot-toast';
 
 /* ── Tailwind class constants ── */
 
@@ -47,13 +48,9 @@ const similarCardCls =
  */
 const DiscoverPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [suggestedUsers, setSuggestedUsers] = useState([]);
-  const [similarUsers, setSimilarUsers] = useState([]);
-  const [discoverUsers, setDiscoverUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [recentSearches, setRecentSearches] = useState(() => {
@@ -66,9 +63,47 @@ const DiscoverPage = () => {
   const dropdownRef = useRef(null);
   const debounceTimer = useRef(null);
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  const suggestedUsersQuery = useQuery({
+    queryKey: ['discover', 'suggested'],
+    queryFn: async () => {
+      const res = await socialApi.getSuggestedUsers(0, 10);
+      return res.data.content || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const discoverUsersQuery = useQuery({
+    queryKey: ['discover', 'users'],
+    queryFn: async () => {
+      const res = await socialApi.discoverUsers(0, 20);
+      return res.data.content || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const similarUsersQuery = useQuery({
+    queryKey: ['discover', 'similar'],
+    queryFn: async () => {
+      const res = await socialApi.getSimilarUsers(0, 10);
+      return res.data.content || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const searchUsersQuery = useQuery({
+    queryKey: userSearchQueryKeys.list(debouncedSearchQuery, 0, 8),
+    queryFn: () => fetchUserSearchResults({ query: debouncedSearchQuery, page: 0, size: 8 }),
+    enabled: Boolean(debouncedSearchQuery),
+    staleTime: USER_SEARCH_STALE_TIME_MS,
+  });
+
+  const searching = Boolean(searchQuery.trim()) && searchUsersQuery.isFetching;
+  const suggestions = searchUsersQuery.data || [];
+  const suggestedUsers = suggestedUsersQuery.data || [];
+  const similarUsers = similarUsersQuery.data || [];
+  const discoverUsers = discoverUsersQuery.data || [];
+
+  const loading = suggestedUsersQuery.isLoading || discoverUsersQuery.isLoading;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -84,32 +119,6 @@ const DiscoverPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const loadInitialData = async () => {
-    setLoading(true);
-    try {
-      const [suggestionsRes, discoverRes] = await Promise.all([
-        socialApi.getSuggestedUsers(0, 10),
-        socialApi.discoverUsers(0, 20),
-      ]);
-      setSuggestedUsers(suggestionsRes.data.content || []);
-      setDiscoverUsers(discoverRes.data.content || []);
-    } catch (error) {
-      console.error('Failed to load users:', error);
-      toast.error('Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-
-    // Load similar users independently so it doesn't block the page
-    try {
-      const similarRes = await socialApi.getSimilarUsers(0, 10);
-      setSimilarUsers(similarRes.data.content || []);
-    } catch (error) {
-      console.error('Failed to load similar users:', error);
-      // Silently fail — section just won't show
-    }
-  };
-
   // Debounced live search
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -119,24 +128,14 @@ const DiscoverPage = () => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     if (!value.trim()) {
-      setSuggestions([]);
+      setDebouncedSearchQuery('');
       setShowDropdown(value.length === 0 && recentSearches.length > 0);
       return;
     }
 
     setShowDropdown(true);
-    setSearching(true);
-
-    debounceTimer.current = setTimeout(async () => {
-      try {
-        const response = await socialApi.searchUsers(value.trim(), 0, 8);
-        setSuggestions(response.data.content || []);
-      } catch (error) {
-        console.error('Search failed:', error);
-        setSuggestions([]);
-      } finally {
-        setSearching(false);
-      }
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearchQuery(value.trim());
     }, 250);
   };
 
@@ -177,6 +176,7 @@ const DiscoverPage = () => {
     saveRecentSearch(user);
     setShowDropdown(false);
     setSearchQuery('');
+    setDebouncedSearchQuery('');
     navigate(`/profile/${user.username}`);
   };
 
@@ -203,7 +203,7 @@ const DiscoverPage = () => {
 
   const clearSearch = () => {
     setSearchQuery('');
-    setSuggestions([]);
+    setDebouncedSearchQuery('');
     setShowDropdown(false);
     inputRef.current?.focus();
   };
@@ -215,9 +215,12 @@ const DiscoverPage = () => {
           ? { ...user, isFollowing: status.isFollowing, hasPendingRequest: status.hasPendingRequest }
           : user
       );
-    setSuggestedUsers(updateUser);
-    setSimilarUsers(updateUser);
-    setDiscoverUsers(updateUser);
+    queryClient.setQueryData(['discover', 'suggested'], (prev = []) => updateUser(prev));
+    queryClient.setQueryData(['discover', 'similar'], (prev = []) => updateUser(prev));
+    queryClient.setQueryData(['discover', 'users'], (prev = []) => updateUser(prev));
+    if (debouncedSearchQuery) {
+      queryClient.setQueryData(userSearchQueryKeys.list(debouncedSearchQuery, 0, 8), (prev = []) => updateUser(prev));
+    }
   };
 
   // Get initials for avatar

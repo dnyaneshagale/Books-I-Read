@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../AuthContext';
 import reviewApi from '../api/reviewApi';
 import ReviewCard from '../components/social/ReviewCard';
-import toast from 'react-hot-toast';
 
 /**
  * ReviewsFeedPage - Shows reviews from people you follow + popular reviews
@@ -13,68 +13,71 @@ import toast from 'react-hot-toast';
 const ReviewsFeedPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('following');
   const [sortMode, setSortMode] = useState('relevant'); // 'relevant' | 'recent'
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const debounceRef = useRef(null);
 
-  useEffect(() => {
-    if (!isSearching) {
-      fetchReviews();
-    }
-  }, [activeTab, sortMode]);
+  const isSearching = Boolean(debouncedSearchQuery.trim());
+  const feedSort = activeTab === 'popular' ? 'relevant' : sortMode;
+
+  const feedQuery = useQuery({
+    queryKey: ['reviews', 'feed', activeTab, feedSort, 0, 20],
+    queryFn: async () => {
+      const res = await reviewApi.getFollowingReviews(0, 20, feedSort);
+      return res.data;
+    },
+    enabled: !isSearching,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const searchResultsQuery = useQuery({
+    queryKey: ['reviews', 'search', debouncedSearchQuery.trim(), 0, 20],
+    queryFn: async () => {
+      const res = await reviewApi.searchReviews(debouncedSearchQuery.trim(), 0, 20);
+      return res.data;
+    },
+    enabled: isSearching,
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const loading = isSearching ? searchResultsQuery.isLoading : feedQuery.isLoading;
+  const reviews = isSearching
+    ? (searchResultsQuery.data?.content || [])
+    : (feedQuery.data?.content || []);
 
   // Real-time debounced search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    if (!searchQuery.trim()) {
-      if (isSearching) {
-        setIsSearching(false);
-        fetchReviews();
-      }
-      return;
-    }
-
-    debounceRef.current = setTimeout(async () => {
-      setIsSearching(true);
-      setLoading(true);
-      try {
-        const res = await reviewApi.searchReviews(searchQuery.trim(), 0, 20);
-        setReviews(res.data.content || []);
-      } catch {
-        setReviews([]);
-      } finally {
-        setLoading(false);
-      }
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
     }, 250);
 
     return () => clearTimeout(debounceRef.current);
   }, [searchQuery]);
 
-  const fetchReviews = async () => {
-    setLoading(true);
-    try {
-      const sort = activeTab === 'popular' ? 'relevant' : sortMode;
-      const res = await reviewApi.getFollowingReviews(0, 20, sort);
-      setReviews(res.data.content || []);
-    } catch {
-      setReviews([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Optimistic update for likes - no page reload
   const handleUpdateReview = (reviewId, updates) => {
-    setReviews(prev =>
-      prev.map(r => r.id === reviewId ? { ...r, ...updates } : r)
-    );
+    const applyPatch = (data) => {
+      if (!data?.content) return data;
+      return {
+        ...data,
+        content: data.content.map(r => (r.id === reviewId ? { ...r, ...updates } : r)),
+      };
+    };
+
+    queryClient.setQueryData(['reviews', 'feed', activeTab, feedSort, 0, 20], applyPatch);
+
+    if (isSearching) {
+      queryClient.setQueryData(['reviews', 'search', debouncedSearchQuery.trim(), 0, 20], applyPatch);
+    }
+
+    void queryClient.invalidateQueries({ queryKey: ['reviews'] });
   };
 
   return (

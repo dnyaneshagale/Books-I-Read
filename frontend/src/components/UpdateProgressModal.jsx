@@ -2,31 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Globe, Lock } from 'lucide-react';
 import bookApi from '../api/bookApi';
 import toast from 'react-hot-toast';
+import ModalShell from './ui/modal-shell';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import { modalNeutralOutlineBtn, modalVioletPrimaryBtn } from './ui/modal-button-tokens';
 
 // ── Tailwind class constants ──────────────────────────────────────────────────
-
-const overlayCls = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4 animate-[g-fadeIn_0.2s_ease] overflow-y-auto max-[768px]:p-2';
-
-const modalCls = [
-  'bg-white rounded-2xl max-w-[500px] w-full max-h-[85vh]',
-  'flex flex-col animate-[g-slideUp_0.3s_ease]',
-  'shadow-xl border border-slate-200 mx-auto',
-  'dark:bg-[#0F0C15] dark:border-[#2D2A35]',
-  'max-[480px]:max-w-full max-[480px]:max-h-[100dvh] max-[480px]:m-0 max-[480px]:rounded-none max-[480px]:pb-[env(safe-area-inset-bottom,0px)]',
-  'min-[481px]:max-[768px]:max-w-[90%]',
-].join(' ');
-
-const headerCls = [
-  'flex justify-between items-center py-4 px-6 border-b border-slate-200',
-  'bg-gradient-to-br from-white to-slate-50',
-  'dark:from-[#0F0C15] dark:to-[#1E1B24] dark:border-[#3a3642]',
-].join(' ');
-
-const closeBtnCls = [
-  'bg-transparent border-none text-[28px] text-slate-500 cursor-pointer',
-  'p-0 w-8 h-8 flex items-center justify-center rounded-lg',
-  'transition-all duration-200 hover:bg-slate-100 hover:text-slate-900',
-].join(' ');
 
 const labelCls = 'block text-sm font-semibold text-slate-900 mb-2 dark:text-[#E2D9F3]';
 
@@ -106,33 +86,14 @@ const TAG_GRADIENTS = [
   'from-rose-400 to-yellow-300',
 ];
 
-const cancelBtnCls = [
-  'flex-1 py-3 px-6 border border-slate-200 bg-transparent',
-  'text-slate-900 text-sm font-semibold rounded-xl',
-  'cursor-pointer transition-all duration-200',
-  'hover:bg-slate-50 hover:border-slate-500',
-  'dark:border-[#4a4556] dark:text-[#E2D9F3]',
-  'dark:hover:bg-[#2D2A35] dark:hover:border-[#7C4DFF] dark:hover:text-[#f0ecf7]',
-  'max-[480px]:py-2.5 max-[480px]:px-4',
-].join(' ');
-
-const updateBtnCls = [
-  'flex-[2] py-3 px-6 border-none bg-violet-700 text-white',
-  'text-sm font-bold rounded-xl cursor-pointer',
-  'transition-all duration-200 shadow-[0_2px_8px_rgba(109,40,217,0.25)]',
-  'enabled:hover:bg-violet-800 enabled:hover:shadow-[0_4px_12px_rgba(109,40,217,0.35)]',
-  'disabled:opacity-60 disabled:cursor-not-allowed',
-  'dark:bg-[#7C4DFF] dark:text-[#f0ecf7] dark:shadow-[0_2px_12px_rgba(124,77,255,0.3)]',
-  'dark:enabled:hover:bg-[#6A3DE8] dark:enabled:hover:shadow-[0_4px_16px_rgba(124,77,255,0.4)]',
-  'max-[480px]:py-2.5 max-[480px]:px-4',
-].join(' ');
-
 /**
  * UpdateProgressModal Component - Compact Version
  *
  * Modal for updating book reading progress with context-aware fields
  */
 function UpdateProgressModal({ book, onClose, onUpdated }) {
+  useBodyScrollLock();
+
   const [pagesRead, setPagesRead] = useState(book.pagesRead);
   const [status, setStatus] = useState(book.status || 'WANT_TO_READ');
   const [rating, setRating] = useState(book.rating || 0);
@@ -266,17 +227,14 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
   }, [onClose]);
 
   return (
-    <div className={overlayCls} onClick={onClose}>
-      <div className={modalCls} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className={headerCls}>
-          <h2 className="text-xl font-bold bg-gradient-to-br from-violet-700 to-violet-500 bg-clip-text text-transparent m-0">
-            Update Book
-          </h2>
-          <button className={closeBtnCls} onClick={onClose}>×</button>
-        </div>
-
-        {/* Scrollable Body */}
+    <ModalShell
+      onClose={onClose}
+      title="Update Book"
+      contentClassName="max-w-[500px] w-full max-h-[85vh] flex flex-col mx-auto dark:bg-[#0F0C15] dark:border-[#2D2A35] max-[480px]:max-w-full max-[480px]:max-h-[100dvh] max-[480px]:m-0 max-[480px]:rounded-none max-[480px]:pb-[env(safe-area-inset-bottom,0px)] min-[481px]:max-[768px]:max-w-[90%]"
+      headerClassName="py-4 px-6 border-b border-slate-200 bg-gradient-to-br from-white to-slate-50 dark:from-[#0F0C15] dark:to-[#1E1B24] dark:border-[#3a3642]"
+      closeBtnClassName="bg-transparent border-none text-[28px] text-slate-500 p-0 w-8 h-8 hover:bg-slate-100 hover:text-slate-900"
+      bodyClassName="flex flex-col flex-1 min-h-0"
+    >
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 upm-scrollable dark:bg-[#0F0C15]">
           {/* Book Info */}
           <div className="px-6 pt-6 pb-4 text-center border-b border-slate-200 dark:border-[#3a3642] dark:bg-[#0F0C15]">
@@ -524,15 +482,14 @@ function UpdateProgressModal({ book, onClose, onUpdated }) {
 
         {/* Sticky Actions */}
         <div className="flex gap-3 p-6 border-t border-slate-200 bg-white shrink-0 sticky bottom-0 z-10 dark:bg-[#0F0C15] dark:border-[#3a3642] max-[480px]:pt-3 max-[480px]:gap-2">
-          <button type="button" className={cancelBtnCls} onClick={onClose}>
+          <button type="button" className={modalNeutralOutlineBtn} onClick={onClose}>
             Cancel
           </button>
-          <button type="submit" form="update-book-form" className={updateBtnCls} disabled={isSubmitting}>
+          <button type="submit" form="update-book-form" className={modalVioletPrimaryBtn} disabled={isSubmitting}>
             {isSubmitting ? 'Updating...' : 'Update Book'}
           </button>
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 }
 

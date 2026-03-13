@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Globe, Lock } from 'lucide-react';
 
 const EMOJI_OPTIONS = ['📚', '📖', '🔥', '⭐', '💎', '🌙', '🎯', '🧠', '❤️', '🌍', '🚀', '🎭', '📝', '🌸', '🦋', '🎨'];

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Lock, CheckCircle, Heart, MessageCircle, CornerDownRight, Tag, BookOpen, PenLine, Bell } from 'lucide-react';
 import notificationApi from '../../api/notificationApi';
 
@@ -8,17 +9,47 @@ import notificationApi from '../../api/notificationApi';
  */
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const unreadCountQuery = useQuery({
+    queryKey: ['notifications', 'unreadCount'],
+    queryFn: async () => {
+      const res = await notificationApi.getUnreadCount();
+      return res.data.count || 0;
+    },
+    refetchInterval: 30000,
+    staleTime: 15000,
+  });
+
+  const notificationsQuery = useQuery({
+    queryKey: ['notifications', 'list'],
+    queryFn: async () => {
+      const res = await notificationApi.getNotifications(0, 15);
+      return res.data.content || [];
+    },
+    enabled: isOpen,
+    staleTime: 30000,
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => notificationApi.markAllAsRead(),
+    onSuccess: () => {
+      queryClient.setQueryData(['notifications', 'unreadCount'], 0);
+      queryClient.setQueryData(['notifications', 'list'], (prev = []) =>
+        prev.map((n) => ({ ...n, isRead: true }))
+      );
+    },
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: (notificationId) => notificationApi.markAsRead(notificationId),
+  });
+
+  const notifications = notificationsQuery.data || [];
+  const unreadCount = unreadCountQuery.data || 0;
+  const loading = notificationsQuery.isLoading;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -30,41 +61,22 @@ const NotificationBell = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const fetchUnreadCount = async () => {
-    try {
-      const res = await notificationApi.getUnreadCount();
-      setUnreadCount(res.data.count || 0);
-    } catch { /* silently fail */ }
-  };
-
-  const fetchNotifications = async () => {
-    setLoading(true);
-    try {
-      const res = await notificationApi.getNotifications(0, 15);
-      setNotifications(res.data.content || []);
-    } catch { /* silently fail */ }
-    finally { setLoading(false); }
-  };
-
   const toggleDropdown = () => {
-    if (!isOpen) fetchNotifications();
     setIsOpen(!isOpen);
   };
 
   const handleMarkAllRead = async () => {
     try {
-      await notificationApi.markAllAsRead();
-      setUnreadCount(0);
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      await markAllReadMutation.mutateAsync();
     } catch { /* silently fail */ }
   };
 
   const handleNotificationClick = async (notification) => {
     if (!notification.isRead) {
       try {
-        await notificationApi.markAsRead(notification.id);
-        setUnreadCount(prev => Math.max(0, prev - 1));
-        setNotifications(prev =>
+        await markReadMutation.mutateAsync(notification.id);
+        queryClient.setQueryData(['notifications', 'unreadCount'], (prev = 0) => Math.max(0, prev - 1));
+        queryClient.setQueryData(['notifications', 'list'], (prev = []) =>
           prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
         );
       } catch { /* silently fail */ }

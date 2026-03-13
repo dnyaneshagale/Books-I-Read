@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BookOpen, Globe, Lock, Heart, Edit3, Trash2, Library } from 'lucide-react';
 import listApi from '../api/listApi';
 import bookApi from '../api/bookApi';
@@ -23,8 +24,7 @@ const pickerItemCls = 'flex items-center justify-between gap-3.5 px-3.5 py-3 bg-
 export default function ListDetailPage() {
   const { listId } = useParams();
   const navigate = useNavigate();
-  const [list, setList] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addTitle, setAddTitle] = useState('');
@@ -34,47 +34,47 @@ export default function ListDetailPage() {
 
   // Book picker state
   const [showBookPicker, setShowBookPicker] = useState(false);
-  const [myBooks, setMyBooks] = useState([]);
   const [bookSearchQuery, setBookSearchQuery] = useState('');
-  const [loadingBooks, setLoadingBooks] = useState(false);
   const [addingBookId, setAddingBookId] = useState(null);
   const [addingToLibrary, setAddingToLibrary] = useState(null);
-  const [booksInLibrary, setBooksInLibrary] = useState(new Set());
 
-  useEffect(() => {
-    loadList();
-    loadUserLibraryForComparison();
-  }, [listId]);
-
-  const loadList = async () => {
-    try {
+  const listQuery = useQuery({
+    queryKey: ['lists', 'detail', listId],
+    queryFn: async () => {
       const res = await listApi.getList(listId);
-      setList(res.data);
-    } catch (err) {
-      console.error('Failed to load list:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
-  // Load user's library books to check which ones are already added
-  const loadUserLibraryForComparison = async () => {
-    try {
-      const books = await bookApi.getAllBooks();
-      const bookKeys = new Set(
-        (Array.isArray(books) ? books : []).map(book => 
-          `${book.title}||${book.author}`.toLowerCase()
-        )
-      );
-      setBooksInLibrary(bookKeys);
-    } catch (err) {
-      console.error('Failed to load user library:', err);
-    }
-  };
+  const libraryBooksQuery = useQuery({
+    queryKey: ['books', 'all'],
+    queryFn: () => bookApi.getAllBooks(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const list = listQuery.data || null;
+  const loading = listQuery.isLoading;
+  const myBooks = useMemo(
+    () => (Array.isArray(libraryBooksQuery.data) ? libraryBooksQuery.data : []),
+    [libraryBooksQuery.data]
+  );
+  const loadingBooks = libraryBooksQuery.isLoading;
+
+  const booksInLibrary = useMemo(() => {
+    return new Set(
+      myBooks.map((book) => `${book.title}||${book.author}`.toLowerCase())
+    );
+  }, [myBooks]);
 
   const handleUpdateList = async (data) => {
     await listApi.updateList(listId, data);
-    await loadList();
+    await Promise.all([
+      listQuery.refetch(),
+      queryClient.invalidateQueries({ queryKey: ['lists', 'mine'] }),
+      queryClient.invalidateQueries({ queryKey: ['lists', 'saved'] }),
+      queryClient.invalidateQueries({ queryKey: ['lists', 'browse'] }),
+    ]);
   };
 
   const handleAddItem = async (e) => {
@@ -91,7 +91,7 @@ export default function ListDetailPage() {
       setAddAuthor('');
       setAddNote('');
       setShowAddForm(false);
-      await loadList();
+      await listQuery.refetch();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to add book');
     } finally {
@@ -103,7 +103,7 @@ export default function ListDetailPage() {
     if (!confirm('Remove this book from the list?')) return;
     try {
       await listApi.removeItem(listId, itemId);
-      await loadList();
+      await listQuery.refetch();
     } catch (err) {
       console.error('Failed to remove item:', err);
     }
@@ -112,30 +112,16 @@ export default function ListDetailPage() {
   const handleToggleLike = async () => {
     try {
       const res = await listApi.toggleLike(listId);
-      setList(res.data);
+      queryClient.setQueryData(['lists', 'detail', listId], res.data);
+      await queryClient.invalidateQueries({ queryKey: ['lists', 'browse'] });
     } catch (err) {
       console.error('Failed to toggle like:', err);
-    }
-  };
-
-  // Load user's library books for the picker
-  const loadMyBooks = async () => {
-    if (myBooks.length > 0) return; // already loaded
-    setLoadingBooks(true);
-    try {
-      const books = await bookApi.getAllBooks();
-      setMyBooks(Array.isArray(books) ? books : []);
-    } catch (err) {
-      console.error('Failed to load books:', err);
-    } finally {
-      setLoadingBooks(false);
     }
   };
 
   const handleOpenBookPicker = () => {
     setShowBookPicker(true);
     setBookSearchQuery('');
-    loadMyBooks();
   };
 
   // Filter books not already in the list, and match search query
@@ -161,7 +147,7 @@ export default function ListDetailPage() {
         bookTitle: book.title,
         bookAuthor: book.author,
       });
-      await loadList();
+      await listQuery.refetch();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to add book');
     } finally {
@@ -181,16 +167,12 @@ export default function ListDetailPage() {
         pagesRead: 0,
       });
       toast.success(`"${item.bookTitle}" added to your library!`);
-      // Add to the set of books in library so button becomes disabled
-      const libraryKey = `${item.bookTitle}||${item.bookAuthor}`.toLowerCase();
-      setBooksInLibrary(prev => new Set([...prev, libraryKey]));
+      await queryClient.invalidateQueries({ queryKey: ['books', 'all'] });
     } catch (err) {
       const msg = err?.response?.data?.message || err?.response?.data || '';
       if (typeof msg === 'string' && msg.toLowerCase().includes('already')) {
         toast.error('This book is already in your library');
-        // Also add to the set since it's confirmed to be in library
-        const libraryKey = `${item.bookTitle}||${item.bookAuthor}`.toLowerCase();
-        setBooksInLibrary(prev => new Set([...prev, libraryKey]));
+        await queryClient.invalidateQueries({ queryKey: ['books', 'all'] });
       } else {
         toast.error('Failed to add book');
       }

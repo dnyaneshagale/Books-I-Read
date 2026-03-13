@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import listApi from '../api/listApi';
 import bookApi from '../api/bookApi';
 import CreateListModal from '../components/CreateListModal';
@@ -24,36 +25,62 @@ const savedCardCls = 'bg-[var(--color-bg)] border border-[var(--color-border)] r
 const addBtnCls = 'flex items-center gap-1 py-[5px] px-3 border border-[rgba(109,40,217,0.2)] bg-[rgba(109,40,217,0.06)] text-[#6d28d9] rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap shrink-0 hover:enabled:bg-[#6d28d9] hover:enabled:text-white hover:enabled:border-[#6d28d9] disabled:opacity-60 disabled:cursor-not-allowed dark:border-[rgba(124,77,255,0.25)] dark:bg-[rgba(124,77,255,0.1)] dark:text-[#9575FF] dark:hover:enabled:bg-[#7C4DFF] dark:hover:enabled:text-white dark:hover:enabled:border-[#7C4DFF]';
 
 export default function MyListsPage() {
-  const [lists, setLists] = useState([]);
-  const [savedLists, setSavedLists] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('my');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [expandedSaved, setExpandedSaved] = useState(null);
   const [addingBook, setAddingBook] = useState(null);
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  useEffect(() => { loadLists(); }, []);
+  const myListsQuery = useQuery({
+    queryKey: ['lists', 'mine'],
+    queryFn: async () => {
+      const res = await listApi.getMyLists();
+      return res.data || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
-  const loadLists = async () => {
-    try {
-      const [myRes, savedRes] = await Promise.all([listApi.getMyLists(), listApi.getSavedLists()]);
-      setLists(myRes.data);
-      setSavedLists(savedRes.data);
-    } catch (err) { console.error('Failed to load lists:', err); }
-    finally { setLoading(false); }
+  const savedListsQuery = useQuery({
+    queryKey: ['lists', 'saved'],
+    queryFn: async () => {
+      const res = await listApi.getSavedLists();
+      return res.data || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const lists = myListsQuery.data || [];
+  const savedLists = savedListsQuery.data || [];
+  const loading = myListsQuery.isLoading || savedListsQuery.isLoading;
+
+  const handleCreateList = async (data) => {
+    await listApi.createList(data);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['lists', 'mine'] }),
+      queryClient.invalidateQueries({ queryKey: ['lists', 'saved'] }),
+      queryClient.invalidateQueries({ queryKey: ['lists', 'browse'] }),
+    ]);
   };
-
-  const handleCreateList = async (data) => { await listApi.createList(data); await loadLists(); };
   const handleDeleteList = async (listId, e) => {
     e.stopPropagation();
     if (!confirm('Delete this list? This cannot be undone.')) return;
-    try { await listApi.deleteList(listId); setLists((prev) => prev.filter((l) => l.id !== listId)); }
+    try {
+      await listApi.deleteList(listId);
+      queryClient.setQueryData(['lists', 'mine'], (prev = []) => prev.filter((l) => l.id !== listId));
+      queryClient.setQueryData(['lists', 'saved'], (prev = []) => prev.filter((l) => l.id !== listId));
+      await queryClient.invalidateQueries({ queryKey: ['lists', 'browse'] });
+    }
     catch (err) { console.error('Failed to delete list:', err); }
   };
   const handleUnsaveList = async (listId, e) => {
     e.stopPropagation();
-    try { await listApi.toggleLike(listId); setSavedLists((prev) => prev.filter((l) => l.id !== listId)); toast.success('List removed from saved'); }
+    try {
+      await listApi.toggleLike(listId);
+      queryClient.setQueryData(['lists', 'saved'], (prev = []) => prev.filter((l) => l.id !== listId));
+      await queryClient.invalidateQueries({ queryKey: ['lists', 'browse'] });
+      toast.success('List removed from saved');
+    }
     catch (err) { console.error('Failed to unsave list:', err); }
   };
   const handleAddBookToLibrary = async (item) => {

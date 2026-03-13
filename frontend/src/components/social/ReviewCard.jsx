@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Share2, Bookmark } from 'lucide-react';
 import reviewApi from '../../api/reviewApi';
@@ -7,11 +7,10 @@ import toast from 'react-hot-toast';
 /**
  * ReviewCard - Displays a single book review with like/comment actions
  */
-const ReviewCard = ({ review, currentUserId, onUpdate, compact = false }) => {
+const ReviewCard = ({ review, onUpdate, compact = false }) => {
   const [liked, setLiked] = useState(review.likedByViewer || false);
   const [likesCount, setLikesCount] = useState(review.likesCount || 0);
   const [showSpoiler, setShowSpoiler] = useState(false);
-  const [showComments, setShowComments] = useState(false);
   const [saved, setSaved] = useState(review.savedByViewer || false);
   const navigate = useNavigate();
 

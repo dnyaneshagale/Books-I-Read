@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../AuthContext';
 import socialApi from '../api/socialApi';
 import authApi from '../authApi';
@@ -394,7 +395,6 @@ const primaryBtnCls = [
 ].join(' ');
 
 // Skeleton
-const skeletonShimmerCls = 'skeleton rounded-md';
 const skeletonAvatarCls = 'skeleton w-[120px] h-[120px] max-[640px]:w-24 max-[640px]:h-24 rounded-full shrink-0';
 const skeletonLineCls = 'skeleton h-3 rounded-md';
 
@@ -569,6 +569,7 @@ const ProfilePage = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const { user: currentUser, setUser: setCurrentUser } = useAuth();
+  const queryClient = useQueryClient();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -588,33 +589,44 @@ const ProfilePage = () => {
   const [editUsernameStatus, setEditUsernameStatus] = useState(null);
   const editUsernameTimerRef = useRef(null);
 
-  useEffect(() => { loadProfile(); }, [username]);
+  useEffect(() => { loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username]);
 
   useEffect(() => {
     if (profile) {
       const canView = profile.isPublic || profile.isOwnProfile || profile.isFollowing;
       if (canView) { loadProfileBooks(); loadReviews(); loadLists(); loadReflections(); }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, profile?.isFollowing]);
 
   useEffect(() => {
     if (profile?.isOwnProfile) loadRequestsCount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.isOwnProfile]);
 
   // ── Data Loaders ──
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const response = username
-        ? await socialApi.getProfile(username)
-        : await socialApi.getMyProfile();
-      setProfile(response.data);
+      const data = await queryClient.fetchQuery({
+        queryKey: ['profile', username || 'me'],
+        queryFn: async () => {
+          const response = username
+            ? await socialApi.getProfile(username)
+            : await socialApi.getMyProfile();
+          return response.data;
+        },
+        staleTime: 1000 * 60 * 5,
+      });
+      setProfile(data);
       setEditForm({
-        username: response.data.username || '',
-        displayName: response.data.displayName || '',
-        bio: response.data.bio || '',
-        isPublic: response.data.isPublic,
-        favoriteGenres: response.data.favoriteGenres || [],
+        username: data.username || '',
+        displayName: data.displayName || '',
+        bio: data.bio || '',
+        isPublic: data.isPublic,
+        favoriteGenres: data.favoriteGenres || [],
       });
     } catch (error) {
       console.error('Failed to load profile:', error);
@@ -627,16 +639,30 @@ const ProfilePage = () => {
     try {
       const profileUsername = username || currentUser?.username;
       if (!profileUsername) return;
-      const response = await socialApi.getUserBooks(profileUsername);
-      setProfileBooks(response.data || []);
+      const data = await queryClient.fetchQuery({
+        queryKey: ['profile', 'books', profileUsername],
+        queryFn: async () => {
+          const response = await socialApi.getUserBooks(profileUsername);
+          return response.data || [];
+        },
+        staleTime: 1000 * 60 * 5,
+      });
+      setProfileBooks(data);
     } catch (error) { console.error('Failed to load books:', error); }
   };
 
   const loadFollowers = async () => {
     if (!profile) return;
     try {
-      const response = await socialApi.getFollowers(profile.id);
-      setFollowers(response.data.content || []);
+      const data = await queryClient.fetchQuery({
+        queryKey: ['profile', 'followers', profile.id],
+        queryFn: async () => {
+          const response = await socialApi.getFollowers(profile.id);
+          return response.data.content || [];
+        },
+        staleTime: 1000 * 60 * 2,
+      });
+      setFollowers(data);
     } catch (error) {
       console.error('Failed to load followers:', error);
       if (error.response?.status === 403) toast.error('This account is private');
@@ -646,8 +672,15 @@ const ProfilePage = () => {
   const loadFollowing = async () => {
     if (!profile) return;
     try {
-      const response = await socialApi.getFollowing(profile.id);
-      setFollowing(response.data.content || []);
+      const data = await queryClient.fetchQuery({
+        queryKey: ['profile', 'following', profile.id],
+        queryFn: async () => {
+          const response = await socialApi.getFollowing(profile.id);
+          return response.data.content || [];
+        },
+        staleTime: 1000 * 60 * 2,
+      });
+      setFollowing(data);
     } catch (error) {
       console.error('Failed to load following:', error);
       if (error.response?.status === 403) toast.error('This account is private');
@@ -657,50 +690,97 @@ const ProfilePage = () => {
   const loadReviews = async () => {
     if (!profile) return;
     try {
-      const response = await reviewApi.getUserReviews(profile.id, 0, 20);
-      setReviews(response.data.content || []);
+      const data = await queryClient.fetchQuery({
+        queryKey: ['profile', 'reviews', profile.id],
+        queryFn: async () => {
+          const response = await reviewApi.getUserReviews(profile.id, 0, 20);
+          return response.data.content || [];
+        },
+        staleTime: 1000 * 60 * 5,
+      });
+      setReviews(data);
     } catch (error) { console.error('Failed to load reviews:', error); }
   };
 
   const loadLists = async () => {
     if (!profile) return;
     try {
-      const response = await listApi.getUserLists(profile.id);
-      setLists(response.data || []);
+      const data = await queryClient.fetchQuery({
+        queryKey: ['profile', 'lists', profile.id],
+        queryFn: async () => {
+          const response = await listApi.getUserLists(profile.id);
+          return response.data || [];
+        },
+        staleTime: 1000 * 60 * 5,
+      });
+      setLists(data);
     } catch (error) { console.error('Failed to load lists:', error); }
   };
 
   const loadReflections = async () => {
     if (!profile) return;
     try {
-      const response = await socialApi.getUserReflections(profile.id, 0, 50);
-      setReflections(response.data.content || []);
+      const data = await queryClient.fetchQuery({
+        queryKey: ['profile', 'reflections', profile.id],
+        queryFn: async () => {
+          const response = await socialApi.getUserReflections(profile.id, 0, 50);
+          return response.data.content || [];
+        },
+        staleTime: 1000 * 60 * 5,
+      });
+      setReflections(data);
     } catch (error) { console.error('Failed to load reflections:', error); }
   };
 
   const loadRequestsCount = async () => {
     try {
-      const response = await socialApi.getPendingRequestsCount();
-      setRequestsCount(response.data.count || 0);
+      const count = await queryClient.fetchQuery({
+        queryKey: ['profile', 'requestsCount'],
+        queryFn: async () => {
+          const response = await socialApi.getPendingRequestsCount();
+          return response.data.count || 0;
+        },
+        staleTime: 1000 * 30,
+      });
+      setRequestsCount(count);
     } catch (error) { console.error('Failed to load requests count:', error); }
   };
 
   const loadFollowRequests = async () => {
     try {
-      const response = await socialApi.getPendingRequests();
-      setFollowRequests(response.data.content || []);
-      setRequestsCount(response.data.content?.length || 0);
+      const data = await queryClient.fetchQuery({
+        queryKey: ['profile', 'followRequests'],
+        queryFn: async () => {
+          const response = await socialApi.getPendingRequests();
+          return response.data.content || [];
+        },
+        staleTime: 1000 * 30,
+      });
+      setFollowRequests(data);
+      setRequestsCount(data.length || 0);
     } catch (error) { console.error('Failed to load follow requests:', error); }
   };
 
   const loadSavedItems = async () => {
     try {
-      const [reviewsRes, reflectionsRes] = await Promise.all([
-        reviewApi.getSavedReviews(0, 50),
-        socialApi.getSavedReflections(0, 50),
+      const [reviews, reflections] = await Promise.all([
+        queryClient.fetchQuery({
+          queryKey: ['profile', 'savedReviews'],
+          queryFn: async () => {
+            const reviewsRes = await reviewApi.getSavedReviews(0, 50);
+            return (reviewsRes.data.content || []).map(r => ({ ...r, _type: 'review' }));
+          },
+          staleTime: 1000 * 60 * 2,
+        }),
+        queryClient.fetchQuery({
+          queryKey: ['profile', 'savedReflections'],
+          queryFn: async () => {
+            const reflectionsRes = await socialApi.getSavedReflections(0, 50);
+            return (reflectionsRes.data.content || []).map(r => ({ ...r, _type: 'reflection' }));
+          },
+          staleTime: 1000 * 60 * 2,
+        }),
       ]);
-      const reviews = (reviewsRes.data.content || []).map(r => ({ ...r, _type: 'review' }));
-      const reflections = (reflectionsRes.data.content || []).map(r => ({ ...r, _type: 'reflection' }));
       const merged = [...reviews, ...reflections].sort(
         (a, b) => new Date(b.savedAt || b.createdAt) - new Date(a.savedAt || a.createdAt)
       );
@@ -794,12 +874,8 @@ const ProfilePage = () => {
   };
 
   const handleProfilePhotoSave = async (photoUrl) => {
-    try {
-      const response = await socialApi.updateProfile({ profilePictureUrl: photoUrl || null });
-      setProfile(response.data);
-    } catch (error) {
-      throw error;
-    }
+    const response = await socialApi.updateProfile({ profilePictureUrl: photoUrl || null });
+    setProfile(response.data);
   };
 
   if (!loading && !profile) {

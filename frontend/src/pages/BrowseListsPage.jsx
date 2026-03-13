@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search, Heart, BookOpen } from 'lucide-react';
 import listApi from '../api/listApi';
 
@@ -7,56 +8,86 @@ export default function BrowseListsPage() {
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [searching, setSearching] = useState(false);
   const navigate = useNavigate();
   const debounceRef = useRef(null);
+  const queryClient = useQueryClient();
+
+  const browseQuery = useQuery({
+    queryKey: ['lists', 'browse', 0],
+    queryFn: async () => {
+      const res = await listApi.browseLists(0);
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const searchListsQuery = useQuery({
+    queryKey: ['lists', 'search', debouncedSearchQuery, 0],
+    queryFn: async () => {
+      const res = await listApi.searchLists(debouncedSearchQuery, 0);
+      return res.data;
+    },
+    enabled: Boolean(debouncedSearchQuery),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const searching = Boolean(searchQuery.trim());
 
   useEffect(() => {
-    loadLists();
-  }, []);
+    if (!debouncedSearchQuery && browseQuery.data) {
+      setLists(browseQuery.data.content || []);
+      setHasMore(
+        browseQuery.data.page
+          ? browseQuery.data.page.number < browseQuery.data.page.totalPages - 1
+          : !browseQuery.data.last
+      );
+      setPage(0);
+      setLoading(false);
+    }
+  }, [browseQuery.data, debouncedSearchQuery]);
+
+  useEffect(() => {
+    if (!debouncedSearchQuery || !searchListsQuery.data) return;
+
+    const data = searchListsQuery.data;
+    setLists(data.content || []);
+    setHasMore(data.page ? data.page.number < data.page.totalPages - 1 : !data.last);
+    setPage(0);
+    setLoading(false);
+  }, [debouncedSearchQuery, searchListsQuery.data]);
+
+  useEffect(() => {
+    if (searchListsQuery.isError) {
+      setLists([]);
+      setLoading(false);
+    }
+  }, [searchListsQuery.isError]);
 
   // Real-time debounced search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (!searchQuery.trim()) {
-      if (searching) {
-        setSearching(false);
-        setLoading(true);
-        loadLists(0);
-      }
+      setDebouncedSearchQuery('');
       return;
     }
 
-    debounceRef.current = setTimeout(async () => {
-      setSearching(true);
+    debounceRef.current = setTimeout(() => {
       setLoading(true);
-      try {
-        const res = await listApi.searchLists(searchQuery, 0);
-        setLists(res.data.content);
-        setHasMore(res.data.page ? res.data.page.number < res.data.page.totalPages - 1 : !res.data.last);
-        setPage(0);
-      } catch (err) {
-        console.error('Search failed:', err);
-      } finally {
-        setLoading(false);
-      }
+      setDebouncedSearchQuery(searchQuery.trim());
     }, 250);
 
     return () => clearTimeout(debounceRef.current);
   }, [searchQuery]);
 
-  const loadLists = async (pageNum = 0) => {
+  const loadMoreLists = async (pageNum) => {
     try {
       const res = await listApi.browseLists(pageNum);
       const data = res.data;
-      if (pageNum === 0) {
-        setLists(data.content);
-      } else {
-        setLists((prev) => [...prev, ...data.content]);
-      }
+      setLists((prev) => [...prev, ...data.content]);
       setHasMore(data.page ? data.page.number < data.page.totalPages - 1 : !data.last);
       setPage(pageNum);
     } catch (err) {
@@ -73,6 +104,15 @@ export default function BrowseListsPage() {
       setLists((prev) =>
         prev.map((l) => (l.id === listId ? { ...l, likedByViewer: res.data.likedByViewer, likesCount: res.data.likesCount } : l))
       );
+      queryClient.setQueryData(['lists', 'browse', 0], (prev) => {
+        if (!prev?.content) return prev;
+        return {
+          ...prev,
+          content: prev.content.map((l) =>
+            l.id === listId ? { ...l, likedByViewer: res.data.likedByViewer, likesCount: res.data.likesCount } : l
+          ),
+        };
+      });
     } catch (err) {
       console.error('Like failed:', err);
     }
@@ -155,7 +195,7 @@ export default function BrowseListsPage() {
 
           {hasMore && (
             <div className="text-center mt-7">
-              <button onClick={() => loadLists(page + 1)} className="py-3 px-8 border border-[var(--color-border,#e2e8f0)] rounded-[var(--radius-md,12px)] bg-[var(--color-bg,#fff)] text-[var(--color-primary,#6d28d9)] text-[var(--font-size-sm,14px)] font-bold cursor-pointer transition-all duration-200 shadow-[var(--shadow-xs,0_1px_2px_rgba(0,0,0,0.04))] hover:bg-[var(--color-bg-hover,#f1f5f9)] hover:border-[var(--color-primary,#6d28d9)] hover:shadow-[var(--shadow-sm,0_1px_2px_rgba(0,0,0,0.06))] dark:bg-[var(--color-bg-secondary,#1E1B24)] dark:border-[var(--color-border,#2D2A35)] dark:text-[var(--color-primary,#7C4DFF)] dark:hover:bg-[var(--color-bg-tertiary,#2D2A35)] dark:hover:border-[var(--color-primary,#7C4DFF)]">Load More</button>
+              <button onClick={() => loadMoreLists(page + 1)} className="py-3 px-8 border border-[var(--color-border,#e2e8f0)] rounded-[var(--radius-md,12px)] bg-[var(--color-bg,#fff)] text-[var(--color-primary,#6d28d9)] text-[var(--font-size-sm,14px)] font-bold cursor-pointer transition-all duration-200 shadow-[var(--shadow-xs,0_1px_2px_rgba(0,0,0,0.04))] hover:bg-[var(--color-bg-hover,#f1f5f9)] hover:border-[var(--color-primary,#6d28d9)] hover:shadow-[var(--shadow-sm,0_1px_2px_rgba(0,0,0,0.06))] dark:bg-[var(--color-bg-secondary,#1E1B24)] dark:border-[var(--color-border,#2D2A35)] dark:text-[var(--color-primary,#7C4DFF)] dark:hover:bg-[var(--color-bg-tertiary,#2D2A35)] dark:hover:border-[var(--color-primary,#7C4DFF)]">Load More</button>
             </div>
           )}
         </>

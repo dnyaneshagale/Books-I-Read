@@ -17,12 +17,8 @@ const bookApi = {
    * @returns {Promise} Array of books
    */
   getAllBooks: async () => {
-    try {
-      const response = await axiosClient.get('/books');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.get('/books');
+    return response.data;
   },
 
   /**
@@ -31,12 +27,8 @@ const bookApi = {
    * @returns {Promise} Book object
    */
   getBookById: async (id) => {
-    try {
-      const response = await axiosClient.get(`/books/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.get(`/books/${id}`);
+    return response.data;
   },
 
   /**
@@ -45,12 +37,8 @@ const bookApi = {
    * @returns {Promise} Created book
    */
   createBook: async (bookData) => {
-    try {
-      const response = await axiosClient.post('/books', bookData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.post('/books', bookData);
+    return response.data;
   },
 
   /**
@@ -60,12 +48,8 @@ const bookApi = {
    * @returns {Promise} Updated book
    */
   updateBook: async (id, bookData) => {
-    try {
-      const response = await axiosClient.put(`/books/${id}`, bookData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.put(`/books/${id}`, bookData);
+    return response.data;
   },
 
   /**
@@ -82,11 +66,7 @@ const bookApi = {
    * @returns {Promise} void
    */
   deleteBook: async (id) => {
-    try {
-      await axiosClient.delete(`/books/${id}`);
-    } catch (error) {
-      throw error;
-    }
+    await axiosClient.delete(`/books/${id}`);
   },
 
   /**
@@ -95,11 +75,7 @@ const bookApi = {
    * @returns {Promise} void
    */
   deleteBooksInBatch: async (bookIds) => {
-    try {
-      await axiosClient.delete('/books/batch', { data: bookIds });
-    } catch (error) {
-      throw error;
-    }
+    await axiosClient.delete('/books/batch', { data: bookIds });
   },
 
   /**
@@ -107,21 +83,13 @@ const bookApi = {
    * @returns {Promise} Object with activityDates array
    */
   getActivityDates: async () => {
-    try {
-      const response = await axiosClient.get('/activities/dates');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.get('/activities/dates');
+    return response.data;
   },
 
   getActivityDetails: async () => {
-    try {
-      const response = await axiosClient.get('/activities/details');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.get('/activities/details');
+    return response.data;
   },
 
   /**
@@ -129,12 +97,8 @@ const bookApi = {
    * @returns {Promise} Object with dailyStats array
    */
   getDailyStats: async () => {
-    try {
-      const response = await axiosClient.get('/activities/daily-stats');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.get('/activities/daily-stats');
+    return response.data;
   },
 
   /**
@@ -142,12 +106,8 @@ const bookApi = {
    * @returns {Promise} Object with pagesThisWeek, pagesThisMonth, pagesThisYear
    */
   getPeriodStats: async () => {
-    try {
-      const response = await axiosClient.get('/activities/period-stats');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.get('/activities/period-stats');
+    return response.data;
   },
 
   /**
@@ -156,12 +116,8 @@ const bookApi = {
    * @returns {Promise} void
    */
   generateAiNotes: async (id) => {
-    try {
-      const response = await axiosClient.post(`/ai/generate-notes/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.post(`/ai/generate-notes/${id}`);
+    return response.data;
   },
 
   // Extension: Add future methods

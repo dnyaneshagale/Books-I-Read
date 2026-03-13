@@ -1,23 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../AuthContext';
-import { Library, Wand2, Newspaper, PenLine, BookMarked, Search, Sun, Moon, Download, Upload, LogOut, CheckCircle, BookOpen, FileText, Flame, Globe, BarChart3, Lightbulb, RefreshCw } from 'lucide-react';
+import { Library, Wand2, Newspaper, PenLine, BookMarked, Search, Sun, Moon, Download, Upload, LogOut, CheckCircle, BookOpen, FileText, Flame, Globe, BarChart3, Lightbulb, RefreshCw, Menu, UserRound } from 'lucide-react';
 import BookCard from '../components/BookCard';
-import AddBookForm from '../components/AddBookForm';
-import UpdateProgressModal from '../components/UpdateProgressModal';
-import ShareModal from '../components/ShareModal';
-import ImportModal from '../components/ImportModal';
-import AnalyticsModal from '../components/AnalyticsModal';
-import InsightsModal from '../components/InsightsModal';
-import NotesModal from '../components/NotesModal';
-import RecommendationModal from '../components/RecommendationModal';
 import ProfileDropdown from '../components/ProfileDropdown';
 import NotificationBell from '../components/social/NotificationBell';
 import ReadingGoalWidget from '../components/ReadingGoalWidget';
-import ReviewForm from '../components/social/ReviewForm';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 import bookApi from '../api/bookApi';
+import { prefetchFeed, prefetchReviews } from '../prefetchQueries';
 import toast from 'react-hot-toast';
 import { READING_QUOTES } from '../data/quotes';
+
+const AddBookForm = lazy(() => import('../components/AddBookForm'));
+const UpdateProgressModal = lazy(() => import('../components/UpdateProgressModal'));
+const ShareProfileModal = lazy(() => import('../components/ShareProfileModal'));
+const ImportModal = lazy(() => import('../components/ImportModal'));
+const AnalyticsModal = lazy(() => import('../components/AnalyticsModal'));
+const InsightsModal = lazy(() => import('../components/InsightsModal'));
+const NotesModal = lazy(() => import('../components/NotesModal'));
+const RecommendationModal = lazy(() => import('../components/RecommendationModal'));
+const ReviewForm = lazy(() => import('../components/social/ReviewForm'));
 
 /* ─── Tailwind class constants ─────────────────────────── */
 
@@ -129,30 +139,6 @@ const btnHamburgerCls = [
   'min-w-[44px] min-h-[44px] touch-manipulation',
   'hover:bg-violet-700 hover:scale-105 hover:shadow-md',
   'dark:bg-[#7C4DFF]/70 dark:hover:bg-[#7C4DFF]/90'
-].join(' ');
-
-// ── Mobile Dropdown ──
-const navDropdownCls = [
-  'hidden max-[768px]:block fixed top-[60px] right-4',
-  'bg-white dark:bg-[#1E1B24]',
-  'border border-gray-200 dark:border-white/10',
-  'rounded-xl shadow-xl min-w-[200px] z-[1000]',
-  'transition-all duration-200',
-  'max-h-[80vh] overflow-y-auto',
-  'max-[480px]:top-[48px] max-[480px]:right-2'
-].join(' ');
-
-const navDropdownClosedCls = 'opacity-0 -translate-y-2.5 pointer-events-none';
-const navDropdownOpenCls = 'opacity-100 translate-y-0 pointer-events-auto';
-
-const navDropdownBtnCls = [
-  'block w-full text-left px-5 py-3.5',
-  'border-none bg-transparent touch-manipulation',
-  'text-gray-800 dark:text-gray-200 text-sm font-medium',
-  'cursor-pointer transition-all duration-200',
-  'border-b border-gray-200 dark:border-white/10',
-  'hover:bg-gray-100 dark:hover:bg-white/5 hover:text-violet-700 dark:hover:text-violet-400',
-  'last:border-b-0 last:rounded-b-xl'
 ].join(' ');
 
 // ── Main Content ──
@@ -427,6 +413,7 @@ const selectAllLabelCls = 'text-sm font-medium text-gray-700 dark:text-gray-300 
 function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -454,11 +441,40 @@ function Dashboard() {
   });
   const [randomQuote, setRandomQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [goalRefreshKey, setGoalRefreshKey] = useState(0);
   const [reviewBook, setReviewBook] = useState(null);
   const [selectedBookIds, setSelectedBookIds] = useState(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  const booksQuery = useQuery({
+    queryKey: ['books', 'all'],
+    queryFn: () => bookApi.getAllBooks(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const activityDatesQuery = useQuery({
+    queryKey: ['activities', 'dates'],
+    queryFn: () => bookApi.getActivityDates(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const activityDetailsQuery = useQuery({
+    queryKey: ['activities', 'details'],
+    queryFn: () => bookApi.getActivityDetails(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const dailyStatsQuery = useQuery({
+    queryKey: ['activities', 'daily-stats'],
+    queryFn: () => bookApi.getDailyStats(),
+    staleTime: 1000 * 60 * 3,
+  });
+
+  const periodStatsQuery = useQuery({
+    queryKey: ['activities', 'period-stats'],
+    queryFn: () => bookApi.getPeriodStats(),
+    staleTime: 1000 * 60 * 3,
+  });
 
   // Function to get a random quote from local collection
   const getRandomQuote = () => {
@@ -491,75 +507,53 @@ function Dashboard() {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
 
-  // Fetch books and activity dates on component mount
   useEffect(() => {
-    fetchBooks();
-    fetchActivityDates();
-    fetchDailyStats();
-    fetchPeriodStats();
-  }, []);
+    setLoading(booksQuery.isLoading);
+  }, [booksQuery.isLoading]);
 
-  // Apply filtering whenever books, filter, search, or tag changes
   useEffect(() => {
-    applyFilters();
-  }, [books, activeFilter, searchQuery, selectedTag]);
-
-  const fetchBooks = async () => {
-    setLoading(true);
-    try {
-      const data = await bookApi.getAllBooks();
-      setBooks(data);
+    if (booksQuery.data) {
+      setBooks(booksQuery.data);
       setGoalRefreshKey(k => k + 1);
-    } catch (error) {
+    }
+  }, [booksQuery.data]);
+
+  useEffect(() => {
+    if (booksQuery.isError) {
       toast.error('Failed to load books');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [booksQuery.isError]);
 
-  const fetchActivityDates = async () => {
-    try {
-      const data = await bookApi.getActivityDates();
-      // Convert string dates to Date objects
-      const dates = data.activityDates.map(dateStr => new Date(dateStr));
+  useEffect(() => {
+    if (activityDatesQuery.data?.activityDates) {
+      const dates = activityDatesQuery.data.activityDates.map(dateStr => new Date(dateStr));
       setActivityDates(dates);
-      
-      // Also fetch detailed activity data with page counts
-      const detailsData = await bookApi.getActivityDetails();
-      setActivityDetails(detailsData.activities || []);
-    } catch (error) {
-      // Silently handle - fall back to old streak logic
     }
-  };
+  }, [activityDatesQuery.data]);
 
-  const fetchDailyStats = async () => {
-    try {
-      const data = await bookApi.getDailyStats();
-      setDailyStats(data.dailyStats || []);
-    } catch (error) {
-      // Silently handle - analytics will use fallback
+  useEffect(() => {
+    if (activityDetailsQuery.data?.activities) {
+      setActivityDetails(activityDetailsQuery.data.activities || []);
     }
-  };
+  }, [activityDetailsQuery.data]);
 
-  const fetchPeriodStats = async () => {
-    try {
-      const data = await bookApi.getPeriodStats();
+  useEffect(() => {
+    if (dailyStatsQuery.data?.dailyStats) {
+      setDailyStats(dailyStatsQuery.data.dailyStats || []);
+    }
+  }, [dailyStatsQuery.data]);
+
+  useEffect(() => {
+    if (periodStatsQuery.data) {
       setPeriodStats({
-        pagesThisWeek: data.pagesThisWeek || 0,
-        pagesThisMonth: data.pagesThisMonth || 0,
-        pagesThisYear: data.pagesThisYear || 0
+        pagesThisWeek: periodStatsQuery.data.pagesThisWeek || 0,
+        pagesThisMonth: periodStatsQuery.data.pagesThisMonth || 0,
+        pagesThisYear: periodStatsQuery.data.pagesThisYear || 0
       });
-    } catch (error) {
-      // Silently handle - will show 0
     }
-  };
+  }, [periodStatsQuery.data]);
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-  };
-
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...books];
 
     // Apply status filter
@@ -596,6 +590,28 @@ function Dashboard() {
     });
 
     setFilteredBooks(filtered);
+  }, [activeFilter, books, searchQuery, selectedTag]);
+
+  // Apply filtering whenever books, filter, search, or tag changes
+  useEffect(() => {
+    applyFilters();
+  }, [books, activeFilter, searchQuery, selectedTag, applyFilters]);
+
+  const fetchBooks = async () => {
+    const result = await booksQuery.refetch();
+    if (result.data) {
+      setBooks(result.data);
+      setGoalRefreshKey(k => k + 1);
+    }
+  };
+
+  const fetchActivityDates = async () => {
+    await Promise.all([activityDatesQuery.refetch(), activityDetailsQuery.refetch()]);
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
   };
 
   const getAllTags = () => {
@@ -606,14 +622,6 @@ function Dashboard() {
       }
     });
     return Array.from(tagsSet).sort();
-  };
-
-  const getFilterInfo = () => {
-    const parts = [];
-    if (activeFilter !== 'All') parts.push(activeFilter);
-    if (selectedTag) parts.push(`Tag: ${selectedTag}`);
-    if (searchQuery) parts.push(`Search: "${searchQuery}"`);
-    return parts.length > 0 ? parts.join(', ') : null;
   };
 
   const handleShowInsights = async (book) => {
@@ -630,7 +638,7 @@ function Dashboard() {
         setInsightsBook(updatedBook);
         // Update book in the list
         setBooks(prevBooks => prevBooks.map(b => b.id === book.id ? updatedBook : b));
-      } catch (error) {
+      } catch {
         toast.error('Failed to generate AI insights');
       } finally {
         setInsightsLoading(false);
@@ -669,7 +677,7 @@ function Dashboard() {
       await bookApi.createBook(bookRequest);
       toast.success(`📚 "${recommendedBook.title}" added to your Want to Read list!`);
       fetchBooks(); // Refresh the book list
-    } catch (error) {
+    } catch {
       toast.error('Failed to add book');
     }
   };
@@ -683,7 +691,7 @@ function Dashboard() {
       await bookApi.deleteBook(bookId);
       toast.success('🗑️ Book deleted successfully');
       fetchBooks();
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete book');
     }
   };
@@ -802,22 +810,10 @@ function Dashboard() {
     const readingPace = calculateReadingPace(books);
 
     // Calculate pages read for each time period
-    const booksFinishedThisWeek = finishedBooks.filter(b => {
-      const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
-      return bookDateIST >= weekAgoIST;
-    });
     const pagesThisWeek = periodStats.pagesThisWeek;
 
-    const booksFinishedThisMonth = finishedBooks.filter(b => {
-      const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
-      return bookDateIST >= monthStartIST;
-    });
     const pagesThisMonth = periodStats.pagesThisMonth;
 
-    const booksFinishedThisYear = finishedBooks.filter(b => {
-      const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
-      return bookDateIST >= yearStartIST;
-    });
     const pagesThisYear = periodStats.pagesThisYear;
 
     return { 
@@ -980,6 +976,8 @@ function Dashboard() {
             <button
               className={`${btnSocialIconCls} ${desktopOnlyCls}`}
               onClick={() => navigate('/feed')}
+              onMouseEnter={() => void prefetchFeed(queryClient)}
+              onFocus={() => void prefetchFeed(queryClient)}
               title="Social"
             >
               <Globe className="w-5 h-5" />
@@ -1009,139 +1007,90 @@ function Dashboard() {
               onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
             />
             
-            {/* Hamburger Menu (mobile) */}
-            <button 
-              className={btnHamburgerCls}
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle menu"
-            >
-              {menuOpen ? '✕' : '☰'}
-            </button>
+            {/* Mobile Quick Menu (shadcn dropdown) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={btnHamburgerCls} aria-label="Open mobile menu">
+                  <Menu className="w-5 h-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[220px] md:hidden">
+                <DropdownMenuItem onClick={() => setShowAnalyticsModal(true)}>
+                  <BarChart3 className="w-4 h-4" />
+                  Analytics
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <UserRound className="w-4 h-4" />
+                  My Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/feed')}
+                  onMouseEnter={() => void prefetchFeed(queryClient)}
+                  onFocus={() => void prefetchFeed(queryClient)}
+                >
+                  <Newspaper className="w-4 h-4" />
+                  Feed
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/reviews')}
+                  onMouseEnter={() => void prefetchReviews(queryClient)}
+                  onFocus={() => void prefetchReviews(queryClient)}
+                >
+                  <PenLine className="w-4 h-4" />
+                  Reviews
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/lists')}>
+                  <BookMarked className="w-4 h-4" />
+                  Lists
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/lists/browse')}>
+                  <Search className="w-4 h-4" />
+                  Browse Lists
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/discover')}>
+                  <Search className="w-4 h-4" />
+                  Discover
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem onClick={() => setIsDarkMode(!isDarkMode)}>
+                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowImportModal(true)}>
+                  <Download className="w-4 h-4" />
+                  Import Data
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowShareModal(true)}>
+                  <Upload className="w-4 h-4" />
+                  Share Profile
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem className="!text-red-600 focus:!bg-red-500/10" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </nav>
 
-      {/* Mobile menu backdrop */}
-      {menuOpen && (
-        <div
-          className="fixed inset-0 z-[999] md:hidden"
-          onClick={() => setMenuOpen(false)}
-        />
-      )}
-
-      {/* Mobile Dropdown Menu — outside nav to avoid backdrop-filter clipping */}
-      <div className={`${navDropdownCls} ${menuOpen ? navDropdownOpenCls : navDropdownClosedCls}`}>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  setShowAnalyticsModal(true);
-                  setMenuOpen(false);
-                }}
-              >
-                <BarChart3 className="w-4 h-4 inline mr-2" />Analytics
-              </button>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  navigate('/profile');
-                  setMenuOpen(false);
-                }}
-              >
-                👤 My Profile
-              </button>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  navigate('/feed');
-                  setMenuOpen(false);
-                }}
-              >
-                <Newspaper className="w-4 h-4 inline-block mr-2" /> Feed
-              </button>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  navigate('/reviews');
-                  setMenuOpen(false);
-                }}
-              >
-                <PenLine className="w-4 h-4 inline-block mr-2" /> Reviews
-              </button>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  navigate('/lists');
-                  setMenuOpen(false);
-                }}
-              >
-                <BookMarked className="w-4 h-4 inline-block mr-2" /> Lists
-              </button>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  navigate('/lists/browse');
-                  setMenuOpen(false);
-                }}
-              >
-                <Search className="w-4 h-4 inline-block mr-2" /> Browse Lists
-              </button>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  navigate('/discover');
-                  setMenuOpen(false);
-                }}
-              >
-                <Search className="w-4 h-4 inline-block mr-2" /> Discover
-              </button>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  setIsDarkMode(!isDarkMode);
-                  setMenuOpen(false);
-                }}
-              >
-                {isDarkMode ? <><Sun className="w-4 h-4 inline-block mr-2" /> Light Mode</> : <><Moon className="w-4 h-4 inline-block mr-2" /> Dark Mode</>}
-              </button>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  setShowImportModal(true);
-                  setMenuOpen(false);
-                }}
-              >
-                <Download className="w-4 h-4 inline-block mr-2" /> Import
-              </button>
-              <button
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  setShowShareModal(true);
-                  setMenuOpen(false);
-                }}
-              >
-                <Upload className="w-4 h-4 inline-block mr-2" /> Share
-              </button>
-              <button 
-                className={navDropdownBtnCls}
-                onClick={() => {
-                  handleLogout();
-                  setMenuOpen(false);
-                }}
-              >
-                <LogOut className="w-4 h-4 inline-block mr-2" /> Logout
-              </button>
-      </div>
-
       <div className={mainContentCls}>
         {showAddForm ? (
           <div className={addBookSectionCls}>
-            <AddBookForm
-              onBookAdded={() => {
-                fetchBooks();
-                setShowAddForm(false);
-              }}
-              onCancel={() => setShowAddForm(false)}
-            />
+            <Suspense fallback={<div className={loadingStateCls}><div className={spinnerCls}></div></div>}>
+              <AddBookForm
+                onBookAdded={() => {
+                  fetchBooks();
+                  setShowAddForm(false);
+                }}
+                onCancel={() => setShowAddForm(false)}
+              />
+            </Suspense>
           </div>
         ) : (
           <>
@@ -1211,7 +1160,11 @@ function Dashboard() {
                 <ReadingGoalWidget refreshKey={goalRefreshKey} />
               </div>
               <div className={goalSocialColCls}>
-                <div className={socialEntryCardCls} onClick={() => navigate('/feed')}>
+                <div
+                  className={socialEntryCardCls}
+                  onClick={() => navigate('/feed')}
+                  onMouseEnter={() => void prefetchFeed(queryClient)}
+                >
                   <div className={socialGlowCls}></div>
                   <div className={socialContentCls}>
                     <div className={socialIconWrapCls}>
@@ -1417,86 +1370,102 @@ function Dashboard() {
 
       {/* Update Progress Modal */}
       {selectedBook && (
-        <UpdateProgressModal
-          book={selectedBook}
-          onClose={() => setSelectedBook(null)}
-          onUpdated={() => {
-            fetchBooks();
-            fetchActivityDates();  // Refresh activity dates for streak calculation
-            setSelectedBook(null);
-          }}
-        />
+        <Suspense fallback={null}>
+          <UpdateProgressModal
+            book={selectedBook}
+            onClose={() => setSelectedBook(null)}
+            onUpdated={() => {
+              fetchBooks();
+              fetchActivityDates();  // Refresh activity dates for streak calculation
+              setSelectedBook(null);
+            }}
+          />
+        </Suspense>
       )}
 
-      {/* Share Modal */}
+      {/* Share Profile Modal */}
       {showShareModal && (
-        <ShareModal
-          books={filteredBooks}
-          onClose={() => setShowShareModal(false)}
-          filterInfo={getFilterInfo()}
-        />
+        <Suspense fallback={null}>
+          <ShareProfileModal
+            username={user?.username || 'reader'}
+            totalBooks={books.length}
+            onClose={() => setShowShareModal(false)}
+          />
+        </Suspense>
       )}
 
       {/* Import Modal */}
       {showImportModal && (
-        <ImportModal
-          onClose={() => setShowImportModal(false)}
-          onImported={() => {
-            fetchBooks();
-            setShowImportModal(false);
-          }}
-        />
+        <Suspense fallback={null}>
+          <ImportModal
+            onClose={() => setShowImportModal(false)}
+            onImported={() => {
+              fetchBooks();
+              setShowImportModal(false);
+            }}
+          />
+        </Suspense>
       )}
 
       {/* Analytics Modal */}
       {showAnalyticsModal && (
-        <AnalyticsModal
-          stats={stats}
-          dailyStats={dailyStats}
-          activityDates={activityDates}
-          activityDetails={activityDetails}
-          onClose={() => setShowAnalyticsModal(false)}
-        />
+        <Suspense fallback={null}>
+          <AnalyticsModal
+            stats={stats}
+            dailyStats={dailyStats}
+            activityDates={activityDates}
+            activityDetails={activityDetails}
+            onClose={() => setShowAnalyticsModal(false)}
+          />
+        </Suspense>
       )}
 
       {/* AI Insights Modal */}
       {showInsightsModal && (
-        <InsightsModal
-          book={insightsBook}
-          loading={insightsLoading}
-          onClose={handleCloseInsights}
-        />
+        <Suspense fallback={null}>
+          <InsightsModal
+            book={insightsBook}
+            loading={insightsLoading}
+            onClose={handleCloseInsights}
+          />
+        </Suspense>
       )}
 
       {/* Notes Modal */}
       {showNotesModal && (
-        <NotesModal
-          book={notesBook}
-          onClose={handleCloseNotes}
-          onUpdated={fetchBooks}
-        />
+        <Suspense fallback={null}>
+          <NotesModal
+            book={notesBook}
+            onClose={handleCloseNotes}
+            onUpdated={fetchBooks}
+          />
+        </Suspense>
       )}
 
       {/* Review Form Modal */}
       {reviewBook && (
-        <ReviewForm
-          bookId={reviewBook.id}
-          bookTitle={reviewBook.title}
-          onClose={() => setReviewBook(null)}
-          onSaved={() => {
-            fetchBooks();
-            setReviewBook(null);
-          }}
-        />
+        <Suspense fallback={null}>
+          <ReviewForm
+            bookId={reviewBook.id}
+            bookTitle={reviewBook.title}
+            onClose={() => setReviewBook(null)}
+            onSaved={() => {
+              fetchBooks();
+              setReviewBook(null);
+            }}
+          />
+        </Suspense>
       )}
 
       {/* AI Recommendation Modal */}
       {showRecommendationModal && (
-        <RecommendationModal
-          userBooks={books}
-          onClose={() => setShowRecommendationModal(false)}
-          onAddToWishlist={handleAddFromRecommendation}
-        />
+        <Suspense fallback={null}>
+          <RecommendationModal
+            userBooks={books}
+            onClose={() => setShowRecommendationModal(false)}
+            onAddToWishlist={handleAddFromRecommendation}
+          />
+        </Suspense>
       )}
     </div>
   );

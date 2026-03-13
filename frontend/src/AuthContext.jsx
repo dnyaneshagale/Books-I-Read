@@ -1,10 +1,44 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import authApi from './authApi';
 import axiosClient from './api/axiosClient';
 
 const AuthContext = createContext(null);
+
+const getTokenExpiry = (jwt) => {
+  try {
+    const payload = JSON.parse(atob(jwt.split('.')[1]));
+    return payload.exp ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+};
+
+const getStoredSession = () => {
+  const storedToken = localStorage.getItem('token');
+  const storedUser = localStorage.getItem('user');
+
+  if (!storedToken || !storedUser) {
+    return { token: null, user: null };
+  }
+
+  const expiry = getTokenExpiry(storedToken);
+  if (expiry && Date.now() >= expiry) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return { token: null, user: null };
+  }
+
+  try {
+    return { token: storedToken, user: JSON.parse(storedUser) };
+  } catch {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return { token: null, user: null };
+  }
+};
 
 /**
  * AuthProvider - Manages user authentication state
@@ -16,51 +50,24 @@ const AuthContext = createContext(null);
  * - Axios interceptor for Authorization header
  */
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const initialSession = getStoredSession();
+  const [user, setUser] = useState(initialSession.user);
+  const [token, setToken] = useState(initialSession.token);
+  const [loading] = useState(false);
   const navigate = useNavigate();
 
-  // Decode JWT expiry (returns ms timestamp, or null if invalid)
-  const getTokenExpiry = (jwt) => {
-    try {
-      const payload = JSON.parse(atob(jwt.split('.')[1]));
-      return payload.exp ? payload.exp * 1000 : null;
-    } catch {
-      return null;
-    }
-  };
-
   // Force session-expired redirect
-  const forceExpiredLogout = () => {
+  const forceExpiredLogout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
     toast.error('Session expired. Please log in again.');
     navigate('/login', { replace: true });
-  };
+  }, [navigate]);
 
   // Load user from localStorage on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      const expiry = getTokenExpiry(storedToken);
-      if (expiry && Date.now() >= expiry) {
-        // Token already expired — clear immediately
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      } else {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        axiosClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-      }
-    }
-    
-    setLoading(false);
-
     // Listen for logout events from axios interceptor (expired token)
     const handleLogout = (e) => {
       setToken(null);
@@ -85,7 +92,7 @@ export const AuthProvider = ({ children }) => {
     // Set a timeout to auto-logout when token expires
     const msUntilExpiry = expiry - Date.now();
     if (msUntilExpiry <= 0) {
-      forceExpiredLogout();
+      setTimeout(forceExpiredLogout, 0);
       return;
     }
 
@@ -103,7 +110,7 @@ export const AuthProvider = ({ children }) => {
       clearTimeout(timerId);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [token]);
+  }, [forceExpiredLogout, token]);
 
   // Add token to axios requests
   useEffect(() => {

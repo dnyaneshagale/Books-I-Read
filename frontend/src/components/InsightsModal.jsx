@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import { Sparkles, BookOpen, Lightbulb } from 'lucide-react';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 /**
  * InsightsModal Component
@@ -16,15 +17,7 @@ import { Sparkles, BookOpen, Lightbulb } from 'lucide-react';
  * - onClose: Function to close modal
  */
 function InsightsModal({ book, loading = false, onClose }) {
-  // Lock body scroll when modal is open
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    
-    return () => {
-      document.body.style.overflow = originalOverflow || 'unset';
-    };
-  }, []);
+  useBodyScrollLock();
 
   if (!book && !loading) return null;
 

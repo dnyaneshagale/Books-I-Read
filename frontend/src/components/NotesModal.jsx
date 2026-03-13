@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { FileText, PenLine, BookOpen, Lightbulb, Save } from 'lucide-react';
 import bookApi from '../api/bookApi';
 import toast from 'react-hot-toast';
+import ModalShell from './ui/modal-shell';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import {
+  modalAmberAccentBtn,
+  modalAmberPrimaryBtn,
+  modalAmberPrimaryLargeBtn,
+  modalEmeraldPrimaryBtn,
+  modalNeutralSecondaryBtn,
+} from './ui/modal-button-tokens';
 
 /**
  * NotesModal Component
@@ -9,6 +18,8 @@ import toast from 'react-hot-toast';
  * Modal to view and edit book notes
  */
 function NotesModal({ book, onClose, onUpdated }) {
+  useBodyScrollLock();
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(book.notes || '');
   const [currentNotes, setCurrentNotes] = useState(book.notes || '');
@@ -46,7 +57,7 @@ function NotesModal({ book, onClose, onUpdated }) {
       toast.success('Notes updated successfully!');
       setIsEditing(false);
       onUpdated?.();
-    } catch (error) {
+    } catch {
       toast.error('Failed to update notes');
     } finally {
       setIsSaving(false);
@@ -110,13 +121,15 @@ function NotesModal({ book, onClose, onUpdated }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-[var(--spacing-md)] animate-[g-fadeIn_0.2s_ease] overflow-y-auto" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-[var(--color-bg)] rounded-[var(--radius-xl)] max-w-[700px] w-full max-h-[calc(100dvh-40px)] flex flex-col animate-[g-slideUp_0.3s_ease] shadow-[var(--shadow-xl)] border-2 border-amber-400 m-auto max-md:max-w-full max-md:max-h-[calc(100dvh-20px)]">
-        <div className="flex justify-between items-center p-[var(--spacing-lg)] border-b-2 border-b-amber-400 bg-gradient-to-br from-amber-400/10 to-amber-500/5 shrink-0 max-md:p-[var(--spacing-md)]">
-          <h2 className="text-[var(--font-size-xl)] font-[var(--font-weight-bold)] text-amber-500 m-0"><FileText className="w-5 h-5 inline mr-2" /> Reading Notes</h2>
-          <button className="bg-transparent border-none text-[28px] text-[var(--color-text-secondary)] cursor-pointer p-0 w-8 h-8 flex items-center justify-center rounded-[var(--radius-sm)] transition-all duration-200 hover:bg-amber-400/20 hover:text-amber-500" onClick={onClose}>×</button>
-        </div>
-
+    <ModalShell
+      onClose={onClose}
+      title="Reading Notes"
+      icon={<FileText className="w-5 h-5" />}
+      contentClassName="max-w-[700px] max-h-[calc(100dvh-40px)] border-2 border-amber-400 m-auto flex flex-col max-md:max-w-full max-md:max-h-[calc(100dvh-20px)]"
+      headerClassName="p-[var(--spacing-lg)] border-b-2 border-b-amber-400 bg-gradient-to-br from-amber-400/10 to-amber-500/5 shrink-0 max-md:p-[var(--spacing-md)]"
+      closeBtnClassName="bg-transparent border-none text-[28px] text-[var(--color-text-secondary)] p-0 w-8 h-8 rounded-[var(--radius-sm)] hover:bg-amber-400/20 hover:text-amber-500"
+      bodyClassName="flex flex-col flex-1 min-h-0"
+    >
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-[var(--spacing-lg)] min-h-0 max-md:p-[var(--spacing-md)]" style={{ scrollbarWidth: 'thin', scrollbarColor: '#ffc107 transparent' }}>
           <div className="text-center mb-[var(--spacing-xl)] pb-[var(--spacing-lg)] border-b border-[var(--color-border)]">
             <h3 className="text-[var(--font-size-xl)] font-[var(--font-weight-bold)] text-[var(--color-text-primary)] m-0 mb-[var(--spacing-xs)] leading-[1.3] max-md:text-[var(--font-size-lg)]">{book.title}</h3>
@@ -134,7 +147,7 @@ function NotesModal({ book, onClose, onUpdated }) {
               <div className="flex justify-between items-center mb-[var(--spacing-sm)]">
                 <label htmlFor="notes-textarea" className="font-[var(--font-weight-semibold)] text-[var(--color-text-primary)] text-[var(--font-size-md)] m-0"><PenLine className="w-4 h-4 inline mr-1" /> Edit Notes</label>
                 <button 
-                  className="py-[var(--spacing-xs)] px-[var(--spacing-md)] bg-gradient-to-br from-amber-400 to-amber-500 text-white border-none rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 shadow-[0_2px_6px_rgba(255,193,7,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_10px_rgba(255,193,7,0.4)] active:translate-y-0" 
+                  className={modalAmberAccentBtn}
                   onClick={handleAddBullet}
                   type="button"
                   title="Add bullet point"
@@ -170,22 +183,21 @@ function NotesModal({ book, onClose, onUpdated }) {
         <div className="flex justify-between items-center p-[var(--spacing-lg)] border-t border-[var(--color-border)] bg-[var(--color-bg)] shrink-0 max-md:p-[var(--spacing-md)]">
           {isEditing ? (
             <div className="flex gap-[var(--spacing-sm)]">
-              <button className="py-[var(--spacing-sm)] px-[var(--spacing-lg)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:enabled:bg-[var(--color-bg-tertiary)] disabled:opacity-60 disabled:cursor-not-allowed" onClick={handleCancel} disabled={isSaving}>
+              <button className={modalNeutralSecondaryBtn} onClick={handleCancel} disabled={isSaving}>
                 Cancel
               </button>
-              <button className="py-[var(--spacing-sm)] px-[var(--spacing-lg)] border-none rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)] hover:enabled:-translate-y-0.5 hover:enabled:shadow-[0_4px_12px_rgba(16,185,129,0.4)] disabled:opacity-60 disabled:cursor-not-allowed" onClick={handleSave} disabled={isSaving}>
+              <button className={modalEmeraldPrimaryBtn} onClick={handleSave} disabled={isSaving}>
                 {isSaving ? 'Saving...' : <><Save className="w-4 h-4 inline mr-1" /> Save Notes</>}
               </button>
             </div>
           ) : (
             <>
-              <button className="py-3 px-8 bg-gradient-to-br from-amber-400 to-amber-500 text-white border-none rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(255,193,7,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,193,7,0.4)] active:translate-y-0" onClick={onClose}>Close</button>
-              <button className="py-[var(--spacing-sm)] px-[var(--spacing-lg)] border-none rounded-[var(--radius-md)] text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] cursor-pointer transition-all duration-200 bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-[0_2px_8px_rgba(255,193,7,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,193,7,0.4)]" onClick={() => setIsEditing(true)}>✏️ Edit Notes</button>
+              <button className={modalAmberPrimaryLargeBtn} onClick={onClose}>Close</button>
+              <button className={modalAmberPrimaryBtn} onClick={() => setIsEditing(true)}>✏️ Edit Notes</button>
             </>
           )}
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 }
 

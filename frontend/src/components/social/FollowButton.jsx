@@ -9,7 +9,6 @@ const FollowButton = ({
   userId,
   isFollowing: initialIsFollowing = false,
   hasPendingRequest: initialHasPendingRequest = false,
-  isPublic = true,
   onFollowChange,
   size = 'medium',
 }) => {

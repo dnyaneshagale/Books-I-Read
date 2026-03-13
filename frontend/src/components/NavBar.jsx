@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Home, Newspaper, PenLine, Search, BookMarked, User } from 'lucide-react';
+import { prefetchDashboard, prefetchFeed, prefetchReviews } from '../prefetchQueries';
 
 /**
  * NavBar - Shared navigation bar for all authenticated pages
@@ -9,6 +11,7 @@ import { Home, Newspaper, PenLine, Search, BookMarked, User } from 'lucide-react
 const NavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const path = location.pathname;
 
   const navItems = [
@@ -23,6 +26,20 @@ const NavBar = () => {
   const isActive = (itemPath) => {
     if (itemPath === '/') return path === '/';
     return path.startsWith(itemPath);
+  };
+
+  const handlePrefetch = (itemPath) => {
+    if (itemPath === '/') {
+      void prefetchDashboard(queryClient);
+      return;
+    }
+    if (itemPath === '/feed') {
+      void prefetchFeed(queryClient);
+      return;
+    }
+    if (itemPath === '/reviews') {
+      void prefetchReviews(queryClient);
+    }
   };
 
   return (
@@ -43,6 +60,8 @@ const NavBar = () => {
               }
             `}
             onClick={() => navigate(item.path)}
+            onMouseEnter={() => handlePrefetch(item.path)}
+            onFocus={() => handlePrefetch(item.path)}
             title={item.label}
           >
             {isActive(item.path) && (
