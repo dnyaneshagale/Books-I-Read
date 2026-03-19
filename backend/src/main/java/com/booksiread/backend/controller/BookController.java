@@ -110,6 +110,18 @@ public class BookController {
     }
 
     /**
+     * DELETE /api/books/batch - Delete multiple books
+     * 
+     * @param bookIds - List of book IDs to delete
+     * @return 204 No Content on success
+     */
+    @DeleteMapping("/batch")
+    public ResponseEntity<Void> deleteBooksInBatch(@RequestBody List<Long> bookIds) {
+        bookService.deleteBooksInBatch(bookIds);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * POST /api/books/{id}/regenerate-notes - Regenerate AI notes for a book
      * @param id - book ID
      * @return 202 Accepted (async processing)

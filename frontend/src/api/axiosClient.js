@@ -7,7 +7,6 @@ const axiosClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
   timeout: 60000, // 60 seconds for AI operations
 });
 
@@ -55,6 +54,13 @@ axiosClient.interceptors.response.use(
         
         // Emit logout event for AuthContext to handle + redirect
         window.dispatchEvent(new CustomEvent('auth:logout', { detail: { expired: true } }));
+
+        // Fallback redirect if event listener hasn't navigated within 500ms
+        setTimeout(() => {
+          if (window.location.pathname !== '/login') {
+            window.location.replace('/login');
+          }
+        }, 500);
       }
     }
     return Promise.reject(error);
