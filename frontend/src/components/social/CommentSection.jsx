@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import reviewApi from '../../api/reviewApi';
 import socialApi from '../../api/socialApi';
 import toast from 'react-hot-toast';
-import './CommentSection.css';
 
 /**
  * Renders comment text with @mentions as clickable links
@@ -11,12 +10,12 @@ import './CommentSection.css';
 const CommentText = ({ content, navigate }) => {
   const parts = content.split(/(@\w+)/g);
   return (
-    <p className="comment-item__text">
+    <p className="m-0 text-[0.88rem] text-txt-secondary dark:text-[var(--color-text-secondary,#9E95A8)] leading-relaxed break-words">
       {parts.map((part, i) =>
         part.startsWith('@') ? (
           <span
             key={i}
-            className="comment-item__mention"
+            className="text-primary dark:text-[var(--color-primary,#7C4DFF)] font-semibold cursor-pointer transition-opacity duration-150 hover:opacity-75"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/profile/${part.slice(1)}`);
@@ -50,7 +49,6 @@ const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRe
     setCursorPos(cursor);
     onChange(val);
 
-    // Detect @mention in progress
     const textBefore = val.slice(0, cursor);
     const mentionMatch = textBefore.match(/@(\w*)$/);
 
@@ -86,7 +84,6 @@ const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRe
     onChange(newValue);
     setShowMentions(false);
     setMentionResults([]);
-    // Focus back
     setTimeout(() => {
       if (inputRef?.current) {
         const pos = beforeMention.length + username.length + 2;
@@ -124,7 +121,7 @@ const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRe
   }, []);
 
   return (
-    <div className="comment-input-wrapper">
+    <div className="flex-1 relative">
       <input
         ref={inputRef}
         type="text"
@@ -133,32 +130,32 @@ const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRe
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         maxLength={1000}
-        className="comment-section__input"
+        className="w-full py-2.5 px-4 border border-border dark:border-[var(--color-border,#2D2A35)] rounded-full text-[0.88rem] outline-none transition-all duration-200 font-[inherit] bg-bg dark:bg-[var(--color-bg-secondary,#1E1B24)] text-txt-primary dark:text-[var(--color-text-primary,#E2D9F3)] box-border focus:border-primary dark:focus:border-[var(--color-primary,#7C4DFF)] focus:shadow-[0_0_0_3px_rgba(109,40,217,0.08)] dark:focus:shadow-[0_0_0_3px_rgba(124,77,255,0.1)]"
         disabled={posting}
       />
       {showMentions && (
-        <div className="mention-dropdown" ref={mentionListRef}>
+        <div className="absolute bottom-full left-0 right-0 max-h-[220px] overflow-y-auto bg-bg dark:bg-[var(--color-bg-secondary,#1E1B24)] border border-border dark:border-[var(--color-border,#2D2A35)] rounded-xl shadow-lg dark:shadow-[0_10px_30px_rgba(0,0,0,0.4)] z-[100] mb-1" ref={mentionListRef}>
           {mentionResults.map((user, idx) => (
             <div
               key={user.id || user.username}
-              className={`mention-dropdown__item ${idx === mentionIndex ? 'active' : ''}`}
+              className={`flex items-center gap-2.5 py-2.5 px-3.5 cursor-pointer transition-colors duration-[120ms] hover:bg-[rgba(109,40,217,0.04)] dark:hover:bg-[rgba(124,77,255,0.08)] ${idx === mentionIndex ? 'bg-[rgba(109,40,217,0.04)] dark:bg-[rgba(124,77,255,0.08)]' : ''}`}
               onMouseDown={(e) => {
                 e.preventDefault();
                 insertMention(user.username);
               }}
             >
-              <div className="mention-dropdown__avatar">
+              <div>
                 {user.profilePictureUrl ? (
-                  <img src={user.profilePictureUrl} alt="" />
+                  <img src={user.profilePictureUrl} alt="" className="w-[30px] h-[30px] rounded-full object-cover" />
                 ) : (
-                  <div className="mention-dropdown__avatar-placeholder">
+                  <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-primary to-violet-500 text-white flex items-center justify-center font-bold text-xs">
                     {(user.displayName || user.username || '?')[0].toUpperCase()}
                   </div>
                 )}
               </div>
-              <div className="mention-dropdown__info">
-                <span className="mention-dropdown__name">{user.displayName || user.username}</span>
-                <span className="mention-dropdown__username">@{user.username}</span>
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-[0.85rem] text-txt-primary dark:text-[var(--color-text-primary,#E2D9F3)] whitespace-nowrap overflow-hidden text-ellipsis">{user.displayName || user.username}</span>
+                <span className="text-xs text-txt-light dark:text-[#5a5268]">@{user.username}</span>
               </div>
             </div>
           ))}
@@ -217,48 +214,49 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
   };
 
   const replies = comment.replies || [];
+  const isReply = depth > 0;
 
   return (
-    <div className={`comment-item ${depth > 0 ? 'comment-item--reply' : ''}`}>
-      <div className="comment-item__avatar">
+    <div className={`flex items-start gap-2.5 ${isReply ? 'py-2 border-b-0' : 'py-2.5 border-b border-[var(--color-border,#f1f5f9)] dark:border-[var(--color-border,#2D2A35)] last:border-b-0'}`}>
+      <div>
         {comment.authorProfilePictureUrl ? (
-          <img src={comment.authorProfilePictureUrl} alt="" />
+          <img src={comment.authorProfilePictureUrl} alt="" className={`${isReply ? 'w-[26px] h-[26px]' : 'w-8 h-8'} rounded-full object-cover`} />
         ) : (
-          <div className="comment-item__avatar-placeholder">
+          <div className={`${isReply ? 'w-[26px] h-[26px] text-[0.7rem]' : 'w-8 h-8 text-[0.8rem]'} rounded-full bg-gradient-to-br from-primary to-violet-500 text-white flex items-center justify-center font-bold`}>
             {(comment.authorDisplayName || comment.authorUsername || '?')[0].toUpperCase()}
           </div>
         )}
       </div>
-      <div className="comment-item__content-wrap">
-        <div className="comment-item__body">
-          <div className="comment-item__header">
+      <div className="flex-1 min-w-0">
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-2 mb-0.5">
             <span
-              className="comment-item__author"
+              className="font-bold text-[0.85rem] text-txt-primary dark:text-[var(--color-text-primary,#E2D9F3)] cursor-pointer transition-colors duration-150 hover:text-primary dark:hover:text-[var(--color-primary,#7C4DFF)]"
               onClick={() => navigate(`/profile/${comment.authorUsername}`)}
             >
               {comment.authorDisplayName || comment.authorUsername}
             </span>
-            <span className="comment-item__time">{formatTime(comment.createdAt)}</span>
+            <span className="text-[0.72rem] text-txt-light dark:text-[#5a5268]">{formatTime(comment.createdAt)}</span>
           </div>
           <CommentText content={comment.content} navigate={navigate} />
-          <div className="comment-item__actions">
+          <div className="flex gap-3 mt-1">
             {depth < 2 && (
-              <button className="comment-item__reply-btn" onClick={handleReplyClick}>
+              <button className="bg-none border-none text-xs font-bold text-txt-light dark:text-[#5a5268] cursor-pointer py-0.5 px-0 transition-colors duration-150 hover:text-primary dark:hover:text-[var(--color-primary,#7C4DFF)]" onClick={handleReplyClick}>
                 Reply
               </button>
             )}
             {comment.authorId === currentUserId && (
               confirmingDelete ? (
-                <div className="comment-item__delete-confirm">
-                  <span className="comment-item__delete-confirm-text">Delete?</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-red-500 dark:text-red-400">Delete?</span>
                   <button
-                    className="comment-item__delete-yes"
+                    className="bg-red-500 dark:bg-red-600 text-white border-none rounded-lg py-[3px] px-2.5 text-[0.72rem] font-bold cursor-pointer transition-colors duration-150 hover:bg-red-600 dark:hover:bg-red-500"
                     onClick={() => { onDelete(comment.id); setConfirmingDelete(false); }}
                   >
                     Yes
                   </button>
                   <button
-                    className="comment-item__delete-no"
+                    className="bg-none border border-border dark:border-[var(--color-border,#2D2A35)] text-txt-secondary dark:text-[var(--color-text-secondary,#9E95A8)] rounded-lg py-[3px] px-2.5 text-[0.72rem] font-bold cursor-pointer transition-all duration-150 hover:bg-[var(--color-bg-tertiary,#f1f5f9)] dark:hover:bg-[var(--color-bg-tertiary,#2D2A35)]"
                     onClick={() => setConfirmingDelete(false)}
                   >
                     No
@@ -266,7 +264,7 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
                 </div>
               ) : (
                 <button
-                  className="comment-item__delete"
+                  className="bg-none border-none cursor-pointer text-xs font-semibold text-txt-light dark:text-[#5a5268] py-0.5 px-0 transition-colors duration-150 hover:text-red-500 dark:hover:text-red-400"
                   onClick={() => setConfirmingDelete(true)}
                   title="Delete comment"
                 >
@@ -279,7 +277,7 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
 
         {/* Reply input */}
         {showReplyInput && (
-          <form className="comment-section__form comment-section__form--reply" onSubmit={handleReply}>
+          <form className="flex flex-col gap-2 my-2.5 mb-1" onSubmit={handleReply}>
             <CommentInput
               value={replyText}
               onChange={setReplyText}
@@ -288,17 +286,17 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
               posting={replying}
               inputRef={replyInputRef}
             />
-            <div className="comment-reply__actions">
+            <div className="flex gap-2 justify-end">
               <button
                 type="button"
-                className="comment-reply__cancel"
+                className="bg-none border-none text-txt-secondary dark:text-[var(--color-text-secondary,#9E95A8)] text-[0.8rem] font-semibold cursor-pointer py-1.5 px-3 rounded-lg transition-colors duration-150 hover:bg-[var(--color-bg-tertiary,#f1f5f9)] dark:hover:bg-[var(--color-bg-tertiary,#2D2A35)]"
                 onClick={() => { setShowReplyInput(false); setReplyText(''); }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="comment-section__post-btn comment-section__post-btn--reply"
+                className="py-1.5 px-4 rounded-full border-none bg-gradient-primary text-white text-[0.8rem] font-bold cursor-pointer transition-all duration-200 whitespace-nowrap shadow-[0_2px_6px_rgba(109,40,217,0.2)] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(109,40,217,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0"
                 disabled={replying || !replyText.trim()}
               >
                 {replying ? '...' : 'Reply'}
@@ -307,11 +305,11 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
           </form>
         )}
 
-        {/* Replies — Instagram-style show/hide toggle */}
+        {/* Replies */}
         {replies.length > 0 && (
           <>
             <button
-              className="comment-item__show-replies"
+              className="bg-none border-none text-[0.78rem] font-bold text-primary dark:text-[var(--color-primary,#7C4DFF)] cursor-pointer py-1 px-0 mb-0.5 transition-opacity duration-150 hover:opacity-75"
               onClick={() => setShowReplies(!showReplies)}
             >
               {showReplies
@@ -320,7 +318,7 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
               }
             </button>
             {showReplies && (
-              <div className="comment-item__replies">
+              <div className="mt-1 pl-3 border-l-2 border-border dark:border-[var(--color-border,#2D2A35)] ml-1">
                 {replies.map(reply => (
                   <CommentItem
                     key={reply.id}
@@ -389,7 +387,6 @@ const CommentSection = ({ reviewId, currentUserId }) => {
   const handleDelete = async (commentId) => {
     try {
       await reviewApi.deleteComment(commentId);
-      // Remove from top-level or from replies
       setComments(prev => {
         const removeFromList = (list) =>
           list
@@ -420,9 +417,9 @@ const CommentSection = ({ reviewId, currentUserId }) => {
   }, []);
 
   return (
-    <div className="comment-section">
+    <div className="mt-4">
       {/* Add Comment */}
-      <form className="comment-section__form" onSubmit={handlePost}>
+      <form className="flex gap-2 mb-4 items-start" onSubmit={handlePost}>
         <CommentInput
           value={newComment}
           onChange={setNewComment}
@@ -433,7 +430,7 @@ const CommentSection = ({ reviewId, currentUserId }) => {
         />
         <button
           type="submit"
-          className="comment-section__post-btn"
+          className="py-2 px-5 rounded-full border-none bg-gradient-primary text-white text-[0.85rem] font-bold cursor-pointer transition-all duration-200 whitespace-nowrap shadow-[0_2px_6px_rgba(109,40,217,0.2)] flex-shrink-0 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(109,40,217,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0"
           disabled={posting || !newComment.trim()}
         >
           {posting ? '...' : 'Post'}
@@ -441,11 +438,11 @@ const CommentSection = ({ reviewId, currentUserId }) => {
       </form>
 
       {/* Comments List */}
-      <div className="comment-section__list">
+      <div className="flex flex-col gap-0.5">
         {loading ? (
-          <div className="comment-section__loading">Loading comments...</div>
+          <div className="text-center p-6 text-txt-light dark:text-[#5a5268] text-[0.85rem]">Loading comments...</div>
         ) : comments.length === 0 ? (
-          <div className="comment-section__empty">
+          <div className="text-center p-6 text-txt-light dark:text-[#5a5268] text-[0.85rem]">
             No comments yet. Be the first to share your thoughts!
           </div>
         ) : (

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import bookApi from '../api/bookApi';
 import toast from 'react-hot-toast';
-import './ImportModal.css';
 
 /**
  * ImportModal Component
@@ -20,10 +19,8 @@ function ImportModal({ onClose, onImported }) {
       throw new Error('CSV file appears to be empty');
     }
 
-    // Parse CSV header
     const headers = parseCSVLine(lines[0]);
-    
-    // Find column indices (Goodreads export format)
+
     const titleIdx = headers.findIndex(h => h.toLowerCase().includes('title'));
     const authorIdx = headers.findIndex(h => h.toLowerCase().includes('author'));
     const pagesIdx = headers.findIndex(h => h.toLowerCase() === 'number of pages');
@@ -38,21 +35,19 @@ function ImportModal({ onClose, onImported }) {
     }
 
     const books = [];
-    
-    // Parse each book row
+
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
       try {
         const values = parseCSVLine(line);
-        
+
         const title = values[titleIdx]?.trim();
         const author = values[authorIdx]?.trim();
-        
+
         if (!title || !author) continue;
 
-        // Map Goodreads shelves to our status
         let status = 'WANT_TO_READ';
         const shelf = values[shelvesIdx]?.toLowerCase() || '';
         if (shelf.includes('currently-reading') || shelf.includes('reading')) {
@@ -94,7 +89,7 @@ function ImportModal({ onClose, onImported }) {
 
       if (char === '"' && inQuotes && nextChar === '"') {
         current += '"';
-        i++; // Skip next quote
+        i++;
       } else if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -111,9 +106,8 @@ function ImportModal({ onClose, onImported }) {
 
   const parseGoodreadsDate = (dateStr) => {
     if (!dateStr || dateStr.trim() === '') return null;
-    
+
     try {
-      // Goodreads format: "2024/01/15" or "2024-01-15"
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return null;
       return date.toISOString().split('T')[0];
@@ -124,9 +118,8 @@ function ImportModal({ onClose, onImported }) {
 
   const parseGoodreadsTags = (shelvesStr) => {
     if (!shelvesStr) return [];
-    
+
     const shelves = shelvesStr.split(',').map(s => s.trim());
-    // Filter out default Goodreads shelves
     const defaultShelves = ['to-read', 'currently-reading', 'read'];
     return shelves
       .filter(shelf => !defaultShelves.includes(shelf.toLowerCase()))
@@ -144,13 +137,12 @@ function ImportModal({ onClose, onImported }) {
 
     setFile(selectedFile);
 
-    // Read and preview file
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const csvText = e.target.result;
         const parsedBooks = parseGoodreadsCSV(csvText);
-        setPreview(parsedBooks.slice(0, 5)); // Show first 5 books
+        setPreview(parsedBooks.slice(0, 5));
         toast.success(`📚 Found ${parsedBooks.length} books in file`);
       } catch (error) {
         toast.error(error.message || 'Failed to parse CSV file');
@@ -177,7 +169,6 @@ function ImportModal({ onClose, onImported }) {
         let successful = 0;
         let failed = 0;
 
-        // Import books one by one
         for (const book of books) {
           try {
             await bookApi.createBook(book);
@@ -188,12 +179,12 @@ function ImportModal({ onClose, onImported }) {
         }
 
         setImportStats({ successful, failed, total: books.length });
-        
+
         if (successful > 0) {
           toast.success(`✅ Successfully imported ${successful} books!`);
           if (onImported) onImported();
         }
-        
+
         if (failed > 0) {
           toast.error(`⚠️ Failed to import ${failed} books`);
         }
@@ -208,41 +199,41 @@ function ImportModal({ onClose, onImported }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content import-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>📥 Import from Goodreads</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+    <div className="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-lg animate-fade-in" onClick={onClose}>
+      <div className="modal-content bg-bg rounded-xl p-xl max-w-[700px] w-full max-h-[90vh] overflow-y-auto shadow-xl border border-border animate-slide-up max-md:max-w-[calc(100vw-var(--spacing-lg))] max-md:m-sm max-md:p-lg max-[400px]:p-md" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-lg pb-md border-b-2 border-border">
+          <h2 className="text-2xl font-bold text-txt-primary m-0 max-md:text-xl">📥 Import from Goodreads</h2>
+          <button className="bg-bg-tertiary border border-border py-2 px-3.5 rounded-md text-lg cursor-pointer transition-all duration-200 text-txt-secondary hover:bg-danger hover:text-white hover:border-danger hover:scale-105" onClick={onClose}>×</button>
         </div>
 
-        <div className="import-modal-body">
+        <div className="p-lg">
           {!importStats ? (
             <>
-              <div className="import-instructions">
-                <h3>How to import from Goodreads:</h3>
-                <ol>
-                  <li>Go to <a href="https://www.goodreads.com/review/import" target="_blank" rel="noopener noreferrer">Goodreads Export</a></li>
-                  <li>Click "Export Library" and download your CSV file</li>
-                  <li>Upload the CSV file below</li>
+              <div className="bg-bg-secondary p-lg rounded-md mb-lg">
+                <h3 className="m-0 mb-md text-base text-txt-primary">How to import from Goodreads:</h3>
+                <ol className="m-0 pl-lg text-txt-secondary text-sm">
+                  <li className="mb-sm">Go to <a href="https://www.goodreads.com/review/import" target="_blank" rel="noopener noreferrer" className="text-primary no-underline hover:underline">Goodreads Export</a></li>
+                  <li className="mb-sm">Click "Export Library" and download your CSV file</li>
+                  <li className="mb-sm">Upload the CSV file below</li>
                 </ol>
               </div>
 
-              <div className="file-upload-section">
-                <label htmlFor="csv-file" className="file-upload-label">
-                  <div className="file-upload-box">
+              <div className="mb-lg">
+                <label htmlFor="csv-file" className="block cursor-pointer">
+                  <div className="border-2 border-dashed border-border rounded-md p-xl text-center bg-bg transition-all duration-200 flex flex-col items-center gap-sm hover:border-primary hover:bg-bg-hover">
                     {file ? (
                       <>
-                        <span className="file-icon">📄</span>
-                        <span className="file-name">{file.name}</span>
-                        <span className="file-size">
+                        <span className="text-5xl">📄</span>
+                        <span className="text-base font-semibold text-txt-primary">{file.name}</span>
+                        <span className="text-sm text-txt-secondary">
                           {(file.size / 1024).toFixed(2)} KB
                         </span>
                       </>
                     ) : (
                       <>
-                        <span className="upload-icon">📤</span>
-                        <span className="upload-text">Click to select Goodreads CSV file</span>
-                        <span className="upload-hint">or drag and drop</span>
+                        <span className="text-5xl max-md:text-5xl max-[400px]:text-[40px]">📤</span>
+                        <span className="text-base font-semibold text-txt-primary max-md:text-sm">Click to select Goodreads CSV file</span>
+                        <span className="text-sm text-txt-secondary max-md:text-xs">or drag and drop</span>
                       </>
                     )}
                   </div>
@@ -252,23 +243,23 @@ function ImportModal({ onClose, onImported }) {
                   type="file"
                   accept=".csv"
                   onChange={handleFileSelect}
-                  className="file-input-hidden"
+                  className="hidden"
                 />
               </div>
 
               {preview.length > 0 && (
-                <div className="preview-section">
-                  <h3>Preview (first 5 books):</h3>
-                  <div className="preview-list">
+                <div className="mb-lg">
+                  <h3 className="text-base m-0 mb-md text-txt-primary">Preview (first 5 books):</h3>
+                  <div className="flex flex-col gap-sm max-h-[300px] overflow-y-auto">
                     {preview.map((book, index) => (
-                      <div key={index} className="preview-item">
-                        <div className="preview-title">{book.title}</div>
-                        <div className="preview-author">by {book.author}</div>
-                        <div className="preview-details">
-                          <span className="preview-badge">{book.status}</span>
-                          {book.rating && <span className="preview-rating">{'★'.repeat(book.rating)}</span>}
+                      <div key={index} className="bg-bg-secondary p-md rounded-md border-l-[3px] border-l-primary">
+                        <div className="font-semibold text-txt-primary mb-1">{book.title}</div>
+                        <div className="text-sm text-txt-secondary mb-sm">by {book.author}</div>
+                        <div className="flex flex-wrap gap-xs text-xs">
+                          <span className="py-0.5 px-2 bg-primary text-white rounded-xl font-medium">{book.status}</span>
+                          {book.rating && <span className="text-amber-400">{'★'.repeat(book.rating)}</span>}
                           {book.tags.length > 0 && (
-                            <span className="preview-tags">{book.tags.join(', ')}</span>
+                            <span className="text-txt-secondary italic">{book.tags.join(', ')}</span>
                           )}
                         </div>
                       </div>
@@ -277,16 +268,16 @@ function ImportModal({ onClose, onImported }) {
                 </div>
               )}
 
-              <div className="import-actions">
+              <div className="flex gap-md justify-end pt-lg border-t border-border max-md:flex-col-reverse max-md:gap-sm">
                 <button
-                  className="btn-secondary"
+                  className="py-md px-lg rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 border border-border bg-bg-secondary text-txt-primary hover:bg-bg-hover hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed max-md:w-full max-md:py-3.5 max-md:px-[18px] max-md:text-sm"
                   onClick={onClose}
                   disabled={isProcessing}
                 >
                   Cancel
                 </button>
                 <button
-                  className="btn-primary"
+                  className="py-md px-lg rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 border-none bg-primary text-white hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)] disabled:opacity-50 disabled:cursor-not-allowed max-md:w-full max-md:py-3.5 max-md:px-[18px] max-md:text-sm"
                   onClick={handleImport}
                   disabled={!file || isProcessing}
                 >
@@ -295,28 +286,28 @@ function ImportModal({ onClose, onImported }) {
               </div>
             </>
           ) : (
-            <div className="import-results">
-              <div className="results-icon">
+            <div className="text-center p-xl">
+              <div className="text-[64px] mb-md">
                 {importStats.failed === 0 ? '🎉' : '✅'}
               </div>
-              <h3>Import Complete!</h3>
-              <div className="results-stats">
-                <div className="stat-item success">
-                  <span className="stat-number">{importStats.successful}</span>
-                  <span className="stat-label">Successfully Imported</span>
+              <h3 className="text-xl m-0 mb-lg text-txt-primary">Import Complete!</h3>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-md mb-xl">
+                <div className="bg-gradient-to-br from-emerald-100 to-emerald-200 p-md rounded-md flex flex-col gap-xs">
+                  <span className="text-2xl font-bold text-txt-primary">{importStats.successful}</span>
+                  <span className="text-sm text-txt-secondary">Successfully Imported</span>
                 </div>
                 {importStats.failed > 0 && (
-                  <div className="stat-item error">
-                    <span className="stat-number">{importStats.failed}</span>
-                    <span className="stat-label">Failed</span>
+                  <div className="bg-gradient-to-br from-red-100 to-red-200 p-md rounded-md flex flex-col gap-xs">
+                    <span className="text-2xl font-bold text-txt-primary">{importStats.failed}</span>
+                    <span className="text-sm text-txt-secondary">Failed</span>
                   </div>
                 )}
-                <div className="stat-item">
-                  <span className="stat-number">{importStats.total}</span>
-                  <span className="stat-label">Total</span>
+                <div className="bg-bg-secondary p-md rounded-md flex flex-col gap-xs">
+                  <span className="text-2xl font-bold text-txt-primary">{importStats.total}</span>
+                  <span className="text-sm text-txt-secondary">Total</span>
                 </div>
               </div>
-              <button className="btn-primary" onClick={onClose}>
+              <button className="py-md px-lg rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 border-none bg-primary text-white hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)]" onClick={onClose}>
                 Done
               </button>
             </div>

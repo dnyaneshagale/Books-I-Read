@@ -3,7 +3,6 @@ import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
 import authApi from '../authApi';
 import toast from 'react-hot-toast';
-import './LoginPage.css';
 
 /**
  * RegisterPage - User registration form
@@ -15,12 +14,11 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [usernameStatus, setUsernameStatus] = useState(null); // null | 'checking' | 'available' | 'taken' | 'invalid'
+  const [usernameStatus, setUsernameStatus] = useState(null);
   const { register } = useAuth();
   const navigate = useNavigate();
   const usernameTimerRef = useRef(null);
 
-  // Debounced username availability check
   const checkUsernameAvailability = useCallback((value) => {
     if (usernameTimerRef.current) clearTimeout(usernameTimerRef.current);
 
@@ -53,7 +51,6 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
     if (!username.trim() || !email.trim() || !password || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
@@ -79,7 +76,6 @@ const RegisterPage = () => {
       return;
     }
 
-    // Email validation (basic)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast.error('Please enter a valid email');
@@ -100,16 +96,25 @@ const RegisterPage = () => {
     }
   };
 
-  return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h1>Create Account</h1>
-        <p className="auth-subtitle">Start tracking your reading journey</p>
+  // Shared input classes
+  const inputCls = "w-full py-3.5 px-[1.125rem] bg-white dark:bg-[#0F0C15] border-2 border-[#cbd5e1] dark:border-[#2D2A35] rounded-[10px] text-base text-[#1e293b] dark:text-[#E2D9F3] transition-all duration-200 font-[inherit] outline-none focus:border-[#7c3aed] dark:focus:border-[#7C4DFF] focus:bg-white focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[#f8fafc] placeholder:text-[#94a3b8] placeholder:text-[0.9375rem] box-border";
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <div className="input-with-status">
+  const getInputBorderCls = () => {
+    if (usernameStatus === 'taken') return '!border-[#dc2626] focus:!shadow-[0_0_0_3px_rgba(220,38,38,0.12)] focus:!border-[#dc2626]';
+    if (usernameStatus === 'available') return '!border-[#059669] focus:!shadow-[0_0_0_3px_rgba(5,150,105,0.12)] focus:!border-[#059669]';
+    return '';
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-bg-secondary dark:bg-bg p-8 max-[640px]:p-4">
+      <div className="bg-bg-secondary dark:bg-[#1E1B24] border border-border dark:border-[#2D2A35] rounded-2xl py-14 px-12 max-w-[440px] w-full shadow-lg max-[640px]:py-8 max-[640px]:px-6">
+        <h1 className="text-[2rem] font-bold text-txt-primary dark:text-[#E2D9F3] m-0 mb-2.5 text-center tracking-tight max-[640px]:text-[1.625rem]">Create Account</h1>
+        <p className="text-txt-secondary dark:text-[#9E95A8] text-center m-0 mb-10 text-base leading-normal">Start tracking your reading journey</p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2.5">
+            <label htmlFor="username" className="text-[0.9375rem] font-semibold text-[#1e293b] dark:text-[#E2D9F3] tracking-tight">Username</label>
+            <div className="relative">
               <input
                 type="text"
                 id="username"
@@ -118,17 +123,17 @@ const RegisterPage = () => {
                 placeholder="Unique username (3-50 characters)"
                 disabled={isLoading}
                 autoFocus
-                className={usernameStatus === 'taken' ? 'input-error' : usernameStatus === 'available' ? 'input-success' : ''}
+                className={`${inputCls} ${getInputBorderCls()}`}
               />
-              {usernameStatus === 'checking' && <span className="input-status input-status--checking">Checking...</span>}
-              {usernameStatus === 'available' && <span className="input-status input-status--available">✓ Available</span>}
-              {usernameStatus === 'taken' && <span className="input-status input-status--taken">✗ Already taken</span>}
-              {usernameStatus === 'invalid' && <span className="input-status input-status--taken">3-50 characters required</span>}
+              {usernameStatus === 'checking' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.78rem] font-semibold pointer-events-none text-[#6b7280] dark:text-[#9ca3af]">Checking...</span>}
+              {usernameStatus === 'available' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.78rem] font-semibold pointer-events-none text-[#059669] dark:text-[#34d399]">✓ Available</span>}
+              {usernameStatus === 'taken' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.78rem] font-semibold pointer-events-none text-[#dc2626] dark:text-[#f87171]">✗ Already taken</span>}
+              {usernameStatus === 'invalid' && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[0.78rem] font-semibold pointer-events-none text-[#dc2626] dark:text-[#f87171]">3-50 characters required</span>}
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="displayName">Display Name <span style={{color: '#9ca3af', fontWeight: 400}}>(optional)</span></label>
+          <div className="flex flex-col gap-2.5">
+            <label htmlFor="displayName" className="text-[0.9375rem] font-semibold text-[#1e293b] dark:text-[#E2D9F3] tracking-tight">Display Name <span style={{ color: '#9ca3af', fontWeight: 400 }}>(optional)</span></label>
             <input
               type="text"
               id="displayName"
@@ -137,11 +142,12 @@ const RegisterPage = () => {
               placeholder="Your name shown to others"
               disabled={isLoading}
               maxLength={100}
+              className={inputCls}
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
+          <div className="flex flex-col gap-2.5">
+            <label htmlFor="email" className="text-[0.9375rem] font-semibold text-[#1e293b] dark:text-[#E2D9F3] tracking-tight">Email</label>
             <input
               type="email"
               id="email"
@@ -149,11 +155,12 @@ const RegisterPage = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your.email@example.com"
               disabled={isLoading}
+              className={inputCls}
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <div className="flex flex-col gap-2.5">
+            <label htmlFor="password" className="text-[0.9375rem] font-semibold text-[#1e293b] dark:text-[#E2D9F3] tracking-tight">Password</label>
             <input
               type="password"
               id="password"
@@ -161,11 +168,12 @@ const RegisterPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="At least 6 characters"
               disabled={isLoading}
+              className={inputCls}
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+          <div className="flex flex-col gap-2.5">
+            <label htmlFor="confirmPassword" className="text-[0.9375rem] font-semibold text-[#1e293b] dark:text-[#E2D9F3] tracking-tight">Confirm Password</label>
             <input
               type="password"
               id="confirmPassword"
@@ -173,18 +181,19 @@ const RegisterPage = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Re-enter your password"
               disabled={isLoading}
+              className={inputCls}
             />
           </div>
 
-          <button type="submit" className="btn-primary" disabled={isLoading}>
+          <button type="submit" className="mt-3 py-4 px-6 bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] text-white border-none rounded-[10px] text-base font-semibold cursor-pointer transition-all duration-200 font-[inherit] shadow-[0_4px_12px_rgba(124,58,237,0.25)] hover:not-disabled:from-[#6d28d9] hover:not-disabled:to-[#5b21b6] hover:not-disabled:-translate-y-0.5 hover:not-disabled:shadow-[0_6px_16px_rgba(124,58,237,0.35)] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none" disabled={isLoading}>
             {isLoading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>
 
-        <div className="auth-footer">
-          <p>
+        <div className="mt-10 pt-8 border-t border-border dark:border-[#2D2A35] text-center">
+          <p className="text-txt-secondary dark:text-[#9E95A8] text-[0.9375rem] m-0 leading-relaxed">
             Already have an account?{' '}
-            <a href="/login" className="auth-link">
+            <a href="/login" className="text-[#7c3aed] dark:text-[#7C4DFF] font-bold no-underline transition-all duration-200 px-0.5 hover:text-[#6d28d9] hover:underline hover:underline-offset-[3px]">
               Log in
             </a>
           </p>
