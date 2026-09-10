@@ -1,6 +1,7 @@
 package com.booksiread.backend.service;
 
 import com.booksiread.backend.client.GeminiClient;
+import com.booksiread.backend.client.GoogleBooksClient;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -20,10 +21,12 @@ public class RecommendationService {
     private static final Logger logger = LoggerFactory.getLogger(RecommendationService.class);
 
     private final GeminiClient geminiClient;
+    private final GoogleBooksClient googleBooksClient;
     private final ObjectMapper objectMapper;
 
-    public RecommendationService(GeminiClient geminiClient) {
+    public RecommendationService(GeminiClient geminiClient, GoogleBooksClient googleBooksClient) {
         this.geminiClient = geminiClient;
+        this.googleBooksClient = googleBooksClient;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -36,7 +39,7 @@ public class RecommendationService {
         String prompt = buildLibraryPrompt(bookList);
         String jsonResponse = geminiClient.generateRecommendations(prompt);
 
-        return parseRecommendations(jsonResponse);
+        return verifyRecommendations(parseRecommendations(jsonResponse));
     }
 
     /**
@@ -48,7 +51,35 @@ public class RecommendationService {
         String prompt = buildCustomPrompt(preferences);
         String jsonResponse = geminiClient.generateRecommendations(prompt);
 
-        return parseRecommendations(jsonResponse);
+        return verifyRecommendations(parseRecommendations(jsonResponse));
+    }
+
+    /**
+     * Verify Gemini candidates against Google Books before returning them to clients.
+     * Candidates stay in the response when not found so the user can see the signal.
+     */
+    private List<Map<String, String>> verifyRecommendations(List<Map<String, String>> recommendations) {
+        for (Map<String, String> recommendation : recommendations) {
+            String title = recommendation.get("title");
+            String author = recommendation.get("author");
+
+            try {
+                Map<String, String> verifiedData = googleBooksClient.verifyBook(title, author);
+                if (verifiedData == null) {
+                    recommendation.put("verified", "false");
+                    recommendation.put("verificationStatus", "not_found");
+                } else {
+                    recommendation.putAll(verifiedData);
+                    recommendation.put("verified", "true");
+                    recommendation.put("verificationStatus", "verified");
+                }
+            } catch (GoogleBooksClient.GoogleBooksVerificationException exception) {
+                recommendation.put("verified", "false");
+                recommendation.put("verificationStatus", "unavailable");
+            }
+        }
+
+        return recommendations;
     }
 
     /**
