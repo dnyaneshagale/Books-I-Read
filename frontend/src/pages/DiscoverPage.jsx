@@ -1,9 +1,46 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search, Library } from 'lucide-react';
 import socialApi from '../api/socialApi';
+import { fetchUserSearchResults, userSearchQueryKeys, USER_SEARCH_STALE_TIME_MS } from '../userSearchQuery';
 import UserCard from '../components/social/UserCard';
 import FollowButton from '../components/social/FollowButton';
-import toast from 'react-hot-toast';
+
+/* ── Tailwind class constants ── */
+
+const ddItemCls =
+  'flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-[background] duration-[120ms] hover:bg-[var(--color-bg-secondary)] dark:hover:bg-[rgba(124,77,255,0.08)]';
+const ddItemActiveCls = 'bg-[var(--color-bg-secondary)] dark:bg-[rgba(124,77,255,0.08)]';
+
+const ddAvatarCls = 'w-11 h-11 rounded-full overflow-hidden shrink-0 max-sm:w-10 max-sm:h-10';
+const ddAvatarFallbackCls =
+  'w-full h-full flex items-center justify-center bg-gradient-to-br from-[#7c3aed] to-[#a78bfa] text-white font-bold text-[1.1rem]';
+const ddInfoCls = 'flex-1 min-w-0 flex flex-col gap-0.5';
+const ddNameCls =
+  'text-[0.9375rem] font-semibold text-[var(--color-text-primary)] whitespace-nowrap overflow-hidden text-ellipsis dark:text-[var(--color-text-primary)]';
+const ddUsernameCls =
+  'text-[0.8125rem] text-[var(--color-text-secondary)] whitespace-nowrap overflow-hidden text-ellipsis dark:text-[var(--color-text-secondary)]';
+
+const TAG_STYLES = {
+  genre:
+    'bg-[rgba(109,40,217,0.1)] text-[var(--color-primary)] dark:bg-[rgba(124,77,255,0.15)] dark:text-[#a78bfa]',
+  author:
+    'bg-[rgba(16,185,129,0.1)] text-[#059669] dark:bg-[rgba(16,185,129,0.15)] dark:text-[#34d399]',
+  books:
+    'bg-[rgba(245,158,11,0.1)] text-[#d97706] dark:bg-[rgba(245,158,11,0.15)] dark:text-[#fbbf24]',
+};
+const tagBase =
+  'inline-flex items-center py-0.5 px-2.5 rounded-full text-[0.6875rem] font-semibold tracking-[0.01em] whitespace-nowrap';
+
+const inputCls =
+  'w-full py-3.5 pr-20 pl-11 border-2 border-[var(--color-border)] rounded-xl text-base bg-[var(--color-bg)] text-[var(--color-text-primary)] transition-all duration-200 placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_rgba(109,40,217,0.1)] dark:bg-[var(--color-bg-secondary)] dark:border-[var(--color-border)] dark:text-[var(--color-text-primary)] dark:focus:border-[var(--color-primary)] dark:focus:shadow-[0_0_0_4px_rgba(124,77,255,0.2)]';
+
+const dropdownCls =
+  'absolute top-[calc(100%+6px)] left-0 right-0 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[14px] shadow-[0_12px_40px_rgba(0,0,0,0.12),0_4px_12px_rgba(0,0,0,0.06)] overflow-hidden z-[100] max-h-[400px] overflow-y-auto animate-[dropdownSlide_0.18s_ease-out] max-sm:rounded-xl max-sm:max-h-80 dark:bg-[var(--color-bg-secondary)] dark:border-[var(--color-border)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_4px_12px_rgba(0,0,0,0.2)]';
+
+const similarCardCls =
+  'flex items-center justify-between gap-3 p-4 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[14px] cursor-pointer transition-all duration-200 hover:border-[var(--color-primary)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.08)] hover:-translate-y-px dark:bg-[var(--color-bg-secondary)] dark:border-[var(--color-border)] dark:hover:border-[var(--color-primary)] dark:hover:shadow-[0_4px_16px_rgba(124,77,255,0.12)] max-sm:p-3';
 
 /**
  * DiscoverPage - Discover and search for users to follow
@@ -11,13 +48,9 @@ import toast from 'react-hot-toast';
  */
 const DiscoverPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [suggestedUsers, setSuggestedUsers] = useState([]);
-  const [similarUsers, setSimilarUsers] = useState([]);
-  const [discoverUsers, setDiscoverUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [recentSearches, setRecentSearches] = useState(() => {
@@ -30,10 +63,49 @@ const DiscoverPage = () => {
   const dropdownRef = useRef(null);
   const debounceTimer = useRef(null);
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  const suggestedUsersQuery = useQuery({
+    queryKey: ['discover', 'suggested'],
+    queryFn: async () => {
+      const res = await socialApi.getSuggestedUsers(0, 10);
+      return res.data.content || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
+  const discoverUsersQuery = useQuery({
+    queryKey: ['discover', 'users'],
+    queryFn: async () => {
+      const res = await socialApi.discoverUsers(0, 20);
+      return res.data.content || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const similarUsersQuery = useQuery({
+    queryKey: ['discover', 'similar'],
+    queryFn: async () => {
+      const res = await socialApi.getSimilarUsers(0, 10);
+      return res.data.content || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const searchUsersQuery = useQuery({
+    queryKey: userSearchQueryKeys.list(debouncedSearchQuery, 0, 8),
+    queryFn: () => fetchUserSearchResults({ query: debouncedSearchQuery, page: 0, size: 8 }),
+    enabled: Boolean(debouncedSearchQuery),
+    staleTime: USER_SEARCH_STALE_TIME_MS,
+  });
+
+  const searching = Boolean(searchQuery.trim()) && searchUsersQuery.isFetching;
+  const suggestions = searchUsersQuery.data || [];
+  const suggestedUsers = suggestedUsersQuery.data || [];
+  const similarUsers = similarUsersQuery.data || [];
+  const discoverUsers = discoverUsersQuery.data || [];
+
+  const loading = suggestedUsersQuery.isLoading || discoverUsersQuery.isLoading;
+
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -47,30 +119,7 @@ const DiscoverPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const loadInitialData = async () => {
-    setLoading(true);
-    try {
-      const [suggestionsRes, discoverRes] = await Promise.all([
-        socialApi.getSuggestedUsers(0, 10),
-        socialApi.discoverUsers(0, 20),
-      ]);
-      setSuggestedUsers(suggestionsRes.data.content || []);
-      setDiscoverUsers(discoverRes.data.content || []);
-    } catch (error) {
-      console.error('Failed to load users:', error);
-      toast.error('Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-
-    try {
-      const similarRes = await socialApi.getSimilarUsers(0, 10);
-      setSimilarUsers(similarRes.data.content || []);
-    } catch (error) {
-      console.error('Failed to load similar users:', error);
-    }
-  };
-
+  // Debounced live search
   const handleInputChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -79,24 +128,14 @@ const DiscoverPage = () => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     if (!value.trim()) {
-      setSuggestions([]);
+      setDebouncedSearchQuery('');
       setShowDropdown(value.length === 0 && recentSearches.length > 0);
       return;
     }
 
     setShowDropdown(true);
-    setSearching(true);
-
-    debounceTimer.current = setTimeout(async () => {
-      try {
-        const response = await socialApi.searchUsers(value.trim(), 0, 8);
-        setSuggestions(response.data.content || []);
-      } catch (error) {
-        console.error('Search failed:', error);
-        setSuggestions([]);
-      } finally {
-        setSearching(false);
-      }
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearchQuery(value.trim());
     }, 250);
   };
 
@@ -108,9 +147,12 @@ const DiscoverPage = () => {
     }
   };
 
+  // Keyboard navigation
   const handleKeyDown = (e) => {
     if (!showDropdown) return;
+
     const items = searchQuery.trim() ? suggestions : recentSearches;
+
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setHighlightIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0));
@@ -120,7 +162,8 @@ const DiscoverPage = () => {
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (highlightIndex >= 0 && highlightIndex < items.length) {
-        navigateToUser(items[highlightIndex]);
+        const user = items[highlightIndex];
+        navigateToUser(user);
       }
     } else if (e.key === 'Escape') {
       setShowDropdown(false);
@@ -129,9 +172,11 @@ const DiscoverPage = () => {
   };
 
   const navigateToUser = (user) => {
+    // Save to recent searches
     saveRecentSearch(user);
     setShowDropdown(false);
     setSearchQuery('');
+    setDebouncedSearchQuery('');
     navigate(`/profile/${user.username}`);
   };
 
@@ -158,7 +203,7 @@ const DiscoverPage = () => {
 
   const clearSearch = () => {
     setSearchQuery('');
-    setSuggestions([]);
+    setDebouncedSearchQuery('');
     setShowDropdown(false);
     inputRef.current?.focus();
   };
@@ -170,75 +215,39 @@ const DiscoverPage = () => {
           ? { ...user, isFollowing: status.isFollowing, hasPendingRequest: status.hasPendingRequest }
           : user
       );
-    setSuggestedUsers(updateUser);
-    setSimilarUsers(updateUser);
-    setDiscoverUsers(updateUser);
+    queryClient.setQueryData(['discover', 'suggested'], (prev = []) => updateUser(prev));
+    queryClient.setQueryData(['discover', 'similar'], (prev = []) => updateUser(prev));
+    queryClient.setQueryData(['discover', 'users'], (prev = []) => updateUser(prev));
+    if (debouncedSearchQuery) {
+      queryClient.setQueryData(userSearchQueryKeys.list(debouncedSearchQuery, 0, 8), (prev = []) => updateUser(prev));
+    }
   };
 
+  // Get initials for avatar
   const getInitials = (user) => {
     const name = user.displayName || user.username;
     return name.charAt(0).toUpperCase();
   };
 
-  // Reusable dropdown item
-  const DropdownItem = ({ user, index, showRemove, showMeta }) => (
-    <div
-      className={`flex items-center gap-3 py-2.5 px-4 cursor-pointer transition-colors duration-100 ${highlightIndex === index ? 'bg-bg-secondary dark:bg-[rgba(124,77,255,0.08)]' : 'hover:bg-bg-secondary dark:hover:bg-[rgba(124,77,255,0.08)]'}`}
-      onClick={() => navigateToUser(user)}
-      onMouseEnter={() => setHighlightIndex(index)}
-    >
-      <div className="w-11 h-11 max-[640px]:w-10 max-[640px]:h-10 rounded-full overflow-hidden flex-shrink-0">
-        {user.profilePictureUrl ? (
-          <img src={user.profilePictureUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#7c3aed] to-[#a78bfa] text-white font-bold text-lg">
-            {getInitials(user)}
-          </div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <span className="text-[0.9375rem] font-semibold text-txt-primary dark:text-[#e2e8f0] whitespace-nowrap overflow-hidden text-ellipsis">
-          {user.displayName || user.username}
-        </span>
-        <span className="text-[0.8125rem] text-txt-secondary dark:text-[#a5b4fc] whitespace-nowrap overflow-hidden text-ellipsis">
-          @{user.username}
-          {user.bio && <span className="text-txt-light dark:text-[#94a3b8]"> · {user.bio}</span>}
-        </span>
-      </div>
-      {showMeta && user.followersCount > 0 && (
-        <div className="flex-shrink-0 text-right">
-          <span className="text-xs text-txt-light dark:text-[#94a3b8] whitespace-nowrap">
-            {user.followersCount} follower{user.followersCount !== 1 ? 's' : ''}
-          </span>
-        </div>
-      )}
-      {showRemove && (
-        <button
-          className="flex-shrink-0 w-6 h-6 border-none bg-none text-txt-light dark:text-[#94a3b8] cursor-pointer text-[0.7rem] flex items-center justify-center rounded-full transition-all duration-150 hover:bg-bg-secondary dark:hover:bg-[#3b3670] hover:text-txt-primary dark:hover:text-[#e2e8f0]"
-          onClick={(e) => removeRecentSearch(e, user.id)}
-          title="Remove"
-        >
-          ✕
-        </button>
-      )}
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-bg dark:bg-bg p-6 max-[640px]:p-4">
-      <div className="max-w-[800px] mx-auto animate-fade-in-up">
+    <div className="discover-page min-h-screen bg-[var(--color-bg)] p-6 dark:bg-[var(--color-bg)] max-sm:p-4">
+      <div className="max-w-[800px] mx-auto animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both]">
         {/* Back Button */}
         <button className="page-back-btn" onClick={() => navigate(-1)}>← Back</button>
 
-        {/* Search Section */}
+        {/* Search Section — LinkedIn/Instagram style */}
         <header className="mb-9 text-center">
-          <h1 className="text-[1.75rem] font-bold text-txt-primary dark:text-[#e2e8f0] m-0 mb-1.5">Discover Readers</h1>
-          <p className="text-txt-secondary dark:text-[#a5b4fc] m-0 mb-6 text-[0.9375rem]">Find and follow other book lovers</p>
+          <h1 className="text-[1.75rem] font-bold text-[var(--color-text-primary)] mb-1.5 dark:text-[var(--color-text-primary)]">
+            Discover Readers
+          </h1>
+          <p className="text-[var(--color-text-secondary)] mb-6 text-[0.9375rem]">
+            Find and follow other book lovers
+          </p>
 
-          <div className="relative max-w-[520px] max-[640px]:max-w-full mx-auto">
+          <div className="relative max-w-[520px] mx-auto max-sm:max-w-full">
             <div className="relative flex items-center">
               <svg
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-txt-light dark:text-[#94a3b8] pointer-events-none z-[1]"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-muted)] pointer-events-none z-[1]"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -251,19 +260,19 @@ const DiscoverPage = () => {
               <input
                 ref={inputRef}
                 type="text"
+                className={inputCls}
                 placeholder="Search people..."
                 value={searchQuery}
                 onChange={handleInputChange}
                 onFocus={handleInputFocus}
                 onKeyDown={handleKeyDown}
                 autoComplete="off"
-                className="w-full py-3.5 pr-20 pl-11 border-2 border-border dark:border-[#3b3670] rounded-xl text-base bg-bg dark:bg-[#1e1b4b] text-txt-primary dark:text-[#e2e8f0] transition-all duration-200 outline-none focus:border-primary dark:focus:border-[#7C4DFF] focus:shadow-[0_0_0_4px_rgba(109,40,217,0.1)] dark:focus:shadow-[0_0_0_4px_rgba(124,77,255,0.2)] placeholder:text-txt-light dark:placeholder:text-[#94a3b8]"
               />
 
               {searchQuery && (
                 <button
                   type="button"
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 w-[26px] h-[26px] border-none bg-bg-secondary dark:bg-bg rounded-full text-txt-secondary dark:text-[#a5b4fc] cursor-pointer text-[0.7rem] flex items-center justify-center transition-all duration-150 z-[1] hover:bg-border dark:hover:bg-[#3b3670] hover:text-txt-primary dark:hover:text-[#e2e8f0]"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 w-[26px] h-[26px] border-none bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-secondary)] cursor-pointer text-[0.7rem] flex items-center justify-center transition-all duration-150 z-[1] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)] dark:bg-[var(--color-bg)] dark:text-[var(--color-text-secondary)] dark:hover:bg-[var(--color-border)]"
                   onClick={clearSearch}
                 >
                   ✕
@@ -271,22 +280,61 @@ const DiscoverPage = () => {
               )}
 
               {searching && (
-                <div className="absolute right-12 top-1/2 -translate-y-1/2 w-[18px] h-[18px] border-2 border-border dark:border-[#3b3670] border-t-primary dark:border-t-[#7C4DFF] rounded-full animate-spin" />
+                <div className="absolute right-12 top-1/2 -translate-y-1/2 w-[18px] h-[18px] border-2 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin dark:border-[var(--color-border)] dark:border-t-[var(--color-primary)]" />
               )}
             </div>
 
             {/* Live Search Dropdown */}
             {showDropdown && (
-              <div ref={dropdownRef} className="absolute top-[calc(100%+6px)] left-0 right-0 bg-bg dark:bg-[#1a1744] border border-border dark:border-[#3b3670] rounded-[14px] max-[640px]:rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.12),0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_4px_12px_rgba(0,0,0,0.2)] overflow-hidden z-[100] max-h-[400px] max-[640px]:max-h-[320px] overflow-y-auto animate-fade-in-up">
-                {/* Recent searches */}
+              <div
+                className={dropdownCls}
+                ref={dropdownRef}
+                style={{ scrollbarWidth: 'thin' }}
+              >
+                {/* Show recent searches when input is empty */}
                 {!searchQuery.trim() && recentSearches.length > 0 && (
                   <>
-                    <div className="flex items-center justify-between py-3 px-4 pb-2 text-[0.8125rem] font-semibold text-txt-secondary dark:text-[#a5b4fc] uppercase tracking-wider">
+                    <div className="flex items-center justify-between px-4 pt-3 pb-2 text-[0.8125rem] font-semibold text-[var(--color-text-secondary)] uppercase tracking-[0.04em] dark:text-[var(--color-text-secondary)]">
                       <span>Recent</span>
-                      <button className="bg-none border-none text-primary text-[0.8125rem] font-semibold cursor-pointer p-0 normal-case tracking-normal hover:underline" onClick={clearAllRecent}>Clear all</button>
+                      <button
+                        className="bg-none border-none text-[var(--color-primary)] text-[0.8125rem] font-semibold cursor-pointer p-0 normal-case tracking-normal hover:underline"
+                        onClick={clearAllRecent}
+                      >
+                        Clear all
+                      </button>
                     </div>
                     {recentSearches.map((user, index) => (
-                      <DropdownItem key={user.id} user={user} index={index} showRemove />
+                      <div
+                        key={user.id}
+                        className={`${ddItemCls} ${highlightIndex === index ? ddItemActiveCls : ''}`}
+                        onClick={() => navigateToUser(user)}
+                        onMouseEnter={() => setHighlightIndex(index)}
+                      >
+                        <div className={ddAvatarCls}>
+                          {user.profilePictureUrl ? (
+                            <img className="w-full h-full object-cover" src={user.profilePictureUrl} alt="" />
+                          ) : (
+                            <div className={ddAvatarFallbackCls}>
+                              {getInitials(user)}
+                            </div>
+                          )}
+                        </div>
+                        <div className={ddInfoCls}>
+                          <span className={ddNameCls}>
+                            {user.displayName || user.username}
+                          </span>
+                          <span className={ddUsernameCls}>
+                            @{user.username}
+                          </span>
+                        </div>
+                        <button
+                          className="shrink-0 w-6 h-6 border-none bg-none text-[var(--color-text-muted)] cursor-pointer text-[0.7rem] flex items-center justify-center rounded-full transition-all duration-150 hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] dark:hover:bg-[var(--color-border)] dark:hover:text-[var(--color-text-primary)]"
+                          onClick={(e) => removeRecentSearch(e, user.id)}
+                          title="Remove"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ))}
                   </>
                 )}
@@ -295,23 +343,56 @@ const DiscoverPage = () => {
                 {searchQuery.trim() && !searching && suggestions.length > 0 && (
                   <>
                     {suggestions.map((user, index) => (
-                      <DropdownItem key={user.id} user={user} index={index} showMeta />
+                      <div
+                        key={user.id}
+                        className={`${ddItemCls} ${highlightIndex === index ? ddItemActiveCls : ''}`}
+                        onClick={() => navigateToUser(user)}
+                        onMouseEnter={() => setHighlightIndex(index)}
+                      >
+                        <div className={ddAvatarCls}>
+                          {user.profilePictureUrl ? (
+                            <img className="w-full h-full object-cover" src={user.profilePictureUrl} alt="" />
+                          ) : (
+                            <div className={ddAvatarFallbackCls}>
+                              {getInitials(user)}
+                            </div>
+                          )}
+                        </div>
+                        <div className={ddInfoCls}>
+                          <span className={ddNameCls}>
+                            {user.displayName || user.username}
+                          </span>
+                          <span className={ddUsernameCls}>
+                            @{user.username}
+                            {user.bio && (
+                              <span className="text-[var(--color-text-muted)]"> · {user.bio}</span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          {user.followersCount > 0 && (
+                            <span className="text-xs text-[var(--color-text-muted)] whitespace-nowrap">
+                              {user.followersCount} follower{user.followersCount !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </>
                 )}
 
                 {/* Searching indicator */}
                 {searchQuery.trim() && searching && (
-                  <div className="flex items-center justify-center gap-2.5 py-6 px-4 text-txt-secondary dark:text-[#a5b4fc] text-sm">
-                    <div className="w-[18px] h-[18px] border-2 border-border dark:border-[#3b3670] border-t-primary dark:border-t-[#7C4DFF] rounded-full animate-spin" />
+                  <div className="flex items-center justify-center gap-2.5 py-6 px-4 text-[var(--color-text-secondary)] text-sm dark:text-[var(--color-text-secondary)]">
+                    <div className="w-[18px] h-[18px] border-2 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin dark:border-[var(--color-border)] dark:border-t-[var(--color-primary)]" />
                     <span>Searching...</span>
                   </div>
                 )}
 
                 {/* No results */}
                 {searchQuery.trim() && !searching && suggestions.length === 0 && (
-                  <div className="flex items-center justify-center gap-2.5 py-6 px-4 text-txt-secondary dark:text-[#a5b4fc] text-sm">
-                    <span className="text-xl">🔍</span>
+                  <div className="flex items-center justify-center gap-2.5 py-6 px-4 text-[var(--color-text-secondary)] text-sm dark:text-[var(--color-text-secondary)]">
+                    <span className="text-xl"><Search className="w-5 h-5" /></span>
                     <span>No results for "<strong>{searchQuery}</strong>"</span>
                   </div>
                 )}
@@ -323,113 +404,133 @@ const DiscoverPage = () => {
         {/* Discover Content */}
         <div>
           {loading ? (
-            <div className="flex flex-col items-center justify-center gap-4 min-h-[50vh] text-base text-txt-secondary dark:text-[#a5b4fc]">
-              <div className="w-8 h-8 border-[3px] border-border dark:border-[#3b3670] border-t-primary dark:border-t-[#7C4DFF] rounded-full animate-spin" />
+            <div className="flex flex-col items-center justify-center gap-4 min-h-[50vh] text-base text-[var(--color-text-secondary)]">
+              <div className="w-8 h-8 border-3 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-[g-spin_0.7s_linear_infinite] dark:border-[var(--color-border)] dark:border-t-[var(--color-primary)]" />
               <span>Finding readers for you...</span>
             </div>
           ) : (
-            <>
-              {/* Suggested Users */}
-              {suggestedUsers.length > 0 && (
-                <section className="mb-10">
-                  <h2 className="text-xl font-semibold text-txt-primary dark:text-[#e2e8f0] m-0">Suggested for You</h2>
-                  <p className="text-txt-secondary dark:text-[#a5b4fc] text-sm mt-1 mb-4">
-                    People you might want to follow
-                  </p>
-                  <div className="user-card-list">
-                    {suggestedUsers.map((user) => (
-                      <UserCard
-                        key={user.id}
-                        user={user}
-                        onFollowChange={handleFollowChange}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
+          <>
+          {/* Suggested Users */}
+          {suggestedUsers.length > 0 && (
+            <section className="mb-10">
+              <h2 className="text-xl font-semibold text-[var(--color-text-primary)] m-0 dark:text-[var(--color-text-primary)]">
+                Suggested for You
+              </h2>
+              <p className="text-[var(--color-text-secondary)] text-sm mt-1 mb-4">
+                People you might want to follow
+              </p>
+              <div className="flex flex-col gap-3">
+                {suggestedUsers.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    onFollowChange={handleFollowChange}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
-              {/* People with Similar Interests */}
-              {similarUsers.length > 0 && (
-                <section className="mb-10">
-                  <h2 className="text-xl font-semibold text-txt-primary dark:text-[#e2e8f0] m-0">People with Similar Interests</h2>
-                  <p className="text-txt-secondary dark:text-[#a5b4fc] text-sm mt-1 mb-4">
-                    Readers who share your taste in books
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    {similarUsers.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between gap-3 p-4 max-[640px]:p-3 bg-bg dark:bg-[#1a1744] border border-border dark:border-[#3b3670] rounded-[14px] cursor-pointer transition-all duration-200 hover:border-primary dark:hover:border-[#7C4DFF] hover:shadow-[0_4px_16px_rgba(109,40,217,0.08)] dark:hover:shadow-[0_4px_16px_rgba(124,77,255,0.12)] hover:-translate-y-px" onClick={() => navigate(`/profile/${user.username}`)}>
-                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                          <div className="w-[52px] h-[52px] max-[640px]:w-11 max-[640px]:h-11 rounded-full overflow-hidden flex-shrink-0">
-                            {user.profilePictureUrl ? (
-                              <img src={user.profilePictureUrl} alt={user.username} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#7c3aed] to-[#a78bfa] text-white font-bold text-xl">
-                                {(user.displayName || user.username).charAt(0).toUpperCase()}
-                              </div>
-                            )}
+          {/* People with Similar Interests */}
+          {similarUsers.length > 0 && (
+            <section className="mb-10">
+              <h2 className="text-xl font-semibold text-[var(--color-text-primary)] m-0 dark:text-[var(--color-text-primary)]">
+                People with Similar Interests
+              </h2>
+              <p className="text-[var(--color-text-secondary)] text-sm mt-1 mb-4">
+                Readers who share your taste in books
+              </p>
+              <div className="flex flex-col gap-3">
+                {similarUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className={similarCardCls}
+                    onClick={() => navigate(`/profile/${user.username}`)}
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                      <div className="w-13 h-13 rounded-full overflow-hidden shrink-0 max-sm:w-11 max-sm:h-11">
+                        {user.profilePictureUrl ? (
+                          <img className="w-full h-full object-cover" src={user.profilePictureUrl} alt={user.username} />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#7c3aed] to-[#a78bfa] text-white font-bold text-[1.2rem]">
+                            {(user.displayName || user.username).charAt(0).toUpperCase()}
                           </div>
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="text-[0.9375rem] font-semibold text-txt-primary dark:text-[#e2e8f0] whitespace-nowrap overflow-hidden text-ellipsis">{user.displayName || user.username}</span>
-                            <span className="text-[0.8125rem] text-txt-secondary dark:text-[#a5b4fc]">@{user.username}</span>
-                            {/* Shared interests badges */}
-                            <div className="flex flex-wrap gap-1.5 max-[640px]:gap-1 mt-1.5">
-                              {user.sharedGenres?.map((genre) => (
-                                <span key={genre} className="inline-flex items-center py-0.5 px-2.5 rounded-full text-[0.6875rem] font-semibold tracking-tight whitespace-nowrap bg-[rgba(109,40,217,0.1)] dark:bg-[rgba(124,77,255,0.15)] text-primary dark:text-[#a78bfa]">{genre}</span>
-                              ))}
-                              {user.sharedAuthors?.slice(0, 2).map((author) => (
-                                <span key={author} className="inline-flex items-center py-0.5 px-2.5 rounded-full text-[0.6875rem] font-semibold tracking-tight whitespace-nowrap bg-[rgba(16,185,129,0.1)] dark:bg-[rgba(16,185,129,0.15)] text-[#059669] dark:text-[#34d399]">{author}</span>
-                              ))}
-                              {user.commonBooksCount > 0 && (
-                                <span className="inline-flex items-center py-0.5 px-2.5 rounded-full text-[0.6875rem] font-semibold tracking-tight whitespace-nowrap bg-[rgba(245,158,11,0.1)] dark:bg-[rgba(245,158,11,0.15)] text-[#d97706] dark:text-[#fbbf24]">
-                                  {user.commonBooksCount} book{user.commonBooksCount !== 1 ? 's' : ''} in common
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <FollowButton
-                            userId={user.id}
-                            isFollowing={user.isFollowing}
-                            hasPendingRequest={user.hasPendingRequest}
-                            isPublic={user.isPublic}
-                            onFollowChange={(status) => handleFollowChange(user.id, status)}
-                            size="small"
-                          />
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="text-[0.9375rem] font-semibold text-[var(--color-text-primary)] whitespace-nowrap overflow-hidden text-ellipsis dark:text-[var(--color-text-primary)]">
+                          {user.displayName || user.username}
+                        </span>
+                        <span className="text-[0.8125rem] text-[var(--color-text-secondary)] dark:text-[var(--color-text-secondary)]">
+                          @{user.username}
+                        </span>
+                        {/* Shared interests badges */}
+                        <div className="flex flex-wrap gap-1.5 mt-1.5 max-sm:gap-1">
+                          {user.sharedGenres?.map((genre) => (
+                            <span key={genre} className={`${tagBase} ${TAG_STYLES.genre}`}>
+                              {genre}
+                            </span>
+                          ))}
+                          {user.sharedAuthors?.slice(0, 2).map((author) => (
+                            <span key={author} className={`${tagBase} ${TAG_STYLES.author}`}>
+                              {author}
+                            </span>
+                          ))}
+                          {user.commonBooksCount > 0 && (
+                            <span className={`${tagBase} ${TAG_STYLES.books}`}>
+                              {user.commonBooksCount} book{user.commonBooksCount !== 1 ? 's' : ''} in common
+                            </span>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* All Users */}
-              {discoverUsers.length > 0 && (
-                <section className="mb-10">
-                  <h2 className="text-xl font-semibold text-txt-primary dark:text-[#e2e8f0] m-0">Explore</h2>
-                  <p className="text-txt-secondary dark:text-[#a5b4fc] text-sm mt-1 mb-4">
-                    Discover readers from around the world
-                  </p>
-                  <div className="user-card-grid max-[640px]:!grid-cols-1">
-                    {discoverUsers.map((user) => (
-                      <UserCard
-                        key={user.id}
-                        user={user}
-                        onFollowChange={handleFollowChange}
+                    </div>
+                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <FollowButton
+                        userId={user.id}
+                        isFollowing={user.isFollowing}
+                        hasPendingRequest={user.hasPendingRequest}
+                        isPublic={user.isPublic}
+                        onFollowChange={(status) => handleFollowChange(user.id, status)}
+                        size="small"
                       />
-                    ))}
+                    </div>
                   </div>
-                </section>
-              )}
+                ))}
+              </div>
+            </section>
+          )}
 
-              {suggestedUsers.length === 0 && discoverUsers.length === 0 && (
-                <div className="text-center py-16 px-6 bg-bg-secondary dark:bg-[#1e1b4b] rounded-xl border border-border dark:border-[#3b3670]">
-                  <div className="text-[3rem] mb-4">📚</div>
-                  <h3 className="text-lg font-semibold text-txt-primary dark:text-[#e2e8f0] m-0 mb-2">No users to discover yet</h3>
-                  <p className="text-txt-secondary dark:text-[#a5b4fc] m-0">Be the first to invite your friends!</p>
-                </div>
-              )}
-            </>
+          {/* All Users */}
+          {discoverUsers.length > 0 && (
+            <section className="mb-10">
+              <h2 className="text-xl font-semibold text-[var(--color-text-primary)] m-0 dark:text-[var(--color-text-primary)]">
+                Explore
+              </h2>
+              <p className="text-[var(--color-text-secondary)] text-sm mt-1 mb-4">
+                Discover readers from around the world
+              </p>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 max-sm:grid-cols-1">
+                {discoverUsers.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    onFollowChange={handleFollowChange}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {suggestedUsers.length === 0 && discoverUsers.length === 0 && (
+            <div className="text-center py-16 px-6 bg-[var(--color-bg-secondary)] rounded-xl border border-[var(--color-border)] dark:bg-[var(--color-bg-secondary)] dark:border-[var(--color-border)]">
+              <div className="text-5xl mb-4"><Library className="w-14 h-14 mx-auto" /></div>
+              <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2 dark:text-[var(--color-text-primary)]">
+                No users to discover yet
+              </h3>
+              <p className="text-[var(--color-text-secondary)] m-0">Be the first to invite your friends!</p>
+            </div>
+          )}
+          </>
           )}
         </div>
       </div>

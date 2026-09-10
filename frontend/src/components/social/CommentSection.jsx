@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { Trash2 } from 'lucide-react';
 import reviewApi from '../../api/reviewApi';
-import socialApi from '../../api/socialApi';
+import { fetchUserSearchResults, userSearchQueryKeys, USER_SEARCH_STALE_TIME_MS } from '../../userSearchQuery';
 import toast from 'react-hot-toast';
 
 /**
@@ -10,12 +12,12 @@ import toast from 'react-hot-toast';
 const CommentText = ({ content, navigate }) => {
   const parts = content.split(/(@\w+)/g);
   return (
-    <p className="m-0 text-[0.88rem] text-txt-secondary dark:text-[var(--color-text-secondary,#9E95A8)] leading-relaxed break-words">
+    <p className="m-0 text-[0.88rem] text-[var(--color-text-secondary,#475569)] dark:text-[#9E95A8] leading-normal break-words">
       {parts.map((part, i) =>
         part.startsWith('@') ? (
           <span
             key={i}
-            className="text-primary dark:text-[var(--color-primary,#7C4DFF)] font-semibold cursor-pointer transition-opacity duration-150 hover:opacity-75"
+            className="text-[var(--color-primary,#6d28d9)] dark:text-[#7C4DFF] font-semibold cursor-pointer transition-opacity duration-150 hover:opacity-75"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/profile/${part.slice(1)}`);
@@ -35,13 +37,13 @@ const CommentText = ({ content, navigate }) => {
  * Comment input with @mention autocomplete
  */
 const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRef }) => {
-  const [mentionQuery, setMentionQuery] = useState('');
   const [mentionResults, setMentionResults] = useState([]);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [cursorPos, setCursorPos] = useState(0);
   const searchTimeout = useRef(null);
   const mentionListRef = useRef(null);
+  const queryClient = useQueryClient();
 
   const handleChange = (e) => {
     const val = e.target.value;
@@ -49,18 +51,21 @@ const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRe
     setCursorPos(cursor);
     onChange(val);
 
+    // Detect @mention in progress
     const textBefore = val.slice(0, cursor);
     const mentionMatch = textBefore.match(/@(\w*)$/);
 
     if (mentionMatch) {
       const query = mentionMatch[1];
-      setMentionQuery(query);
       if (query.length >= 1) {
         clearTimeout(searchTimeout.current);
         searchTimeout.current = setTimeout(async () => {
           try {
-            const res = await socialApi.searchUsers(query, 0, 6);
-            const users = res.data.content || res.data || [];
+            const users = await queryClient.fetchQuery({
+              queryKey: userSearchQueryKeys.list(query, 0, 6),
+              queryFn: () => fetchUserSearchResults({ query, page: 0, size: 6 }),
+              staleTime: USER_SEARCH_STALE_TIME_MS,
+            });
             setMentionResults(users);
             setShowMentions(users.length > 0);
             setMentionIndex(0);
@@ -84,6 +89,7 @@ const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRe
     onChange(newValue);
     setShowMentions(false);
     setMentionResults([]);
+    // Focus back
     setTimeout(() => {
       if (inputRef?.current) {
         const pos = beforeMention.length + username.length + 2;
@@ -130,32 +136,32 @@ const CommentInput = ({ value, onChange, onSubmit, placeholder, posting, inputRe
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         maxLength={1000}
-        className="w-full py-2.5 px-4 border border-border dark:border-[var(--color-border,#2D2A35)] rounded-full text-[0.88rem] outline-none transition-all duration-200 font-[inherit] bg-bg dark:bg-[var(--color-bg-secondary,#1E1B24)] text-txt-primary dark:text-[var(--color-text-primary,#E2D9F3)] box-border focus:border-primary dark:focus:border-[var(--color-primary,#7C4DFF)] focus:shadow-[0_0_0_3px_rgba(109,40,217,0.08)] dark:focus:shadow-[0_0_0_3px_rgba(124,77,255,0.1)]"
+        className="w-full py-2.5 px-4 border border-[var(--color-border,#e2e8f0)] dark:border-[#2D2A35] rounded-full text-[0.88rem] outline-none transition-all duration-200 font-[inherit] bg-[var(--color-bg,#ffffff)] dark:bg-[#1E1B24] text-[var(--color-text-primary,#0f172a)] dark:text-[#E2D9F3] box-border focus:border-[var(--color-primary,#6d28d9)] dark:focus:border-[#7C4DFF] focus:shadow-[0_0_0_3px_rgba(109,40,217,0.08)] dark:focus:shadow-[0_0_0_3px_rgba(124,77,255,0.1)]"
         disabled={posting}
       />
       {showMentions && (
-        <div className="absolute bottom-full left-0 right-0 max-h-[220px] overflow-y-auto bg-bg dark:bg-[var(--color-bg-secondary,#1E1B24)] border border-border dark:border-[var(--color-border,#2D2A35)] rounded-xl shadow-lg dark:shadow-[0_10px_30px_rgba(0,0,0,0.4)] z-[100] mb-1" ref={mentionListRef}>
+        <div className="absolute bottom-full left-0 right-0 max-h-[220px] overflow-y-auto bg-[var(--color-bg,#ffffff)] dark:bg-[#1E1B24] border border-[var(--color-border,#e2e8f0)] dark:border-[#2D2A35] rounded-xl shadow-lg dark:shadow-[0_10px_30px_rgba(0,0,0,0.4)] z-[100] mb-1" ref={mentionListRef}>
           {mentionResults.map((user, idx) => (
             <div
               key={user.id || user.username}
-              className={`flex items-center gap-2.5 py-2.5 px-3.5 cursor-pointer transition-colors duration-[120ms] hover:bg-[rgba(109,40,217,0.04)] dark:hover:bg-[rgba(124,77,255,0.08)] ${idx === mentionIndex ? 'bg-[rgba(109,40,217,0.04)] dark:bg-[rgba(124,77,255,0.08)]' : ''}`}
+              className={`flex items-center gap-2.5 py-2.5 px-3.5 cursor-pointer transition-colors duration-[120ms] ${idx === mentionIndex ? 'bg-violet-600/[0.04] dark:bg-violet-400/[0.08]' : 'hover:bg-violet-600/[0.04] dark:hover:bg-violet-400/[0.08]'}`}
               onMouseDown={(e) => {
                 e.preventDefault();
                 insertMention(user.username);
               }}
             >
-              <div>
+              <div className="shrink-0">
                 {user.profilePictureUrl ? (
                   <img src={user.profilePictureUrl} alt="" className="w-[30px] h-[30px] rounded-full object-cover" />
                 ) : (
-                  <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-primary to-violet-500 text-white flex items-center justify-center font-bold text-xs">
+                  <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-violet-700 to-violet-500 text-white flex items-center justify-center font-bold text-xs">
                     {(user.displayName || user.username || '?')[0].toUpperCase()}
                   </div>
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="font-bold text-[0.85rem] text-txt-primary dark:text-[var(--color-text-primary,#E2D9F3)] whitespace-nowrap overflow-hidden text-ellipsis">{user.displayName || user.username}</span>
-                <span className="text-xs text-txt-light dark:text-[#5a5268]">@{user.username}</span>
+                <span className="font-bold text-[0.85rem] text-[var(--color-text-primary,#0f172a)] dark:text-[#E2D9F3] truncate">{user.displayName || user.username}</span>
+                <span className="text-xs text-[var(--color-text-light,#94a3b8)] dark:text-[#5a5268]">@{user.username}</span>
               </div>
             </div>
           ))}
@@ -214,15 +220,14 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
   };
 
   const replies = comment.replies || [];
-  const isReply = depth > 0;
 
   return (
-    <div className={`flex items-start gap-2.5 ${isReply ? 'py-2 border-b-0' : 'py-2.5 border-b border-[var(--color-border,#f1f5f9)] dark:border-[var(--color-border,#2D2A35)] last:border-b-0'}`}>
-      <div>
+    <div className={`flex items-start gap-2.5 py-2.5 ${depth > 0 ? 'border-none py-2' : 'border-b border-[var(--color-border,#f1f5f9)] dark:border-[#2D2A35] last:border-none'}`}>
+      <div className="shrink-0">
         {comment.authorProfilePictureUrl ? (
-          <img src={comment.authorProfilePictureUrl} alt="" className={`${isReply ? 'w-[26px] h-[26px]' : 'w-8 h-8'} rounded-full object-cover`} />
+          <img src={comment.authorProfilePictureUrl} alt="" className={`${depth > 0 ? 'w-[26px] h-[26px]' : 'w-8 h-8'} rounded-full object-cover`} />
         ) : (
-          <div className={`${isReply ? 'w-[26px] h-[26px] text-[0.7rem]' : 'w-8 h-8 text-[0.8rem]'} rounded-full bg-gradient-to-br from-primary to-violet-500 text-white flex items-center justify-center font-bold`}>
+          <div className={`${depth > 0 ? 'w-[26px] h-[26px] text-[0.7rem]' : 'w-8 h-8 text-[0.8rem]'} rounded-full bg-gradient-to-br from-violet-700 to-violet-500 text-white flex items-center justify-center font-bold`}>
             {(comment.authorDisplayName || comment.authorUsername || '?')[0].toUpperCase()}
           </div>
         )}
@@ -231,17 +236,17 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
         <div className="min-w-0">
           <div className="flex items-baseline gap-2 mb-0.5">
             <span
-              className="font-bold text-[0.85rem] text-txt-primary dark:text-[var(--color-text-primary,#E2D9F3)] cursor-pointer transition-colors duration-150 hover:text-primary dark:hover:text-[var(--color-primary,#7C4DFF)]"
+              className="font-bold text-[0.85rem] text-[var(--color-text-primary,#0f172a)] dark:text-[#E2D9F3] cursor-pointer transition-colors duration-150 hover:text-[var(--color-primary,#6d28d9)] dark:hover:text-[#7C4DFF]"
               onClick={() => navigate(`/profile/${comment.authorUsername}`)}
             >
               {comment.authorDisplayName || comment.authorUsername}
             </span>
-            <span className="text-[0.72rem] text-txt-light dark:text-[#5a5268]">{formatTime(comment.createdAt)}</span>
+            <span className="text-[0.72rem] text-[var(--color-text-light,#94a3b8)] dark:text-[#5a5268]">{formatTime(comment.createdAt)}</span>
           </div>
           <CommentText content={comment.content} navigate={navigate} />
           <div className="flex gap-3 mt-1">
             {depth < 2 && (
-              <button className="bg-none border-none text-xs font-bold text-txt-light dark:text-[#5a5268] cursor-pointer py-0.5 px-0 transition-colors duration-150 hover:text-primary dark:hover:text-[var(--color-primary,#7C4DFF)]" onClick={handleReplyClick}>
+              <button className="bg-none border-none text-xs font-bold text-[var(--color-text-light,#94a3b8)] dark:text-[#5a5268] cursor-pointer py-0.5 px-0 transition-colors duration-150 hover:text-[var(--color-primary,#6d28d9)] dark:hover:text-[#7C4DFF]" onClick={handleReplyClick}>
                 Reply
               </button>
             )}
@@ -250,13 +255,13 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold text-red-500 dark:text-red-400">Delete?</span>
                   <button
-                    className="bg-red-500 dark:bg-red-600 text-white border-none rounded-lg py-[3px] px-2.5 text-[0.72rem] font-bold cursor-pointer transition-colors duration-150 hover:bg-red-600 dark:hover:bg-red-500"
+                    className="bg-red-500 dark:bg-red-600 text-white border-none rounded-lg px-2.5 py-0.5 text-[0.72rem] font-bold cursor-pointer transition-colors duration-150 hover:bg-red-600 dark:hover:bg-red-500"
                     onClick={() => { onDelete(comment.id); setConfirmingDelete(false); }}
                   >
                     Yes
                   </button>
                   <button
-                    className="bg-none border border-border dark:border-[var(--color-border,#2D2A35)] text-txt-secondary dark:text-[var(--color-text-secondary,#9E95A8)] rounded-lg py-[3px] px-2.5 text-[0.72rem] font-bold cursor-pointer transition-all duration-150 hover:bg-[var(--color-bg-tertiary,#f1f5f9)] dark:hover:bg-[var(--color-bg-tertiary,#2D2A35)]"
+                    className="bg-none border border-[var(--color-border,#e2e8f0)] dark:border-[#2D2A35] text-[var(--color-text-secondary,#475569)] dark:text-[#9E95A8] rounded-lg px-2.5 py-0.5 text-[0.72rem] font-bold cursor-pointer transition-all duration-150 hover:bg-slate-100 dark:hover:bg-[#2D2A35]"
                     onClick={() => setConfirmingDelete(false)}
                   >
                     No
@@ -264,11 +269,11 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
                 </div>
               ) : (
                 <button
-                  className="bg-none border-none cursor-pointer text-xs font-semibold text-txt-light dark:text-[#5a5268] py-0.5 px-0 transition-colors duration-150 hover:text-red-500 dark:hover:text-red-400"
+                  className="bg-none border-none cursor-pointer text-xs font-semibold text-[var(--color-text-light,#94a3b8)] dark:text-[#5a5268] py-0.5 px-0 transition-colors duration-150 hover:text-red-500 dark:hover:text-red-400"
                   onClick={() => setConfirmingDelete(true)}
                   title="Delete comment"
                 >
-                  🗑️ Delete
+                  <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete
                 </button>
               )
             )}
@@ -289,14 +294,14 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
-                className="bg-none border-none text-txt-secondary dark:text-[var(--color-text-secondary,#9E95A8)] text-[0.8rem] font-semibold cursor-pointer py-1.5 px-3 rounded-lg transition-colors duration-150 hover:bg-[var(--color-bg-tertiary,#f1f5f9)] dark:hover:bg-[var(--color-bg-tertiary,#2D2A35)]"
+                className="bg-none border-none text-[var(--color-text-secondary,#475569)] dark:text-[#9E95A8] text-[0.8rem] font-semibold cursor-pointer py-1.5 px-3 rounded-lg transition-colors duration-150 hover:bg-slate-100 dark:hover:bg-[#2D2A35]"
                 onClick={() => { setShowReplyInput(false); setReplyText(''); }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="py-1.5 px-4 rounded-full border-none bg-gradient-primary text-white text-[0.8rem] font-bold cursor-pointer transition-all duration-200 whitespace-nowrap shadow-[0_2px_6px_rgba(109,40,217,0.2)] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(109,40,217,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0"
+                className="py-1.5 px-4 rounded-full border-none bg-gradient-to-br from-violet-700 via-violet-500 to-blue-600 text-white text-[0.8rem] font-bold cursor-pointer transition-all duration-200 whitespace-nowrap shadow-[0_2px_6px_rgba(109,40,217,0.2)] shrink-0 hover:not-disabled:-translate-y-px hover:not-disabled:shadow-[0_4px_12px_rgba(109,40,217,0.3)] disabled:opacity-40 disabled:cursor-not-allowed"
                 disabled={replying || !replyText.trim()}
               >
                 {replying ? '...' : 'Reply'}
@@ -305,11 +310,11 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
           </form>
         )}
 
-        {/* Replies */}
+        {/* Replies — Instagram-style show/hide toggle */}
         {replies.length > 0 && (
           <>
             <button
-              className="bg-none border-none text-[0.78rem] font-bold text-primary dark:text-[var(--color-primary,#7C4DFF)] cursor-pointer py-1 px-0 mb-0.5 transition-opacity duration-150 hover:opacity-75"
+              className="bg-none border-none text-[0.78rem] font-bold text-[var(--color-primary,#6d28d9)] dark:text-[#7C4DFF] cursor-pointer py-1 px-0 mb-0.5 transition-opacity duration-150 hover:opacity-75"
               onClick={() => setShowReplies(!showReplies)}
             >
               {showReplies
@@ -318,7 +323,7 @@ const CommentItem = ({ comment, currentUserId, reviewId, onDelete, onReplyAdded,
               }
             </button>
             {showReplies && (
-              <div className="mt-1 pl-3 border-l-2 border-border dark:border-[var(--color-border,#2D2A35)] ml-1">
+              <div className="mt-1 pl-3 border-l-2 border-[var(--color-border,#e2e8f0)] dark:border-[#2D2A35] ml-1">
                 {replies.map(reply => (
                   <CommentItem
                     key={reply.id}
@@ -351,11 +356,7 @@ const CommentSection = ({ reviewId, currentUserId }) => {
   const navigate = useNavigate();
   const mainInputRef = useRef(null);
 
-  useEffect(() => {
-    fetchComments();
-  }, [reviewId]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setLoading(true);
     try {
       const res = await reviewApi.getComments(reviewId);
@@ -365,7 +366,11 @@ const CommentSection = ({ reviewId, currentUserId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [reviewId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const handlePost = async (e) => {
     e?.preventDefault();
@@ -377,7 +382,7 @@ const CommentSection = ({ reviewId, currentUserId }) => {
       setNewComment('');
       fetchComments();
       toast.success('Comment added');
-    } catch (err) {
+    } catch {
       toast.error('Failed to post comment');
     } finally {
       setPosting(false);
@@ -387,6 +392,7 @@ const CommentSection = ({ reviewId, currentUserId }) => {
   const handleDelete = async (commentId) => {
     try {
       await reviewApi.deleteComment(commentId);
+      // Remove from top-level or from replies
       setComments(prev => {
         const removeFromList = (list) =>
           list
@@ -430,7 +436,7 @@ const CommentSection = ({ reviewId, currentUserId }) => {
         />
         <button
           type="submit"
-          className="py-2 px-5 rounded-full border-none bg-gradient-primary text-white text-[0.85rem] font-bold cursor-pointer transition-all duration-200 whitespace-nowrap shadow-[0_2px_6px_rgba(109,40,217,0.2)] flex-shrink-0 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(109,40,217,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0"
+          className="py-2 px-5 rounded-full border-none bg-gradient-to-br from-violet-700 via-violet-500 to-blue-600 text-white text-[0.85rem] font-bold cursor-pointer transition-all duration-200 whitespace-nowrap shadow-[0_2px_6px_rgba(109,40,217,0.2)] shrink-0 hover:not-disabled:-translate-y-px hover:not-disabled:shadow-[0_4px_12px_rgba(109,40,217,0.3)] disabled:opacity-40 disabled:cursor-not-allowed"
           disabled={posting || !newComment.trim()}
         >
           {posting ? '...' : 'Post'}
@@ -440,9 +446,9 @@ const CommentSection = ({ reviewId, currentUserId }) => {
       {/* Comments List */}
       <div className="flex flex-col gap-0.5">
         {loading ? (
-          <div className="text-center p-6 text-txt-light dark:text-[#5a5268] text-[0.85rem]">Loading comments...</div>
+          <div className="text-center py-6 text-[var(--color-text-light,#94a3b8)] dark:text-[#5a5268] text-[0.85rem]">Loading comments...</div>
         ) : comments.length === 0 ? (
-          <div className="text-center p-6 text-txt-light dark:text-[#5a5268] text-[0.85rem]">
+          <div className="text-center py-6 text-[var(--color-text-light,#94a3b8)] dark:text-[#5a5268] text-[0.85rem]">
             No comments yet. Be the first to share your thoughts!
           </div>
         ) : (

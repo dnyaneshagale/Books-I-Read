@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
+import { FileText, PenLine, BookOpen, Lightbulb, Save } from 'lucide-react';
 import bookApi from '../api/bookApi';
 import toast from 'react-hot-toast';
+import ModalShell from './ui/modal-shell';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import {
+  modalAmberAccentBtn,
+  modalAmberPrimaryBtn,
+  modalAmberPrimaryLargeBtn,
+  modalEmeraldPrimaryBtn,
+  modalNeutralSecondaryBtn,
+} from './ui/modal-button-tokens';
 
 /**
  * NotesModal Component
@@ -8,11 +18,13 @@ import toast from 'react-hot-toast';
  * Modal to view and edit book notes
  */
 function NotesModal({ book, onClose, onUpdated }) {
+  useBodyScrollLock();
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(book.notes || '');
   const [currentNotes, setCurrentNotes] = useState(book.notes || '');
   const [isSaving, setIsSaving] = useState(false);
-
+  
   const formatDate = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
@@ -35,16 +47,17 @@ function NotesModal({ book, onClose, onUpdated }) {
         completeDate: book.completeDate || null,
         tags: book.tags || []
       };
-
+      
       await bookApi.updateBook(book.id, updateData);
-
+      
+      // Update local state for real-time display
       const trimmedNotes = editedNotes.trim();
       setCurrentNotes(trimmedNotes);
-
+      
       toast.success('Notes updated successfully!');
       setIsEditing(false);
       onUpdated?.();
-    } catch (error) {
+    } catch {
       toast.error('Failed to update notes');
     } finally {
       setIsSaving(false);
@@ -59,15 +72,16 @@ function NotesModal({ book, onClose, onUpdated }) {
   const handleAddBullet = () => {
     const textarea = document.getElementById('notes-textarea');
     if (!textarea) return;
-
+    
     const cursorPos = textarea.selectionStart;
     const textBefore = editedNotes.substring(0, cursorPos);
     const textAfter = editedNotes.substring(cursorPos);
     const needsNewLine = textBefore && !textBefore.endsWith('\n');
-
+    
     const newText = textBefore + (needsNewLine ? '\n' : '') + '• ' + textAfter;
     setEditedNotes(newText);
-
+    
+    // Set cursor after the bullet
     setTimeout(() => {
       const newPos = textBefore.length + (needsNewLine ? 3 : 2);
       textarea.focus();
@@ -78,10 +92,10 @@ function NotesModal({ book, onClose, onUpdated }) {
   const renderNotesContent = () => {
     if (!currentNotes) {
       return (
-        <div className="text-center py-2xl px-lg">
-          <div className="text-[64px] mb-md opacity-30">📝</div>
-          <p className="text-lg font-semibold text-txt-primary m-0 mb-sm">No notes yet</p>
-          <p className="text-sm text-txt-secondary m-0 leading-[1.6]">
+        <div className="text-center py-[var(--spacing-2xl)] px-[var(--spacing-lg)]">
+          <div className="text-[64px] mb-[var(--spacing-md)] opacity-30"><FileText className="w-16 h-16 mx-auto" /></div>
+          <p className="text-[var(--font-size-lg)] font-[var(--font-weight-semibold)] text-[var(--color-text-primary)] m-0 mb-[var(--spacing-sm)]">No notes yet</p>
+          <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] m-0 leading-[1.6]">
             Click the Edit button to add your reading notes, quotes, or key takeaways.
           </p>
         </div>
@@ -89,14 +103,14 @@ function NotesModal({ book, onClose, onUpdated }) {
     }
 
     return (
-      <div className="bg-[rgba(255,193,7,0.05)] border-l-4 border-l-amber-400 rounded-md p-lg mb-lg">
-        <div className="text-base text-txt-primary leading-[1.8]">
+      <div className="bg-amber-400/5 border-l-4 border-l-amber-400 rounded-[var(--radius-md)] p-[var(--spacing-lg)] mb-[var(--spacing-lg)]">
+        <div className="text-[var(--font-size-md)] text-[var(--color-text-primary)] leading-[1.8]">
           {currentNotes.split('\n').map((paragraph, index) => {
             const trimmed = paragraph.trim();
             const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-');
-
+            
             return (
-              <p key={index} className={`m-0 mb-md last:mb-0 whitespace-pre-wrap break-words ${isBullet ? 'pl-md' : ''}`}>
+              <p key={index} className={`m-0 mb-[var(--spacing-md)] last:mb-0 whitespace-pre-wrap break-words ${isBullet ? 'pl-[var(--spacing-md)]' : ''}`}>
                 {isBullet ? trimmed : paragraph}
               </p>
             );
@@ -107,19 +121,21 @@ function NotesModal({ book, onClose, onUpdated }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-md animate-fade-in overflow-y-auto" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-bg rounded-xl max-w-[700px] w-full max-h-[calc(100vh-40px)] flex flex-col animate-slide-up shadow-xl border-2 border-amber-400 m-auto max-md:max-w-full max-md:max-h-[calc(100vh-20px)]">
-        <div className="flex justify-between items-center p-lg max-md:p-md border-b-2 border-b-amber-400 bg-gradient-to-br from-[rgba(255,193,7,0.1)] to-[rgba(245,158,11,0.05)] flex-shrink-0">
-          <h2 className="text-xl font-bold text-amber-500 m-0">📝 Reading Notes</h2>
-          <button className="bg-none border-none text-[28px] text-txt-secondary cursor-pointer p-0 w-8 h-8 flex items-center justify-center rounded-sm transition-all duration-200 hover:bg-[rgba(255,193,7,0.2)] hover:text-amber-500" onClick={onClose}>×</button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-lg max-md:p-md min-h-0">
-          <div className="text-center mb-xl pb-lg border-b border-border">
-            <h3 className="text-xl font-bold text-txt-primary m-0 mb-xs leading-[1.3] max-md:text-lg">{book.title}</h3>
-            <p className="text-base text-txt-secondary m-0 mb-sm italic">by {book.author}</p>
+    <ModalShell
+      onClose={onClose}
+      title="Reading Notes"
+      icon={<FileText className="w-5 h-5" />}
+      contentClassName="max-w-[700px] max-h-[calc(100dvh-40px)] border-2 border-amber-400 m-auto flex flex-col max-md:max-w-full max-md:max-h-[calc(100dvh-20px)]"
+      headerClassName="p-[var(--spacing-lg)] border-b-2 border-b-amber-400 bg-gradient-to-br from-amber-400/10 to-amber-500/5 shrink-0 max-md:p-[var(--spacing-md)]"
+      closeBtnClassName="bg-transparent border-none text-[28px] text-[var(--color-text-secondary)] p-0 w-8 h-8 rounded-[var(--radius-sm)] hover:bg-amber-400/20 hover:text-amber-500"
+      bodyClassName="flex flex-col flex-1 min-h-0"
+    >
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-[var(--spacing-lg)] min-h-0 max-md:p-[var(--spacing-md)]" style={{ scrollbarWidth: 'thin', scrollbarColor: '#ffc107 transparent' }}>
+          <div className="text-center mb-[var(--spacing-xl)] pb-[var(--spacing-lg)] border-b border-[var(--color-border)]">
+            <h3 className="text-[var(--font-size-xl)] font-[var(--font-weight-bold)] text-[var(--color-text-primary)] m-0 mb-[var(--spacing-xs)] leading-[1.3] max-md:text-[var(--font-size-lg)]">{book.title}</h3>
+            <p className="text-[var(--font-size-md)] text-[var(--color-text-secondary)] m-0 mb-[var(--spacing-sm)] italic">by {book.author}</p>
             {book.startDate && (
-              <p className="text-sm text-txt-secondary m-0">
+              <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] m-0">
                 Started: {formatDate(book.startDate)}
                 {book.completeDate && ` • Finished: ${formatDate(book.completeDate)}`}
               </p>
@@ -127,11 +143,11 @@ function NotesModal({ book, onClose, onUpdated }) {
           </div>
 
           {isEditing ? (
-            <div className="mt-lg">
-              <div className="flex justify-between items-center mb-sm">
-                <label htmlFor="notes-textarea" className="font-semibold text-txt-primary text-base m-0">✍️ Edit Notes</label>
-                <button
-                  className="py-xs px-md bg-gradient-to-br from-amber-400 to-amber-500 text-white border-none rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 shadow-[0_2px_6px_rgba(255,193,7,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_10px_rgba(255,193,7,0.4)] active:translate-y-0"
+            <div className="mt-[var(--spacing-lg)]">
+              <div className="flex justify-between items-center mb-[var(--spacing-sm)]">
+                <label htmlFor="notes-textarea" className="font-[var(--font-weight-semibold)] text-[var(--color-text-primary)] text-[var(--font-size-md)] m-0"><PenLine className="w-4 h-4 inline mr-1" /> Edit Notes</label>
+                <button 
+                  className={modalAmberAccentBtn}
                   onClick={handleAddBullet}
                   type="button"
                   title="Add bullet point"
@@ -143,13 +159,13 @@ function NotesModal({ book, onClose, onUpdated }) {
                 id="notes-textarea"
                 value={editedNotes}
                 onChange={(e) => setEditedNotes(e.target.value)}
-                placeholder={"Add your notes, quotes, or key takeaways...\n\n• Use bullet points for lists\n- Or dashes for notes\n\nExample:\n• Key theme: Character development\n• Favorite quote: \"...\"\n- Reminded me of..."}
+                placeholder="Add your notes, quotes, or key takeaways...&#10;&#10;• Use bullet points for lists&#10;- Or dashes for notes&#10;&#10;Example:&#10;• Key theme: Character development&#10;• Favorite quote: &quot;...&quot;&#10;- Reminded me of..."
                 rows="12"
-                className="w-full p-md border-2 border-amber-400 rounded-md text-base font-[inherit] leading-[1.8] resize-y transition-all duration-200 bg-[rgba(255,193,7,0.05)] focus:outline-none focus:border-amber-500 focus:shadow-[0_0_0_3px_rgba(255,193,7,0.1)] focus:bg-white"
+                className="w-full p-[var(--spacing-md)] border-2 border-amber-400 rounded-[var(--radius-md)] text-[var(--font-size-md)] font-[inherit] leading-[1.8] resize-y transition-all duration-200 bg-amber-400/5 focus:outline-none focus:border-amber-500 focus:shadow-[0_0_0_3px_rgba(255,193,7,0.1)] focus:bg-white"
                 autoFocus
               />
-              <div className="mt-sm py-sm px-md bg-[rgba(255,193,7,0.1)] border-l-[3px] border-l-amber-400 rounded-sm text-sm text-txt-secondary">
-                💡 Tip: Start lines with • or - for bullet points
+              <div className="mt-[var(--spacing-sm)] py-[var(--spacing-sm)] px-[var(--spacing-md)] bg-amber-400/10 border-l-[3px] border-l-amber-400 rounded-[var(--radius-sm)] text-[var(--font-size-sm)] text-[var(--color-text-secondary)]">
+                <Lightbulb className="w-3.5 h-3.5 inline mr-1" /> Tip: Start lines with • or - for bullet points
               </div>
             </div>
           ) : (
@@ -157,32 +173,31 @@ function NotesModal({ book, onClose, onUpdated }) {
           )}
 
           {book.review && (
-            <div className="mt-lg pt-lg border-t border-border">
-              <h4 className="text-base font-semibold text-primary m-0 mb-md">📖 Review</h4>
-              <div className="bg-bg-secondary border-l-4 border-l-primary rounded-md p-md text-sm text-txt-secondary italic leading-[1.7] whitespace-pre-wrap">{book.review}</div>
+            <div className="mt-[var(--spacing-lg)] pt-[var(--spacing-lg)] border-t border-[var(--color-border)]">
+              <h4 className="text-[var(--font-size-md)] font-[var(--font-weight-semibold)] text-[var(--color-primary)] m-0 mb-[var(--spacing-md)]"><BookOpen className="w-4 h-4 inline mr-1" /> Review</h4>
+              <div className="bg-[var(--color-bg-secondary)] border-l-4 border-l-[var(--color-primary)] rounded-[var(--radius-md)] p-[var(--spacing-md)] text-[var(--font-size-sm)] text-[var(--color-text-secondary)] italic leading-[1.7] whitespace-pre-wrap">{book.review}</div>
             </div>
           )}
         </div>
 
-        <div className="flex justify-between items-center p-lg max-md:p-md border-t border-border bg-bg flex-shrink-0">
+        <div className="flex justify-between items-center p-[var(--spacing-lg)] border-t border-[var(--color-border)] bg-[var(--color-bg)] shrink-0 max-md:p-[var(--spacing-md)]">
           {isEditing ? (
-            <div className="flex gap-sm mx-auto">
-              <button className="py-sm px-lg border border-border rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 bg-bg-secondary text-txt-primary hover:bg-bg-tertiary disabled:opacity-60 disabled:cursor-not-allowed" onClick={handleCancel} disabled={isSaving}>
+            <div className="flex gap-[var(--spacing-sm)]">
+              <button className={modalNeutralSecondaryBtn} onClick={handleCancel} disabled={isSaving}>
                 Cancel
               </button>
-              <button className="py-sm px-lg border-none rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(16,185,129,0.4)] disabled:opacity-60 disabled:cursor-not-allowed" onClick={handleSave} disabled={isSaving}>
-                {isSaving ? 'Saving...' : '💾 Save Notes'}
+              <button className={modalEmeraldPrimaryBtn} onClick={handleSave} disabled={isSaving}>
+                {isSaving ? 'Saving...' : <><Save className="w-4 h-4 inline mr-1" /> Save Notes</>}
               </button>
             </div>
           ) : (
             <>
-              <button className="py-3 px-8 bg-gradient-to-br from-amber-400 to-amber-500 text-white border-none rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(255,193,7,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,193,7,0.4)] active:translate-y-0" onClick={onClose}>Close</button>
-              <button className="py-sm px-lg border-none rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-[0_2px_8px_rgba(255,193,7,0.3)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,193,7,0.4)]" onClick={() => setIsEditing(true)}>✏️ Edit Notes</button>
+              <button className={modalAmberPrimaryLargeBtn} onClick={onClose}>Close</button>
+              <button className={modalAmberPrimaryBtn} onClick={() => setIsEditing(true)}>✏️ Edit Notes</button>
             </>
           )}
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 }
 

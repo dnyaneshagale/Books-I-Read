@@ -1,27 +1,419 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../AuthContext';
+import { Library, Wand2, Newspaper, PenLine, BookMarked, Search, Sun, Moon, Download, Upload, LogOut, CheckCircle, BookOpen, FileText, Flame, Globe, BarChart3, Lightbulb, RefreshCw, Menu, UserRound } from 'lucide-react';
 import BookCard from '../components/BookCard';
-import AddBookForm from '../components/AddBookForm';
-import UpdateProgressModal from '../components/UpdateProgressModal';
-import ShareModal from '../components/ShareModal';
-import ImportModal from '../components/ImportModal';
-import AnalyticsModal from '../components/AnalyticsModal';
-import InsightsModal from '../components/InsightsModal';
-import NotesModal from '../components/NotesModal';
-import RecommendationModal from '../components/RecommendationModal';
 import ProfileDropdown from '../components/ProfileDropdown';
 import NotificationBell from '../components/social/NotificationBell';
 import ReadingGoalWidget from '../components/ReadingGoalWidget';
-import ReviewForm from '../components/social/ReviewForm';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 import bookApi from '../api/bookApi';
+import { prefetchFeed, prefetchReviews } from '../prefetchQueries';
 import toast from 'react-hot-toast';
 import { READING_QUOTES } from '../data/quotes';
-// Dashboard.css fully migrated to Tailwind
+
+const AddBookForm = lazy(() => import('../components/AddBookForm'));
+const UpdateProgressModal = lazy(() => import('../components/UpdateProgressModal'));
+const ShareProfileModal = lazy(() => import('../components/ShareProfileModal'));
+const ImportModal = lazy(() => import('../components/ImportModal'));
+const AnalyticsModal = lazy(() => import('../components/AnalyticsModal'));
+const InsightsModal = lazy(() => import('../components/InsightsModal'));
+const NotesModal = lazy(() => import('../components/NotesModal'));
+const RecommendationModal = lazy(() => import('../components/RecommendationModal'));
+const ReviewForm = lazy(() => import('../components/social/ReviewForm'));
+
+/* ─── Tailwind class constants ─────────────────────────── */
+
+const dashboardCls = [
+  'min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30',
+  'dark:from-[#0f0d15] dark:via-[#13111a] dark:to-[#0f0d15]',
+  'transition-colors duration-300',
+  'pb-[env(safe-area-inset-bottom,0px)]'
+].join(' ');
+
+// ── Navbar ──
+const navbarCls = [
+  'sticky top-0 z-40',
+  'pt-[env(safe-area-inset-top,0px)]',
+  'bg-white/80 dark:bg-[#1E1B24]/80',
+  'backdrop-blur-[20px] backdrop-saturate-[180%]',
+  'shadow-sm border-b border-gray-200/50 dark:border-white/5'
+].join(' ');
+
+const navContentCls = [
+  'max-w-[1400px] mx-auto flex items-center justify-between',
+  'gap-4 px-6 py-3',
+  'max-[768px]:px-4 max-[768px]:py-3 max-[768px]:relative max-[768px]:gap-2.5',
+  'max-[480px]:px-2 max-[480px]:py-[6px] max-[480px]:gap-1'
+].join(' ');
+
+const navBrandCls = [
+  'flex items-center gap-3 shrink min-w-0 flex-wrap',
+  'max-[768px]:gap-2.5 max-[480px]:gap-2'
+].join(' ');
+
+const brandIconCls = [
+  'text-[28px] leading-none flex items-center',
+  'drop-shadow-[0_2px_4px_rgba(99,102,241,0.3)]',
+  'animate-[db-float_3s_ease-in-out_infinite]',
+  'max-[768px]:text-[26px] max-[480px]:text-[22px]'
+].join(' ');
+
+const navBrandH1Cls = [
+  'text-xl font-bold',
+  'bg-gradient-to-br from-violet-700 to-purple-500',
+  'bg-clip-text text-transparent',
+  'tracking-[-0.5px] m-0 leading-none flex items-center whitespace-nowrap',
+  'max-[768px]:text-lg max-[768px]:tracking-[-0.5px]',
+  'max-[480px]:text-base'
+].join(' ');
+
+const navActionsCls = 'flex items-center gap-3 flex-nowrap max-[768px]:gap-2';
+
+// ── Navbar Buttons ──
+const btnAiRecommendCls = [
+  'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-900',
+  'border-2 border-amber-400 p-0 w-10 h-10 rounded-full',
+  'text-xl font-bold cursor-pointer transition-all duration-200',
+  'shadow-[0_2px_8px_rgba(251,191,36,0.3)]',
+  'flex items-center justify-center shrink-0',
+  'hover:scale-110 hover:shadow-[0_4px_16px_rgba(251,191,36,0.5)]',
+  'hover:from-amber-200 hover:to-amber-300',
+  'active:scale-105',
+  'dark:bg-none dark:bg-[rgba(255,215,0,0.1)] dark:text-[#FFD700]',
+  'dark:border-[rgba(255,215,0,0.3)] dark:shadow-[0_2px_8px_rgba(255,215,0,0.2)]',
+  'dark:hover:bg-[rgba(255,215,0,0.15)] dark:hover:shadow-[0_4px_16px_rgba(255,215,0,0.3)]',
+  'dark:hover:text-[#FFE55C]',
+  'max-[768px]:w-11 max-[768px]:h-11 max-[768px]:text-[22px]'
+].join(' ');
+
+const btnAddBookCls = [
+  'bg-violet-600/85 text-white',
+  'border-none px-5 h-10 rounded-full',
+  'text-xs font-bold cursor-pointer transition-all duration-500',
+  'shadow-[0_2px_8px_rgba(109,40,217,0.15)]',
+  'relative overflow-hidden tracking-wide whitespace-nowrap',
+  'flex items-center justify-center',
+  'hover:bg-violet-700 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(109,40,217,0.25)]',
+  'active:translate-y-0 active:shadow-sm',
+  'dark:bg-[#7C4DFF]/70 dark:hover:bg-[#7C4DFF]/90',
+  'max-[768px]:px-4 max-[768px]:h-11 max-[768px]:text-sm'
+].join(' ');
+
+const btnSocialIconCls = [
+  'bg-indigo-500/80 text-white',
+  'border-none p-0 w-10 h-10 rounded-full text-xl',
+  'cursor-pointer transition-all duration-200',
+  'shadow-[0_2px_8px_rgba(99,102,241,0.15)]',
+  'flex items-center justify-center shrink-0',
+  'hover:bg-indigo-600 hover:scale-110 hover:shadow-[0_4px_16px_rgba(99,102,241,0.3)]',
+  'active:scale-105',
+  'dark:bg-[rgba(99,102,241,0.25)] dark:text-indigo-300',
+  'dark:shadow-[0_2px_8px_rgba(99,102,241,0.1)]',
+  'dark:hover:bg-[rgba(99,102,241,0.4)] dark:hover:shadow-[0_4px_16px_rgba(99,102,241,0.2)]'
+].join(' ');
+
+const btnAnalyticsIconCls = [
+  'bg-transparent border-none p-0 w-10 h-10 rounded-full',
+  'text-xl cursor-pointer transition-all duration-200',
+  'flex items-center justify-center',
+  'text-gray-500 dark:text-slate-400',
+  'hover:bg-black/5 hover:scale-105 dark:hover:bg-white/10',
+  'active:scale-95'
+].join(' ');
+
+const desktopOnlyCls = 'inline-flex max-[768px]:!hidden';
+
+const btnHamburgerCls = [
+  'hidden max-[768px]:flex items-center justify-center',
+  'bg-violet-600/85 text-white',
+  'border-none px-3 py-2.5 rounded-lg text-xl font-bold',
+  'cursor-pointer transition-all duration-200 shadow-sm',
+  'min-w-[44px] min-h-[44px] touch-manipulation',
+  'hover:bg-violet-700 hover:scale-105 hover:shadow-md',
+  'dark:bg-[#7C4DFF]/70 dark:hover:bg-[#7C4DFF]/90'
+].join(' ');
+
+// ── Main Content ──
+const mainContentCls = [
+  'max-w-[1400px] mx-auto px-8 py-8',
+  'transition-colors duration-300',
+  'animate-[g-fadeInUp_0.5s_cubic-bezier(0.16,1,0.3,1)_both]',
+  'max-[768px]:px-4 max-[768px]:py-6'
+].join(' ');
+
+const addBookSectionCls = 'max-w-[600px] mx-auto';
+
+// ── Quote Banner ──
+const quoteBannerCls = 'mb-4';
+
+const quoteBannerContentCls = [
+  'bg-gradient-to-br from-violet-700/10 to-purple-500/5',
+  'dark:bg-[rgba(124,77,255,0.08)]',
+  'rounded-xl px-6 py-4 flex items-center gap-4',
+  'border-l-4 border-l-violet-700 dark:border-l-[#7C4DFF]',
+  'dark:border-t dark:border-t-white/5',
+  'transition-all duration-200',
+  'hover:border-l-[6px] hover:from-violet-700/[0.15] hover:to-purple-500/[0.08]',
+  'dark:hover:bg-[rgba(124,77,255,0.12)]',
+  'max-[768px]:px-4 max-[768px]:flex-wrap max-[768px]:gap-2'
+].join(' ');
+
+const quoteIconCls = 'text-xl shrink-0';
+
+const quoteTextWrapperCls = 'flex-1 flex flex-col gap-1 min-w-0 overflow-hidden';
+
+const quoteTextCompactCls = [
+  'text-sm text-gray-500 dark:text-gray-400 italic leading-relaxed',
+  'break-words [overflow-wrap:break-word] [word-break:break-word] [hyphens:auto]'
+].join(' ');
+
+const quoteAuthorCls = [
+  'text-xs text-gray-400 dark:text-gray-500 font-medium text-right',
+  'break-words [overflow-wrap:break-word]'
+].join(' ');
+
+const btnRefreshQuoteCls = [
+  'bg-transparent border-none text-lg cursor-pointer',
+  'px-2 py-1 rounded-lg transition-all duration-200 shrink-0',
+  'hover:enabled:bg-violet-700/10 hover:enabled:rotate-180',
+  'disabled:opacity-50 disabled:cursor-not-allowed',
+  'max-[768px]:min-w-[36px] max-[768px]:min-h-[36px]'
+].join(' ');
+
+// ── Stats Grid ──
+const statsGridCls = [
+  'grid grid-cols-2 min-[769px]:grid-cols-4 gap-4 mb-6'
+].join(' ');
+
+const statCardCls = [
+  'group relative overflow-hidden',
+  'bg-white dark:bg-[#1E1B24]',
+  'border border-gray-200',
+  'dark:border-x-0 dark:border-b-0 dark:border-t-white/[0.08]',
+  'rounded-xl px-6 py-6 flex items-center gap-4',
+  'transition-all duration-200 shadow-xs',
+  'dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)]',
+  'before:absolute before:top-0 before:left-0 before:w-[3px] before:h-full',
+  'before:bg-gradient-to-b before:from-violet-700 before:to-violet-400',
+  'before:scale-y-0 before:origin-bottom before:transition-transform before:duration-200',
+  'hover:before:scale-y-100 hover:before:origin-top',
+  'hover:border-violet-700 hover:-translate-y-0.5 hover:shadow-md',
+  'dark:hover:border-t-[rgba(124,77,255,0.3)]',
+  'dark:hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7),0_0_40px_-10px_rgba(124,77,255,0.2)]',
+  'max-[768px]:min-h-[100px]'
+].join(' ');
+
+const statIconCls = [
+  'text-[32px] shrink-0 transition-transform duration-200',
+  'group-hover:scale-110'
+].join(' ');
+
+const statContentCls = 'flex-1 min-w-0';
+
+const statValueCls = [
+  'text-2xl font-black',
+  'bg-gradient-to-br from-violet-700 to-violet-500',
+  'bg-clip-text text-transparent leading-tight mb-0.5'
+].join(' ');
+
+const statLabelCls = 'text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide';
+
+// ── Goal + Social Row ──
+const goalSocialRowCls = [
+  'grid grid-cols-[3fr_2fr] gap-4 mb-6 items-stretch',
+  'max-[600px]:grid-cols-1'
+].join(' ');
+
+const goalSocialColCls = 'min-w-0 flex [&>*]:flex-1 [&>*]:!mb-0';
+
+// ── Social Entry Card ──
+const socialEntryCardCls = [
+  'group relative flex items-center justify-between gap-4',
+  'bg-violet-600/80',
+  'dark:bg-violet-800/70',
+  'rounded-2xl px-6 py-7 cursor-pointer',
+  'transition-all duration-300 text-white',
+  'h-full box-border flex-1 overflow-hidden',
+  'hover:bg-violet-700/90 hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(109,40,217,0.2)]',
+  'dark:hover:bg-violet-700/80 dark:hover:shadow-[0_12px_32px_rgba(76,29,149,0.3)]',
+  'max-[480px]:px-4 max-[480px]:py-5'
+].join(' ');
+
+const socialGlowCls = [
+  'absolute -top-[30%] -right-[20%] w-40 h-40 rounded-full',
+  'bg-white/[0.08] pointer-events-none'
+].join(' ');
+
+const socialContentCls = 'flex items-center gap-4 relative z-[1]';
+
+const socialIconWrapCls = [
+  'w-12 h-12 rounded-[14px] bg-white/15 backdrop-blur-sm',
+  'flex items-center justify-center shrink-0',
+  'transition-colors duration-200',
+  'group-hover:bg-white/[0.22]',
+  'max-[480px]:w-10 max-[480px]:h-10 max-[480px]:rounded-[10px]',
+  'max-[480px]:[&_svg]:w-[22px] max-[480px]:[&_svg]:h-[22px]'
+].join(' ');
+
+const socialTextCls = 'flex flex-col gap-0.5';
+const socialTextH3Cls = 'm-0 text-[1.1rem] font-bold text-white tracking-tight';
+const socialTextPCls = 'm-0 text-[0.8rem] text-white/75 font-normal';
+
+const socialArrowCls = [
+  'relative z-[1] opacity-60 shrink-0',
+  'transition-all duration-200',
+  'group-hover:opacity-100 group-hover:translate-x-[3px]'
+].join(' ');
+
+// ── Filters Section ──
+const filtersSectionCls = 'mb-8 flex flex-col gap-2 max-[768px]:gap-4';
+
+const searchBarCls = 'relative w-full';
+
+const searchInputCls = [
+  'w-full py-4 pl-5 pr-12 border-2 border-slate-400',
+  'rounded-xl text-base font-medium',
+  'bg-white dark:bg-[#15121B]',
+  'text-gray-800 dark:text-gray-200',
+  'transition-all duration-200 shadow-xs',
+  'focus:outline-none focus:border-violet-700 focus:-translate-y-0.5',
+  'focus:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_0_0_4px_rgba(99,102,241,0.1)]',
+  'dark:border-white/10',
+  'dark:focus:border-[rgba(124,77,255,0.5)]',
+  'dark:focus:shadow-[0_4px_12px_rgba(0,0,0,0.3),0_0_0_4px_rgba(124,77,255,0.15)]',
+  'placeholder:text-gray-400 dark:placeholder:text-gray-500',
+  'max-[768px]:pl-4 max-[768px]:min-h-[52px]'
+].join(' ');
+
+const clearSearchCls = [
+  'absolute right-3 top-1/2 -translate-y-1/2',
+  'bg-gray-100 dark:bg-gray-700 border-none',
+  'text-2xl text-gray-500 cursor-pointer',
+  'p-2 leading-none rounded-lg transition-all duration-200',
+  'hover:bg-violet-700 hover:text-white hover:rotate-90',
+  'max-[768px]:text-[22px] max-[768px]:min-w-[44px] max-[768px]:min-h-[44px]'
+].join(' ');
+
+const filterTabsCls = [
+  'flex gap-3 overflow-x-auto p-0 flex-nowrap',
+  '[scrollbar-width:none] [-ms-overflow-style:none]',
+  '[&::-webkit-scrollbar]:hidden',
+  'max-[768px]:flex-wrap max-[768px]:p-1.5 max-[768px]:gap-1.5'
+].join(' ');
+
+const filterTabBaseCls = [
+  'bg-white dark:bg-[#1E1B24] border border-gray-200 dark:border-white/10',
+  'px-3.5 py-1.5 rounded-full text-sm font-medium',
+  'text-gray-500 dark:text-gray-400 cursor-pointer',
+  'transition-all duration-200 flex items-center justify-center',
+  'gap-1.5 whitespace-nowrap shrink-0 shadow-xs min-h-8 h-8',
+  'hover:border-violet-700 hover:text-violet-700',
+  'hover:-translate-y-px hover:shadow-sm',
+  'max-[768px]:flex-[1_1_calc(50%-6px)] max-[768px]:min-w-0',
+  'max-[768px]:px-2.5 max-[768px]:py-3 max-[768px]:text-xs max-[768px]:min-h-[44px] max-[768px]:h-auto',
+  'max-[400px]:text-[10px] max-[400px]:px-1.5 max-[400px]:py-2'
+].join(' ');
+
+const filterTabActiveCls = [
+  '!bg-violet-600/85 !text-white',
+  '!border-transparent shadow-[0_2px_8px_rgba(109,40,217,0.15)]',
+  'dark:!bg-[#7C4DFF]/70'
+].join(' ');
+
+const filterCountCls = [
+  'text-xs px-2 py-0.5 rounded-full font-bold min-w-[20px] text-center',
+  'max-[768px]:text-[11px] max-[768px]:px-[7px] max-[768px]:py-[3px] max-[768px]:min-w-[22px]'
+].join(' ');
+
+// ── Tag Filter ──
+const tagFilterSectionCls = 'mt-2';
+const tagFilterLabelCls = 'text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wide';
+const tagFilterChipsCls = 'flex flex-wrap gap-2 max-[768px]:gap-2';
+
+const tagFilterChipBaseCls = [
+  'px-5 py-2.5 bg-white dark:bg-[#1E1B24] text-gray-500 dark:text-gray-400',
+  'border-2 border-gray-200 dark:border-white/10 rounded-full',
+  'text-sm font-semibold cursor-pointer transition-all duration-200 shadow-xs',
+  'hover:-translate-y-[3px] hover:shadow-md hover:border-violet-700 hover:text-violet-700',
+  'max-[768px]:px-3.5 max-[768px]:py-2 max-[768px]:text-xs max-[768px]:min-h-[36px]'
+].join(' ');
+
+const tagFilterChipActiveCls = [
+  '!bg-violet-600/85 !text-white',
+  '!border-transparent !shadow-md',
+  'dark:!bg-[#7C4DFF]/70'
+].join(' ');
+
+// ── Books Section ──
+const booksSectionCls = 'min-h-[400px]';
+
+const booksGridCls = [
+  'grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6',
+  'max-[768px]:grid-cols-1 max-[768px]:gap-4'
+].join(' ');
+
+// ── Loading & Empty States ──
+const loadingStateCls = 'flex flex-col items-center justify-center px-6 py-12 text-center';
+
+const spinnerCls = [
+  'w-10 h-10 border-[3px] border-gray-200 dark:border-white/10',
+  'border-t-violet-700 rounded-full',
+  'animate-[g-spin_0.8s_linear_infinite] mb-4'
+].join(' ');
+
+const emptyStateCls = 'flex flex-col items-center justify-center px-6 py-12 text-center';
+const emptyIconCls = 'text-[64px] mb-4 opacity-50';
+const emptyTitleCls = 'text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2';
+const emptyTextCls = 'text-base text-gray-500 dark:text-gray-400 mt-2';
+
+// ── Selection Mode & Bulk Actions ──
+const selectionBarCls = [
+  'fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-50',
+  'bg-white dark:bg-[#1E1B24] shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]',
+  'rounded-2xl px-6 py-4 flex items-center gap-4',
+  'border border-gray-200 dark:border-white/10',
+  'backdrop-blur-xl transition-all duration-300'
+].join(' ');
+
+const selectionBarTextCls = 'font-semibold text-gray-900 dark:text-white';
+
+const btnSelectModeCls = [
+  'px-4 py-2 rounded-xl font-medium transition-all duration-200',
+  'bg-violet-600/85 hover:bg-violet-700 text-white',
+  'shadow-[0_2px_8px_rgba(109,40,217,0.15)]',
+  'dark:bg-[#7C4DFF]/70 dark:hover:bg-[#7C4DFF]/90',
+  'active:scale-95'
+].join(' ');
+
+const btnCancelSelectionCls = [
+  'px-4 py-2 rounded-xl font-medium transition-all duration-200',
+  'bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20',
+  'text-gray-700 dark:text-gray-300 active:scale-95'
+].join(' ');
+
+const btnBatchDeleteCls = [
+  'px-4 py-2 rounded-xl font-medium transition-all duration-200',
+  'bg-red-600 hover:bg-red-700 text-white',
+  'active:scale-95'
+].join(' ');
+
+const selectAllContainerCls = 'flex items-center gap-2 mb-4';
+const selectAllLabelCls = 'text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none';
+
+/* ─────────────────────────────────────────────────────── */
 
 function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,9 +441,40 @@ function Dashboard() {
   });
   const [randomQuote, setRandomQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [goalRefreshKey, setGoalRefreshKey] = useState(0);
   const [reviewBook, setReviewBook] = useState(null);
+  const [selectedBookIds, setSelectedBookIds] = useState(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  const booksQuery = useQuery({
+    queryKey: ['books', 'all'],
+    queryFn: () => bookApi.getAllBooks(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const activityDatesQuery = useQuery({
+    queryKey: ['activities', 'dates'],
+    queryFn: () => bookApi.getActivityDates(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const activityDetailsQuery = useQuery({
+    queryKey: ['activities', 'details'],
+    queryFn: () => bookApi.getActivityDetails(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const dailyStatsQuery = useQuery({
+    queryKey: ['activities', 'daily-stats'],
+    queryFn: () => bookApi.getDailyStats(),
+    staleTime: 1000 * 60 * 3,
+  });
+
+  const periodStatsQuery = useQuery({
+    queryKey: ['activities', 'period-stats'],
+    queryFn: () => bookApi.getPeriodStats(),
+    staleTime: 1000 * 60 * 3,
+  });
 
   // Function to get a random quote from local collection
   const getRandomQuote = () => {
@@ -84,75 +507,53 @@ function Dashboard() {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
 
-  // Fetch books and activity dates on component mount
   useEffect(() => {
-    fetchBooks();
-    fetchActivityDates();
-    fetchDailyStats();
-    fetchPeriodStats();
-  }, []);
+    setLoading(booksQuery.isLoading);
+  }, [booksQuery.isLoading]);
 
-  // Apply filtering whenever books, filter, search, or tag changes
   useEffect(() => {
-    applyFilters();
-  }, [books, activeFilter, searchQuery, selectedTag]);
-
-  const fetchBooks = async () => {
-    setLoading(true);
-    try {
-      const data = await bookApi.getAllBooks();
-      setBooks(data);
+    if (booksQuery.data) {
+      setBooks(booksQuery.data);
       setGoalRefreshKey(k => k + 1);
-    } catch (error) {
+    }
+  }, [booksQuery.data]);
+
+  useEffect(() => {
+    if (booksQuery.isError) {
       toast.error('Failed to load books');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [booksQuery.isError]);
 
-  const fetchActivityDates = async () => {
-    try {
-      const data = await bookApi.getActivityDates();
-      // Convert string dates to Date objects
-      const dates = data.activityDates.map(dateStr => new Date(dateStr));
+  useEffect(() => {
+    if (activityDatesQuery.data?.activityDates) {
+      const dates = activityDatesQuery.data.activityDates.map(dateStr => new Date(dateStr));
       setActivityDates(dates);
-
-      // Also fetch detailed activity data with page counts
-      const detailsData = await bookApi.getActivityDetails();
-      setActivityDetails(detailsData.activities || []);
-    } catch (error) {
-      // Silently handle - fall back to old streak logic
     }
-  };
+  }, [activityDatesQuery.data]);
 
-  const fetchDailyStats = async () => {
-    try {
-      const data = await bookApi.getDailyStats();
-      setDailyStats(data.dailyStats || []);
-    } catch (error) {
-      // Silently handle - analytics will use fallback
+  useEffect(() => {
+    if (activityDetailsQuery.data?.activities) {
+      setActivityDetails(activityDetailsQuery.data.activities || []);
     }
-  };
+  }, [activityDetailsQuery.data]);
 
-  const fetchPeriodStats = async () => {
-    try {
-      const data = await bookApi.getPeriodStats();
+  useEffect(() => {
+    if (dailyStatsQuery.data?.dailyStats) {
+      setDailyStats(dailyStatsQuery.data.dailyStats || []);
+    }
+  }, [dailyStatsQuery.data]);
+
+  useEffect(() => {
+    if (periodStatsQuery.data) {
       setPeriodStats({
-        pagesThisWeek: data.pagesThisWeek || 0,
-        pagesThisMonth: data.pagesThisMonth || 0,
-        pagesThisYear: data.pagesThisYear || 0
+        pagesThisWeek: periodStatsQuery.data.pagesThisWeek || 0,
+        pagesThisMonth: periodStatsQuery.data.pagesThisMonth || 0,
+        pagesThisYear: periodStatsQuery.data.pagesThisYear || 0
       });
-    } catch (error) {
-      // Silently handle - will show 0
     }
-  };
+  }, [periodStatsQuery.data]);
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-  };
-
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...books];
 
     // Apply status filter
@@ -169,7 +570,7 @@ function Dashboard() {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(book =>
+      filtered = filtered.filter(book => 
         book.title.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query)
       );
@@ -177,7 +578,7 @@ function Dashboard() {
 
     // Apply tag filter
     if (selectedTag) {
-      filtered = filtered.filter(book =>
+      filtered = filtered.filter(book => 
         book.tags && book.tags.includes(selectedTag)
       );
     }
@@ -189,6 +590,28 @@ function Dashboard() {
     });
 
     setFilteredBooks(filtered);
+  }, [activeFilter, books, searchQuery, selectedTag]);
+
+  // Apply filtering whenever books, filter, search, or tag changes
+  useEffect(() => {
+    applyFilters();
+  }, [books, activeFilter, searchQuery, selectedTag, applyFilters]);
+
+  const fetchBooks = async () => {
+    const result = await booksQuery.refetch();
+    if (result.data) {
+      setBooks(result.data);
+      setGoalRefreshKey(k => k + 1);
+    }
+  };
+
+  const fetchActivityDates = async () => {
+    await Promise.all([activityDatesQuery.refetch(), activityDetailsQuery.refetch()]);
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
   };
 
   const getAllTags = () => {
@@ -201,18 +624,10 @@ function Dashboard() {
     return Array.from(tagsSet).sort();
   };
 
-  const getFilterInfo = () => {
-    const parts = [];
-    if (activeFilter !== 'All') parts.push(activeFilter);
-    if (selectedTag) parts.push(`Tag: ${selectedTag}`);
-    if (searchQuery) parts.push(`Search: "${searchQuery}"`);
-    return parts.length > 0 ? parts.join(', ') : null;
-  };
-
   const handleShowInsights = async (book) => {
     setInsightsBook(book);
     setShowInsightsModal(true);
-
+    
     // If AI notes haven't been generated yet or failed, trigger generation
     if (book.aiStatus === 'PENDING' || book.aiStatus === 'FAILED' || !book.aiSummary) {
       setInsightsLoading(true);
@@ -223,7 +638,7 @@ function Dashboard() {
         setInsightsBook(updatedBook);
         // Update book in the list
         setBooks(prevBooks => prevBooks.map(b => b.id === book.id ? updatedBook : b));
-      } catch (error) {
+      } catch {
         toast.error('Failed to generate AI insights');
       } finally {
         setInsightsLoading(false);
@@ -262,7 +677,7 @@ function Dashboard() {
       await bookApi.createBook(bookRequest);
       toast.success(`📚 "${recommendedBook.title}" added to your Want to Read list!`);
       fetchBooks(); // Refresh the book list
-    } catch (error) {
+    } catch {
       toast.error('Failed to add book');
     }
   };
@@ -276,8 +691,55 @@ function Dashboard() {
       await bookApi.deleteBook(bookId);
       toast.success('🗑️ Book deleted successfully');
       fetchBooks();
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete book');
+    }
+  };
+
+  // Toggle selection mode
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedBookIds(new Set()); // Clear selections when toggling mode
+  };
+
+  // Toggle individual book selection
+  const toggleBookSelection = (bookId) => {
+    setSelectedBookIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(bookId)) {
+        newSet.delete(bookId);
+      } else {
+        newSet.add(bookId);
+      }
+      return newSet;
+    });
+  };
+
+  // Select all filtered books
+  const selectAllBooks = () => {
+    if (selectedBookIds.size === filteredBooks.length) {
+      setSelectedBookIds(new Set()); // Deselect all if all are selected
+    } else {
+      setSelectedBookIds(new Set(filteredBooks.map(book => book.id)));
+    }
+  };
+
+  // Handle batch delete
+  const handleBatchDelete = async () => {
+    const count = selectedBookIds.size;
+    if (count === 0) return;
+
+    if (window.confirm(`Are you sure you want to delete ${count} book${count > 1 ? 's' : ''}? This will also remove all related activities.`)) {
+      try {
+        await bookApi.deleteBooksInBatch(Array.from(selectedBookIds));
+        fetchBooks();
+        toast.success(`🗑️ ${count} book${count > 1 ? 's' : ''} deleted successfully!`);
+        setSelectedBookIds(new Set());
+        setIsSelectionMode(false);
+      } catch (error) {
+        console.error('Batch delete error:', error);
+        toast.error('Failed to delete books. Please try again.');
+      }
     }
   };
 
@@ -312,14 +774,14 @@ function Dashboard() {
     const nowIST = getISTDate();
     const todayIST = getISTStartOfDay(nowIST);
     const finishedBooks = books.filter(b => b.status === 'FINISHED' && b.completeDate);
-
+    
     // Books finished this week (last 7 days in IST)
     const weekAgoIST = new Date(todayIST.getTime() - 7 * 24 * 60 * 60 * 1000);
     const booksThisWeek = finishedBooks.filter(b => {
       const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
       return bookDateIST >= weekAgoIST;
     }).length;
-
+    
     // Books finished this month (in IST)
     const monthStartIST = new Date(Date.UTC(
       nowIST.getUTCFullYear(),
@@ -330,45 +792,33 @@ function Dashboard() {
       const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
       return bookDateIST >= monthStartIST;
     }).length;
-
+    
     // Books finished this year (in IST)
     const yearStartIST = new Date(Date.UTC(nowIST.getUTCFullYear(), 0, 1, 0, 0, 0, 0));
     const booksThisYear = finishedBooks.filter(b => {
       const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
       return bookDateIST >= yearStartIST;
     }).length;
-
+    
     // Calculate reading streak using activity dates (pass start of day for today)
     const streak = calculateReadingStreak(activityDates, getISTStartOfDay, todayIST);
-
+    
     // Average pages per book (based on pages read across all books)
     const avgPages = books.length > 0 ? Math.round(totalPagesRead / books.length) : 0;
-
+    
     // Calculate reading pace (pages per day)
     const readingPace = calculateReadingPace(books);
 
     // Calculate pages read for each time period
-    const booksFinishedThisWeek = finishedBooks.filter(b => {
-      const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
-      return bookDateIST >= weekAgoIST;
-    });
     const pagesThisWeek = periodStats.pagesThisWeek;
 
-    const booksFinishedThisMonth = finishedBooks.filter(b => {
-      const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
-      return bookDateIST >= monthStartIST;
-    });
     const pagesThisMonth = periodStats.pagesThisMonth;
 
-    const booksFinishedThisYear = finishedBooks.filter(b => {
-      const bookDateIST = getISTStartOfDay(new Date(b.completeDate));
-      return bookDateIST >= yearStartIST;
-    });
     const pagesThisYear = periodStats.pagesThisYear;
 
-    return {
-      completed,
-      reading,
+    return { 
+      completed, 
+      reading, 
       totalPagesRead,
       booksThisWeek,
       booksThisMonth,
@@ -388,7 +838,7 @@ function Dashboard() {
     if (!activityDatesFromBackend || activityDatesFromBackend.length === 0) {
       return { current: 0, longest: 0 };
     }
-
+    
     // Convert to IST start of day and sort (most recent first)
     // Filter out any future dates to prevent backdated entries from affecting current streak
     const todayStartOfDay = getISTStartOfDay(todayIST);
@@ -396,30 +846,30 @@ function Dashboard() {
       .map(date => getISTStartOfDay(new Date(date)))
       .filter(date => date <= todayStartOfDay) // Only include dates up to today
       .sort((a, b) => b - a);
-
+    
     if (sortedDates.length === 0) {
       return { current: 0, longest: 0 };
     }
-
+    
     let currentStreak = 0;
     let longestStreak = 0;
     let tempStreak = 1;
-
+    
     const yesterdayIST = new Date(todayStartOfDay.getTime() - 24 * 60 * 60 * 1000);
     const mostRecentActivity = sortedDates[0];
-
+    
     // Current streak: Only count if most recent activity is today or yesterday
     // This ensures backdated entries don't extend current streak
-    if (mostRecentActivity.getTime() === todayStartOfDay.getTime() ||
-      mostRecentActivity.getTime() === yesterdayIST.getTime()) {
+    if (mostRecentActivity.getTime() === todayStartOfDay.getTime() || 
+        mostRecentActivity.getTime() === yesterdayIST.getTime()) {
       currentStreak = 1;
-
+      
       // Count consecutive days backwards from most recent
       for (let i = 1; i < sortedDates.length; i++) {
         const currentDate = sortedDates[i];
         const previousDate = sortedDates[i - 1];
         const daysDiff = Math.floor((previousDate - currentDate) / (1000 * 60 * 60 * 24));
-
+        
         if (daysDiff === 1) {
           currentStreak++;
         } else if (daysDiff > 1) {
@@ -427,14 +877,14 @@ function Dashboard() {
         }
       }
     }
-
+    
     // Calculate longest streak from all dates (historical)
     tempStreak = 1;
     for (let i = 1; i < sortedDates.length; i++) {
       const currentDate = sortedDates[i];
       const previousDate = sortedDates[i - 1];
       const daysDiff = Math.floor((previousDate - currentDate) / (1000 * 60 * 60 * 24));
-
+      
       if (daysDiff === 1) {
         tempStreak++;
         longestStreak = Math.max(longestStreak, tempStreak);
@@ -443,15 +893,15 @@ function Dashboard() {
         tempStreak = 1;
       }
     }
-
+    
     longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
-
+    
     return { current: currentStreak, longest: longestStreak };
   };
 
   const calculateReadingPace = (books) => {
     if (books.length === 0) return null;
-
+    
     // Helper to get IST date (UTC+5:30)
     const getISTDate = (date = new Date()) => {
       const utcTime = date.getTime();
@@ -469,162 +919,322 @@ function Dashboard() {
         0, 0, 0, 0
       ));
     };
-
+    
     // Get all books with reading activity (reading or finished)
-    const activeBooks = books.filter(b =>
+    const activeBooks = books.filter(b => 
       (b.status === 'READING' || b.status === 'FINISHED') && b.startDate
     );
-
+    
     if (activeBooks.length === 0) return null;
-
+    
     // Find the earliest start date (normalized to start of day in IST)
     const startDates = activeBooks.map(b => getISTStartOfDay(new Date(b.startDate)));
     const earliestStart = new Date(Math.min(...startDates));
-
+    
     // Calculate days from earliest start to today (using IST midnight boundaries)
     const todayIST = getISTStartOfDay(getISTDate());
     const totalDays = Math.max(1, Math.ceil((todayIST - earliestStart) / (1000 * 60 * 60 * 24)) + 1);
-
+    
     // Calculate total pages read across all books
-    const totalPagesRead = books.reduce((sum, b) => sum + b.pagesRead, 0);
-
-    // Pages per day (rounded)
-    return Math.round(totalPagesRead / totalDays);
+    const totalPagesRead = books.reduce((sum, b) => sum + (b.pagesRead || 0), 0);
+    
+    // Pages per day (1 decimal place)
+    const pace = totalPagesRead / totalDays;
+    return Math.round(pace * 10) / 10;
   };
 
   const stats = calculateStats();
 
-  /* Shared Tailwind fragments */
-  const navBtnMobile = 'block w-full text-left py-3.5 px-5 border-none bg-none text-txt-primary dark:text-[#E2D9F3] text-sm font-medium cursor-pointer transition-all border-b border-border dark:border-[#2D2A35] hover:bg-bg-hover dark:hover:bg-[#2D2A35] hover:text-primary dark:hover:text-primary-light';
-  const statCardCls = 'bg-bg dark:bg-[#1E1B24] border border-border dark:border-transparent dark:border-t dark:border-t-white/[0.08] rounded-2xl p-5 md:p-6 flex items-center gap-4 transition-all shadow-xs dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] relative overflow-hidden group hover:border-primary dark:hover:border-t-[rgba(124,77,255,0.3)] hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7),0_0_40px_-10px_rgba(124,77,255,0.2)] before:content-[\'\'] before:absolute before:top-0 before:left-0 before:w-[3px] before:h-full before:bg-gradient-to-b before:from-primary before:to-primary-light before:scale-y-0 before:transition-transform before:origin-bottom hover:before:scale-y-100 hover:before:origin-top';
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bg-secondary to-bg-tertiary transition-colors duration-300">
+    <div className={dashboardCls}>
       {/* Navbar */}
-      <nav className="bg-white/80 dark:bg-[rgba(15,23,42,0.8)] backdrop-blur-[20px] backdrop-saturate-[180%] border-b border-[rgba(226,232,240,0.8)] dark:border-[rgba(51,65,85,0.8)] sticky top-0 z-40 shadow-sm transition-all duration-300">
-        <div className="max-w-[1400px] mx-auto py-3 px-6 max-[480px]:py-1.5 max-[480px]:px-2 max-[480px]:gap-1 md:px-8 flex justify-between items-center gap-5 max-[768px]:gap-2.5 max-[768px]:py-3 max-[768px]:px-4 max-[768px]:relative">
-          <div className="flex items-center gap-4 max-[480px]:gap-1.5 max-[768px]:gap-2.5 flex-shrink min-w-0 flex-wrap">
-            <span className="text-[28px] max-[480px]:text-[22px] max-[768px]:text-[26px] drop-shadow-[0_2px_4px_rgba(99,102,241,0.3)] animate-[float_3s_ease-in-out_infinite] leading-none flex items-center">📚</span>
-            <h1 className="text-xl max-[480px]:text-base max-[768px]:text-lg font-bold bg-gradient-to-br from-primary to-[#a855f7] bg-clip-text text-transparent tracking-tight m-0 leading-none flex items-center whitespace-nowrap">Books I Read</h1>
+      <nav className={navbarCls}>
+        <div className={navContentCls}>
+          <div className={navBrandCls}>
+            <span className={brandIconCls}><Library className="w-6 h-6" /></span>
+            <h1 className={navBrandH1Cls}>Books I Read</h1>
           </div>
-          <div className="flex items-center gap-3 max-[768px]:gap-2 flex-nowrap">
-            {/* AI Magic Wand */}
-            <button className="bg-gradient-to-br from-[#fef3c7] to-[#fde68a] dark:bg-[rgba(255,215,0,0.1)] text-[#78350f] dark:text-[#FFD700] border-2 border-[#fbbf24] dark:border-[rgba(255,215,0,0.3)] p-0 w-10 h-10 max-[768px]:w-11 max-[768px]:h-11 max-[768px]:text-[22px] rounded-full text-xl font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(251,191,36,0.3)] dark:shadow-[0_2px_8px_rgba(255,215,0,0.2)] flex items-center justify-center flex-shrink-0 hover:scale-110 hover:shadow-[0_4px_16px_rgba(251,191,36,0.5)] dark:hover:bg-[rgba(255,215,0,0.15)] dark:hover:shadow-[0_4px_16px_rgba(255,215,0,0.3)] dark:hover:text-[#FFE55C] active:scale-105" onClick={() => setShowRecommendationModal(true)} title="Get AI Recommendations">🪄</button>
+          <div className={navActionsCls}>
+            {/* AI Magic Wand - Icon only */}
+            <button
+              className={btnAiRecommendCls}
+              onClick={() => setShowRecommendationModal(true)}
+              title="Get AI Recommendations"
+            >
+              <Wand2 className="w-5 h-5" />
+            </button>
 
-            {/* Add Book */}
-            <button className="bg-gradient-to-br from-primary to-primary-light text-white border-none px-5 max-[768px]:px-4 max-[768px]:h-11 max-[768px]:text-sm max-[400px]:px-2.5 max-[400px]:text-[11px] h-10 rounded-full text-xs font-bold cursor-pointer transition-all shadow-[0_2px_8px_rgba(109,40,217,0.3)] relative overflow-hidden tracking-wide whitespace-nowrap flex items-center justify-center hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(109,40,217,0.4)] active:translate-y-0 active:shadow-sm" onClick={() => setShowAddForm(!showAddForm)}>{showAddForm ? '← Back' : '+ Add Book'}</button>
+            {/* Add Book - Primary action */}
+            <button
+              className={btnAddBookCls}
+              onClick={() => setShowAddForm(!showAddForm)}
+            >
+              {showAddForm ? '← Back' : '+ Add Book'}
+            </button>
 
-            {/* Social (desktop) */}
-            <button className="hidden md:inline-flex bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] dark:bg-[rgba(99,102,241,0.2)] text-white dark:text-[#818cf8] border-none p-0 w-10 h-10 rounded-full text-xl cursor-pointer transition-all shadow-[0_2px_8px_rgba(99,102,241,0.3)] dark:shadow-[0_2px_8px_rgba(99,102,241,0.2)] items-center justify-center flex-shrink-0 hover:scale-110 hover:shadow-[0_4px_16px_rgba(99,102,241,0.5)] dark:hover:bg-[rgba(99,102,241,0.3)] dark:hover:shadow-[0_4px_16px_rgba(99,102,241,0.35)] active:scale-105" onClick={() => navigate('/feed')} title="Social">🌐</button>
+            {/* Social - Icon only (desktop) */}
+            <button
+              className={`${btnSocialIconCls} ${desktopOnlyCls}`}
+              onClick={() => navigate('/feed')}
+              onMouseEnter={() => void prefetchFeed(queryClient)}
+              onFocus={() => void prefetchFeed(queryClient)}
+              title="Social"
+            >
+              <Globe className="w-5 h-5" />
+            </button>
 
-            {/* Analytics (desktop) */}
-            <button className="hidden md:inline-flex bg-transparent border-none p-0 w-10 h-10 rounded-full text-xl cursor-pointer transition-all text-txt-secondary dark:text-[#94a3b8] items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 hover:scale-105 active:scale-95" onClick={() => setShowAnalyticsModal(true)} title="View Analytics">📊</button>
+            {/* Analytics - Icon only (desktop) */}
+            <button
+              className={`${btnAnalyticsIconCls} ${desktopOnlyCls}`}
+              onClick={() => setShowAnalyticsModal(true)}
+              title="View Analytics"
+            >
+              <BarChart3 className="w-5 h-5" />
+            </button>
 
             {/* Notification Bell (desktop) */}
-            <div className="hidden md:inline-flex"><NotificationBell /></div>
+            <div className={desktopOnlyCls}>
+              <NotificationBell />
+            </div>
 
             {/* Profile Dropdown (desktop) */}
-            <ProfileDropdown username={user?.username || 'User'} onImport={() => setShowImportModal(true)} onShare={() => setShowShareModal(true)} onLogout={handleLogout} isDarkMode={isDarkMode} onToggleDarkMode={() => setIsDarkMode(!isDarkMode)} />
+            <ProfileDropdown
+              username={user?.username || 'User'}
+              onImport={() => setShowImportModal(true)}
+              onShare={() => setShowShareModal(true)}
+              onLogout={handleLogout}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+            />
+            
+            {/* Mobile Quick Menu (shadcn dropdown) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={btnHamburgerCls} aria-label="Open mobile menu">
+                  <Menu className="w-5 h-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[220px] md:hidden">
+                <DropdownMenuItem onClick={() => setShowAnalyticsModal(true)}>
+                  <BarChart3 className="w-4 h-4" />
+                  Analytics
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <UserRound className="w-4 h-4" />
+                  My Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/feed')}
+                  onMouseEnter={() => void prefetchFeed(queryClient)}
+                  onFocus={() => void prefetchFeed(queryClient)}
+                >
+                  <Newspaper className="w-4 h-4" />
+                  Feed
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/reviews')}
+                  onMouseEnter={() => void prefetchReviews(queryClient)}
+                  onFocus={() => void prefetchReviews(queryClient)}
+                >
+                  <PenLine className="w-4 h-4" />
+                  Reviews
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/lists')}>
+                  <BookMarked className="w-4 h-4" />
+                  Lists
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/lists/browse')}>
+                  <Search className="w-4 h-4" />
+                  Browse Lists
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/discover')}>
+                  <Search className="w-4 h-4" />
+                  Discover
+                </DropdownMenuItem>
 
-            {/* Hamburger (mobile) */}
-            <button className="hidden max-[768px]:flex bg-gradient-to-br from-primary to-primary-light text-white border-none py-2.5 px-3 rounded-lg text-xl font-bold cursor-pointer transition-all shadow-sm items-center justify-center min-w-[44px] min-h-[44px] hover:scale-105 hover:shadow-md" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? '✕' : '☰'}</button>
+                <DropdownMenuSeparator />
 
-            {/* Mobile Dropdown */}
-            <div className={`hidden max-[768px]:block absolute top-full right-0 bg-bg dark:bg-[#1E1B24] border border-border dark:border-[#2D2A35] rounded-2xl shadow-xl min-w-[200px] z-[1000] mt-2 transition-all ${menuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2.5 pointer-events-none'}`}>
-              <button className={navBtnMobile} onClick={() => { setShowAnalyticsModal(true); setMenuOpen(false); }}>📊 Analytics</button>
-              <button className={navBtnMobile} onClick={() => { navigate('/profile'); setMenuOpen(false); }}>👤 My Profile</button>
-              <button className={navBtnMobile} onClick={() => { navigate('/feed'); setMenuOpen(false); }}>📰 Feed</button>
-              <button className={navBtnMobile} onClick={() => { navigate('/reviews'); setMenuOpen(false); }}>✍️ Reviews</button>
-              <button className={navBtnMobile} onClick={() => { navigate('/lists'); setMenuOpen(false); }}>📚 Lists</button>
-              <button className={navBtnMobile} onClick={() => { navigate('/lists/browse'); setMenuOpen(false); }}>🔍 Browse Lists</button>
-              <button className={navBtnMobile} onClick={() => { navigate('/discover'); setMenuOpen(false); }}>🔍 Discover</button>
-              <button className={navBtnMobile} onClick={() => { setIsDarkMode(!isDarkMode); setMenuOpen(false); }}>{isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}</button>
-              <button className={navBtnMobile} onClick={() => { setShowImportModal(true); setMenuOpen(false); }}>📥 Import</button>
-              <button className={navBtnMobile} onClick={() => { setShowShareModal(true); setMenuOpen(false); }}>📤 Share</button>
-              <button className={`${navBtnMobile} !border-b-0 rounded-b-2xl`} onClick={() => { handleLogout(); setMenuOpen(false); }}>🚪 Logout</button>
-            </div>
+                <DropdownMenuItem onClick={() => setIsDarkMode(!isDarkMode)}>
+                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowImportModal(true)}>
+                  <Download className="w-4 h-4" />
+                  Import Data
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowShareModal(true)}>
+                  <Upload className="w-4 h-4" />
+                  Share Profile
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem className="!text-red-600 focus:!bg-red-500/10" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-[1400px] mx-auto p-6 md:p-8 max-[768px]:px-4 max-[768px]:py-5 transition-colors duration-300 animate-fade-in-up">
+      <div className={mainContentCls}>
         {showAddForm ? (
-          <div className="max-w-[600px] mx-auto">
-            <AddBookForm onBookAdded={() => { fetchBooks(); setShowAddForm(false); }} onCancel={() => setShowAddForm(false)} />
+          <div className={addBookSectionCls}>
+            <Suspense fallback={<div className={loadingStateCls}><div className={spinnerCls}></div></div>}>
+              <AddBookForm
+                onBookAdded={() => {
+                  fetchBooks();
+                  setShowAddForm(false);
+                }}
+                onCancel={() => setShowAddForm(false)}
+              />
+            </Suspense>
           </div>
         ) : (
           <>
-            {/* Quote Banner */}
+            {/* Compact Quote Banner */}
             {randomQuote && (
-              <div className="mb-4 md:mb-5">
-                <div className="bg-gradient-to-br from-[rgba(109,40,217,0.1)] to-[rgba(168,85,247,0.05)] dark:from-[rgba(124,77,255,0.08)] dark:to-transparent rounded-2xl py-3.5 px-5 max-[768px]:p-4 max-[768px]:flex-wrap max-[768px]:gap-2 flex items-center gap-4 border-l-4 border-l-primary dark:border-l-[#7C4DFF] dark:border-t dark:border-t-white/5 transition-all hover:border-l-[6px] hover:from-[rgba(109,40,217,0.15)] hover:to-[rgba(168,85,247,0.08)] dark:hover:from-[rgba(124,77,255,0.12)]">
-                  <span className="text-xl flex-shrink-0">💡</span>
-                  <div className="flex-1 flex flex-col gap-1 min-w-0 overflow-hidden">
-                    <span className="text-sm text-txt-secondary dark:text-[#94a3b8] italic leading-relaxed break-words">{quoteLoading ? 'Loading...' : `"${randomQuote.text}"`}</span>
-                    {!quoteLoading && <span className="text-xs text-txt-muted dark:text-[#64748b] font-medium text-right break-words">— {randomQuote.author}</span>}
+              <div className={quoteBannerCls}>
+                <div className={quoteBannerContentCls}>
+                  <span className={quoteIconCls}><Lightbulb className="w-5 h-5" /></span>
+                  <div className={quoteTextWrapperCls}>
+                    <span className={quoteTextCompactCls}>
+                      {quoteLoading ? 'Loading...' : `"${randomQuote.text}"`}
+                    </span>
+                    {!quoteLoading && (
+                      <span className={quoteAuthorCls}>— {randomQuote.author}</span>
+                    )}
                   </div>
-                  <button className="bg-transparent border-none text-lg cursor-pointer p-1 px-2 rounded-lg transition-all flex-shrink-0 min-w-[36px] min-h-[36px] hover:bg-[rgba(109,40,217,0.1)] hover:rotate-180 disabled:opacity-50 disabled:cursor-not-allowed" onClick={getNewQuote} disabled={quoteLoading} title="New quote">🔄</button>
+                  <button 
+                    className={btnRefreshQuoteCls}
+                    onClick={getNewQuote}
+                    disabled={quoteLoading}
+                    title="New quote"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 mb-5 md:mb-6">
-              {[{ icon: '✅', val: stats.completed, lbl: 'Completed' }, { icon: '📖', val: stats.reading, lbl: 'Reading' }, { icon: '📄', val: stats.totalPagesRead.toLocaleString(), lbl: 'Pages Read' }, { icon: '🔥', val: stats.currentStreak, lbl: 'Streak' }].map(s => (
-                <div key={s.lbl} className={statCardCls}>
-                  <div className="text-[32px] flex-shrink-0 transition-transform group-hover:scale-110">{s.icon}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-2xl md:text-3xl font-black bg-gradient-to-br from-primary to-primary-light bg-clip-text text-transparent leading-tight mb-0.5">{s.val}</div>
-                    <div className="text-xs text-txt-secondary dark:text-[#94a3b8] font-semibold uppercase tracking-wider">{s.lbl}</div>
-                  </div>
+            {/* Statistics Cards - 2x2 Grid */}
+            <div className={statsGridCls}>
+              <div className={statCardCls}>
+                <div className={statIconCls}><CheckCircle className="w-6 h-6" /></div>
+                <div className={statContentCls}>
+                  <div className={statValueCls}>{stats.completed}</div>
+                  <div className={statLabelCls}>Completed</div>
                 </div>
-              ))}
+              </div>
+
+              <div className={statCardCls}>
+                <div className={statIconCls}><BookOpen className="w-6 h-6" /></div>
+                <div className={statContentCls}>
+                  <div className={statValueCls}>{stats.reading}</div>
+                  <div className={statLabelCls}>Reading</div>
+                </div>
+              </div>
+
+              <div className={statCardCls}>
+                <div className={statIconCls}><FileText className="w-6 h-6" /></div>
+                <div className={statContentCls}>
+                  <div className={statValueCls}>{stats.totalPagesRead.toLocaleString()}</div>
+                  <div className={statLabelCls}>Pages Read</div>
+                </div>
+              </div>
+
+              <div className={statCardCls}>
+                <div className={statIconCls}><Flame className="w-6 h-6" /></div>
+                <div className={statContentCls}>
+                  <div className={statValueCls}>{stats.currentStreak}</div>
+                  <div className={statLabelCls}>Streak</div>
+                </div>
+              </div>
             </div>
 
             {/* Goal + Social Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-[3fr_2fr] gap-4 mb-5 md:mb-6 items-stretch">
-              <div className="min-w-0 flex [&_.goal-widget]:mb-0 [&_.goal-widget]:flex-1">
+            <div className={goalSocialRowCls}>
+              <div className={goalSocialColCls}>
                 <ReadingGoalWidget refreshKey={goalRefreshKey} />
               </div>
-              <div className="min-w-0 flex">
-                <div className="relative flex items-center justify-between gap-4 bg-gradient-to-br from-[#6d28d9] via-[#7c3aed] to-[#8b5cf6] dark:from-[#4c1d95] dark:via-[#5b21b6] dark:to-[#6d28d9] rounded-2xl py-7 px-6 max-[480px]:py-5 max-[480px]:px-4 cursor-pointer transition-all duration-250 text-white h-full box-border flex-1 overflow-hidden hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(109,40,217,0.35)] dark:hover:shadow-[0_12px_32px_rgba(76,29,149,0.45)] group" onClick={() => navigate('/feed')}>
-                  <div className="absolute -top-[30%] -right-[20%] w-40 h-40 rounded-full bg-white/[0.08] pointer-events-none" />
-                  <div className="flex items-center gap-4 relative z-[1]">
-                    <div className="w-12 h-12 max-[480px]:w-10 max-[480px]:h-10 rounded-[14px] max-[480px]:rounded-[10px] bg-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0 transition-colors group-hover:bg-white/[0.22]">
-                      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="max-[480px]:w-[22px] max-[480px]:h-[22px]"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+              <div className={goalSocialColCls}>
+                <div
+                  className={socialEntryCardCls}
+                  onClick={() => navigate('/feed')}
+                  onMouseEnter={() => void prefetchFeed(queryClient)}
+                >
+                  <div className={socialGlowCls}></div>
+                  <div className={socialContentCls}>
+                    <div className={socialIconWrapCls}>
+                      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
                     </div>
-                    <div className="flex flex-col gap-0.5">
-                      <h3 className="m-0 text-[1.1rem] font-bold text-white tracking-tight">Social</h3>
-                      <p className="m-0 text-[0.8rem] text-white/75 font-normal">See what friends are reading</p>
+                    <div className={socialTextCls}>
+                      <h3 className={socialTextH3Cls}>Social</h3>
+                      <p className={socialTextPCls}>See what friends are reading</p>
                     </div>
                   </div>
-                  <div className="relative z-[1] opacity-60 flex-shrink-0 transition-all group-hover:opacity-100 group-hover:translate-x-[3px]">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                  <div className={socialArrowCls}>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Filters */}
-            <div className="mb-6 md:mb-8 flex flex-col gap-2 max-[768px]:gap-4">
-              {/* Search */}
-              <div className="relative w-full">
-                <input type="text" placeholder="Search by title or author..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full py-4 pr-12 pl-5 max-[768px]:pl-4 max-[768px]:min-h-[52px] border-2 border-[#94a3b8] dark:border-white/10 rounded-2xl text-base bg-bg dark:bg-[#15121B] text-txt-primary dark:text-[#E2D9F3] transition-all shadow-xs font-medium focus:outline-none focus:border-primary dark:focus:border-[rgba(124,77,255,0.5)] focus:shadow-[var(--shadow-md),0_0_0_4px_rgba(99,102,241,0.1)] dark:focus:shadow-[0_4px_12px_rgba(0,0,0,0.3),0_0_0_4px_rgba(124,77,255,0.15)] focus:-translate-y-0.5 placeholder:text-txt-muted" />
+            <div className={filtersSectionCls}>
+              <div className={searchBarCls}>
+                <input
+                  type="text"
+                  placeholder="Search by title or author..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={searchInputCls}
+                />
                 {searchQuery && (
-                  <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-bg-hover dark:bg-[#2D2A35] border-none text-2xl max-[768px]:text-[22px] text-txt-secondary cursor-pointer p-2 max-[768px]:min-w-[44px] max-[768px]:min-h-[44px] leading-none rounded-lg transition-all hover:bg-primary hover:text-white hover:-translate-y-1/2 hover:rotate-90" onClick={() => setSearchQuery('')} title="Clear search">×</button>
+                  <button
+                    className={clearSearchCls}
+                    onClick={() => setSearchQuery('')}
+                    title="Clear search"
+                  >
+                    ×
+                  </button>
                 )}
               </div>
 
-              {/* Filter Tabs */}
-              <div className="flex gap-3 max-[768px]:flex-wrap max-[768px]:p-1.5 max-[768px]:gap-1.5 overflow-x-auto scrollbar-none flex-nowrap">
+              <div className={filterTabsCls}>
                 {['All', 'Want to Read', 'Reading', 'Finished'].map(filter => {
-                  const statusMap = { 'All': null, 'Reading': 'READING', 'Finished': 'FINISHED', 'Want to Read': 'WANT_TO_READ' };
-                  const count = filter === 'All' ? books.length : books.filter(b => b.status === statusMap[filter]).length;
+                  const statusMap = {
+                    'All': null,
+                    'Reading': 'READING',
+                    'Finished': 'FINISHED',
+                    'Want to Read': 'WANT_TO_READ'
+                  };
+                  
+                  const count = filter === 'All'
+                    ? books.length
+                    : books.filter(b => b.status === statusMap[filter]).length;
+                  
                   const isActive = activeFilter === filter;
+
                   return (
-                    <button key={filter} className={`flex items-center justify-center gap-1.5 py-1.5 px-3.5 max-[768px]:flex-1 max-[768px]:basis-[calc(50%-6px)] max-[768px]:min-w-0 max-[768px]:py-3 max-[768px]:px-2.5 max-[768px]:text-xs max-[768px]:min-h-[44px] max-[400px]:text-[10px] max-[400px]:py-2 max-[400px]:px-1.5 rounded-full text-sm font-medium cursor-pointer transition-all whitespace-nowrap flex-shrink-0 shadow-xs h-8 ${isActive ? 'bg-gradient-to-br from-primary to-primary-light text-white border border-transparent shadow-[0_4px_12px_rgba(109,40,217,0.3)]' : 'bg-bg dark:bg-[#1E1B24] border border-border dark:border-[#2D2A35] text-txt-secondary dark:text-[#94a3b8] hover:border-primary hover:text-primary hover:-translate-y-px hover:shadow-sm'}`} onClick={() => setActiveFilter(filter)}>
+                    <button
+                      key={filter}
+                      className={`${filterTabBaseCls} ${isActive ? filterTabActiveCls : ''}`}
+                      onClick={() => setActiveFilter(filter)}
+                    >
                       {filter}
-                      <span className={`text-xs max-[768px]:text-[11px] max-[768px]:py-[3px] max-[768px]:px-[7px] max-[768px]:min-w-[22px] py-0.5 px-2 rounded-full font-bold min-w-[20px] text-center ${isActive ? 'bg-white/25' : 'bg-bg-tertiary dark:bg-[#2D2A35] text-txt-muted dark:text-[#64748b]'}`}>{count}</span>
+                      <span className={`${filterCountCls} ${isActive ? 'bg-white/25' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'}`}>
+                        {count}
+                      </span>
                     </button>
                   );
                 })}
@@ -632,36 +1242,103 @@ function Dashboard() {
 
               {/* Tag Filter */}
               {getAllTags().length > 0 && (
-                <div className="mt-2">
-                  <div className="text-sm font-semibold text-txt-secondary dark:text-[#94a3b8] mb-3 uppercase tracking-wider">Filter by Tag:</div>
-                  <div className="flex flex-wrap gap-2 max-[768px]:gap-2">
-                    <button className={`py-2.5 px-5 max-[768px]:py-2 max-[768px]:px-3.5 max-[768px]:text-xs max-[768px]:min-h-[36px] rounded-full text-sm font-semibold cursor-pointer transition-all shadow-xs ${selectedTag === null ? 'bg-gradient-to-br from-primary to-primary-light text-white border-2 border-transparent shadow-lg' : 'bg-bg dark:bg-[#1E1B24] text-txt-secondary dark:text-[#94a3b8] border-2 border-border dark:border-[#2D2A35] hover:-translate-y-[3px] hover:shadow-md hover:border-primary hover:text-primary'}`} onClick={() => setSelectedTag(null)}>All Tags</button>
+                <div className={tagFilterSectionCls}>
+                  <div className={tagFilterLabelCls}>Filter by Tag:</div>
+                  <div className={tagFilterChipsCls}>
+                    <button
+                      className={`${tagFilterChipBaseCls} ${selectedTag === null ? tagFilterChipActiveCls : ''}`}
+                      onClick={() => setSelectedTag(null)}
+                    >
+                      All Tags
+                    </button>
                     {getAllTags().map((tag, index) => (
-                      <button key={index} className={`py-2.5 px-5 max-[768px]:py-2 max-[768px]:px-3.5 max-[768px]:text-xs max-[768px]:min-h-[36px] rounded-full text-sm font-semibold cursor-pointer transition-all shadow-xs ${selectedTag === tag ? 'bg-gradient-to-br from-primary to-primary-light text-white border-2 border-transparent shadow-lg' : 'bg-bg dark:bg-[#1E1B24] text-txt-secondary dark:text-[#94a3b8] border-2 border-border dark:border-[#2D2A35] hover:-translate-y-[3px] hover:shadow-md hover:border-primary hover:text-primary'}`} onClick={() => setSelectedTag(tag)}>{tag}</button>
+                      <button
+                        key={index}
+                        className={`${tagFilterChipBaseCls} ${selectedTag === tag ? tagFilterChipActiveCls : ''}`}
+                        onClick={() => setSelectedTag(tag)}
+                      >
+                        {tag}
+                      </button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Selection Mode Controls */}
+              {filteredBooks.length > 0 && (
+                <div className="flex items-center justify-between gap-4 mt-4 flex-wrap">
+                  <button
+                    onClick={toggleSelectionMode}
+                    className={btnSelectModeCls}
+                  >
+                    {isSelectionMode ? 'Cancel Selection' : 'Select Books'}
+                  </button>
+
+                  {isSelectionMode && (
+                    <div className={selectAllContainerCls}>
+                      <input
+                        type="checkbox"
+                        id="select-all"
+                        checked={selectedBookIds.size === filteredBooks.length && filteredBooks.length > 0}
+                        onChange={selectAllBooks}
+                        className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
+                      />
+                      <label htmlFor="select-all" className={selectAllLabelCls}>
+                        Select All ({filteredBooks.length})
+                      </label>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Books Grid */}
-            <div className="min-h-[400px]">
+            <div className={booksSectionCls}>
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-12 px-5 text-center">
-                  <div className="w-10 h-10 border-[3px] border-border dark:border-[#2D2A35] border-t-primary rounded-full animate-spin mb-4" />
-                  <p className="text-txt-secondary dark:text-[#94a3b8] text-base mt-2">Loading your library...</p>
+                <div className={loadingStateCls}>
+                  <div className={spinnerCls}></div>
+                  <p className="text-gray-500 dark:text-gray-400 text-base mt-2">Loading your library...</p>
                 </div>
               ) : filteredBooks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 px-5 text-center">
-                  <div className="text-[64px] mb-4 opacity-50">📚</div>
-                  <h3 className="text-xl font-semibold text-txt-primary dark:text-[#E2D9F3] mb-2">No books found</h3>
-                  <p className="text-txt-secondary dark:text-[#94a3b8] text-base mt-2">{activeFilter === 'All' ? 'Start building your reading library by adding your first book!' : `No books with status "${activeFilter}"`}</p>
-                  {activeFilter === 'All' && <button className="mt-5 bg-gradient-to-br from-primary to-primary-light text-white border-none py-3 px-6 rounded-xl text-sm font-bold cursor-pointer transition-all shadow-md hover:-translate-y-0.5 hover:shadow-lg" onClick={() => setShowAddForm(true)}>Add Your First Book</button>}
+                <div className={emptyStateCls}>
+                  <div className={emptyIconCls}><Library className="w-16 h-16" /></div>
+                  <h3 className={emptyTitleCls}>No books found</h3>
+                  <p className={emptyTextCls}>
+                    {activeFilter === 'All'
+                      ? 'Start building your reading library by adding your first book!'
+                      : `No books with status "${activeFilter}"`}
+                  </p>
+                  {activeFilter === 'All' && (
+                    <button
+                      className="btn-primary mt-6"
+                      onClick={() => setShowAddForm(true)}
+                    >
+                      Add Your First Book
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] max-[768px]:grid-cols-1 gap-5 max-[768px]:gap-4">
+                <div className={booksGridCls}>
                   {filteredBooks.map(book => (
-                    <BookCard key={book.id} book={book} onUpdate={handleUpdate} onDelete={handleDelete} onShowInsights={handleShowInsights} onViewNotes={handleViewNotes} onWriteReview={(b) => setReviewBook(b)} onTogglePrivacy={async (id, isPublic) => { try { await bookApi.togglePrivacy(id, isPublic); fetchBooks(); toast.success(isPublic ? '🌍 Book is now public' : '🔒 Book is now private'); } catch { toast.error('Failed to update privacy'); } }} />
+                    <BookCard
+                      key={book.id}
+                      book={book}
+                      onUpdate={handleUpdate}
+                      onDelete={handleDelete}
+                      onShowInsights={handleShowInsights}
+                      onViewNotes={handleViewNotes}
+                      onWriteReview={(b) => setReviewBook(b)}
+                      onTogglePrivacy={async (id, isPublic) => {
+                        try {
+                          await bookApi.togglePrivacy(id, isPublic);
+                          fetchBooks();
+                          toast.success(isPublic ? 'Book is now public' : 'Book is now private');
+                        } catch { toast.error('Failed to update privacy'); }
+                      }}
+                      isSelectionMode={isSelectionMode}
+                      isSelected={selectedBookIds.has(book.id)}
+                      onToggleSelection={() => toggleBookSelection(book.id)}
+                    />
                   ))}
                 </div>
               )}
@@ -670,15 +1347,126 @@ function Dashboard() {
         )}
       </div>
 
-      {/* Modals */}
-      {selectedBook && <UpdateProgressModal book={selectedBook} onClose={() => setSelectedBook(null)} onUpdated={() => { fetchBooks(); fetchActivityDates(); setSelectedBook(null); }} />}
-      {showShareModal && <ShareModal books={filteredBooks} onClose={() => setShowShareModal(false)} filterInfo={getFilterInfo()} />}
-      {showImportModal && <ImportModal onClose={() => setShowImportModal(false)} onImported={() => { fetchBooks(); setShowImportModal(false); }} />}
-      {showAnalyticsModal && <AnalyticsModal stats={stats} dailyStats={dailyStats} activityDates={activityDates} activityDetails={activityDetails} onClose={() => setShowAnalyticsModal(false)} />}
-      {showInsightsModal && <InsightsModal book={insightsBook} loading={insightsLoading} onClose={handleCloseInsights} />}
-      {showNotesModal && <NotesModal book={notesBook} onClose={handleCloseNotes} onUpdated={fetchBooks} />}
-      {reviewBook && <ReviewForm bookId={reviewBook.id} bookTitle={reviewBook.title} onClose={() => setReviewBook(null)} onSaved={() => { fetchBooks(); setReviewBook(null); }} />}
-      {showRecommendationModal && <RecommendationModal userBooks={books} onClose={() => setShowRecommendationModal(false)} onAddToWishlist={handleAddFromRecommendation} />}
+      {/* Bulk Action Bar */}
+      {isSelectionMode && selectedBookIds.size > 0 && (
+        <div className={selectionBarCls}>
+          <span className={selectionBarTextCls}>
+            {selectedBookIds.size} book{selectedBookIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <button
+            onClick={handleBatchDelete}
+            className={btnBatchDeleteCls}
+          >
+            Delete Selected
+          </button>
+          <button
+            onClick={toggleSelectionMode}
+            className={btnCancelSelectionCls}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Update Progress Modal */}
+      {selectedBook && (
+        <Suspense fallback={null}>
+          <UpdateProgressModal
+            book={selectedBook}
+            onClose={() => setSelectedBook(null)}
+            onUpdated={() => {
+              fetchBooks();
+              fetchActivityDates();  // Refresh activity dates for streak calculation
+              setSelectedBook(null);
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* Share Profile Modal */}
+      {showShareModal && (
+        <Suspense fallback={null}>
+          <ShareProfileModal
+            username={user?.username || 'reader'}
+            totalBooks={books.length}
+            onClose={() => setShowShareModal(false)}
+          />
+        </Suspense>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <Suspense fallback={null}>
+          <ImportModal
+            onClose={() => setShowImportModal(false)}
+            onImported={() => {
+              fetchBooks();
+              setShowImportModal(false);
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* Analytics Modal */}
+      {showAnalyticsModal && (
+        <Suspense fallback={null}>
+          <AnalyticsModal
+            stats={stats}
+            dailyStats={dailyStats}
+            activityDates={activityDates}
+            activityDetails={activityDetails}
+            onClose={() => setShowAnalyticsModal(false)}
+          />
+        </Suspense>
+      )}
+
+      {/* AI Insights Modal */}
+      {showInsightsModal && (
+        <Suspense fallback={null}>
+          <InsightsModal
+            book={insightsBook}
+            loading={insightsLoading}
+            onClose={handleCloseInsights}
+          />
+        </Suspense>
+      )}
+
+      {/* Notes Modal */}
+      {showNotesModal && (
+        <Suspense fallback={null}>
+          <NotesModal
+            book={notesBook}
+            onClose={handleCloseNotes}
+            onUpdated={fetchBooks}
+          />
+        </Suspense>
+      )}
+
+      {/* Review Form Modal */}
+      {reviewBook && (
+        <Suspense fallback={null}>
+          <ReviewForm
+            bookId={reviewBook.id}
+            bookTitle={reviewBook.title}
+            onClose={() => setReviewBook(null)}
+            onSaved={() => {
+              fetchBooks();
+              setReviewBook(null);
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* AI Recommendation Modal */}
+      {showRecommendationModal && (
+        <Suspense fallback={null}>
+          <RecommendationModal
+            userBooks={books}
+            onClose={() => setShowRecommendationModal(false)}
+            onAddToWishlist={handleAddFromRecommendation}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

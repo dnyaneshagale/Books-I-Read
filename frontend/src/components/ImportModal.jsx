@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Upload, FileText, CheckCircle2, Loader2, Sparkles, Database } from 'lucide-react';
 import bookApi from '../api/bookApi';
 import toast from 'react-hot-toast';
+import ModalShell from './ui/modal-shell';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 /**
  * ImportModal Component
@@ -8,10 +11,14 @@ import toast from 'react-hot-toast';
  * Modal for importing books from Goodreads CSV export
  */
 function ImportModal({ onClose, onImported }) {
+  useBodyScrollLock();
+
   const [file, setFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [preview, setPreview] = useState([]);
   const [importStats, setImportStats] = useState(null);
+  const [processedCount, setProcessedCount] = useState(0);
+  const [totalToImport, setTotalToImport] = useState(0);
 
   const parseGoodreadsCSV = (csvText) => {
     const lines = csvText.split('\n');
@@ -19,8 +26,10 @@ function ImportModal({ onClose, onImported }) {
       throw new Error('CSV file appears to be empty');
     }
 
+    // Parse CSV header
     const headers = parseCSVLine(lines[0]);
-
+    
+    // Find column indices (Goodreads export format)
     const titleIdx = headers.findIndex(h => h.toLowerCase().includes('title'));
     const authorIdx = headers.findIndex(h => h.toLowerCase().includes('author'));
     const pagesIdx = headers.findIndex(h => h.toLowerCase() === 'number of pages');
@@ -35,19 +44,21 @@ function ImportModal({ onClose, onImported }) {
     }
 
     const books = [];
-
+    
+    // Parse each book row
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
       try {
         const values = parseCSVLine(line);
-
+        
         const title = values[titleIdx]?.trim();
         const author = values[authorIdx]?.trim();
-
+        
         if (!title || !author) continue;
 
+        // Map Goodreads shelves to our status
         let status = 'WANT_TO_READ';
         const shelf = values[shelvesIdx]?.toLowerCase() || '';
         if (shelf.includes('currently-reading') || shelf.includes('reading')) {
@@ -70,7 +81,7 @@ function ImportModal({ onClose, onImported }) {
         };
 
         books.push(book);
-      } catch (error) {
+      } catch {
         // Skip invalid lines
       }
     }
@@ -89,7 +100,7 @@ function ImportModal({ onClose, onImported }) {
 
       if (char === '"' && inQuotes && nextChar === '"') {
         current += '"';
-        i++;
+        i++; // Skip next quote
       } else if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -106,8 +117,9 @@ function ImportModal({ onClose, onImported }) {
 
   const parseGoodreadsDate = (dateStr) => {
     if (!dateStr || dateStr.trim() === '') return null;
-
+    
     try {
+      // Goodreads format: "2024/01/15" or "2024-01-15"
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return null;
       return date.toISOString().split('T')[0];
@@ -118,8 +130,9 @@ function ImportModal({ onClose, onImported }) {
 
   const parseGoodreadsTags = (shelvesStr) => {
     if (!shelvesStr) return [];
-
+    
     const shelves = shelvesStr.split(',').map(s => s.trim());
+    // Filter out default Goodreads shelves
     const defaultShelves = ['to-read', 'currently-reading', 'read'];
     return shelves
       .filter(shelf => !defaultShelves.includes(shelf.toLowerCase()))
@@ -137,12 +150,13 @@ function ImportModal({ onClose, onImported }) {
 
     setFile(selectedFile);
 
+    // Read and preview file
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const csvText = e.target.result;
         const parsedBooks = parseGoodreadsCSV(csvText);
-        setPreview(parsedBooks.slice(0, 5));
+        setPreview(parsedBooks.slice(0, 5)); // Show first 5 books
         toast.success(`📚 Found ${parsedBooks.length} books in file`);
       } catch (error) {
         toast.error(error.message || 'Failed to parse CSV file');
@@ -159,36 +173,42 @@ function ImportModal({ onClose, onImported }) {
     }
 
     setIsProcessing(true);
+    setProcessedCount(0);
+    setTotalToImport(0);
     const reader = new FileReader();
 
     reader.onload = async (e) => {
       try {
         const csvText = e.target.result;
         const books = parseGoodreadsCSV(csvText);
+        setTotalToImport(books.length);
 
         let successful = 0;
         let failed = 0;
 
-        for (const book of books) {
+        // Import books one by one to maximize compatibility with existing API constraints.
+        for (let index = 0; index < books.length; index++) {
+          const book = books[index];
           try {
             await bookApi.createBook(book);
             successful++;
-          } catch (error) {
+          } catch {
             failed++;
           }
+          setProcessedCount(index + 1);
         }
 
         setImportStats({ successful, failed, total: books.length });
-
+        
         if (successful > 0) {
           toast.success(`✅ Successfully imported ${successful} books!`);
           if (onImported) onImported();
         }
-
+        
         if (failed > 0) {
           toast.error(`⚠️ Failed to import ${failed} books`);
         }
-      } catch (error) {
+      } catch {
         toast.error('Failed to import books');
       } finally {
         setIsProcessing(false);
@@ -198,42 +218,67 @@ function ImportModal({ onClose, onImported }) {
     reader.readAsText(file);
   };
 
-  return (
-    <div className="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-lg animate-fade-in" onClick={onClose}>
-      <div className="modal-content bg-bg rounded-xl p-xl max-w-[700px] w-full max-h-[90vh] overflow-y-auto shadow-xl border border-border animate-slide-up max-md:max-w-[calc(100vw-var(--spacing-lg))] max-md:m-sm max-md:p-lg max-[400px]:p-md" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-lg pb-md border-b-2 border-border">
-          <h2 className="text-2xl font-bold text-txt-primary m-0 max-md:text-xl">📥 Import from Goodreads</h2>
-          <button className="bg-bg-tertiary border border-border py-2 px-3.5 rounded-md text-lg cursor-pointer transition-all duration-200 text-txt-secondary hover:bg-danger hover:text-white hover:border-danger hover:scale-105" onClick={onClose}>×</button>
-        </div>
+  const progressPercentage = useMemo(() => {
+    if (!isProcessing || processedCount === 0) return 0;
+    const total = totalToImport || importStats?.total || Math.max(preview.length, processedCount);
+    return Math.min(100, Math.round((processedCount / Math.max(1, total)) * 100));
+  }, [isProcessing, processedCount, totalToImport, importStats, preview.length]);
 
-        <div className="p-lg">
+  return (
+    <ModalShell
+      onClose={onClose}
+      title="Import Data"
+      icon={<Upload className="w-5 h-5" />}
+      contentClassName="max-w-[760px] max-h-[90vh] overflow-y-auto max-md:max-w-[calc(100vw-var(--spacing-lg))] max-md:m-2 max-md:p-6 max-[400px]:p-4"
+      bodyClassName="p-[var(--spacing-lg)]"
+    >
           {!importStats ? (
             <>
-              <div className="bg-bg-secondary p-lg rounded-md mb-lg">
-                <h3 className="m-0 mb-md text-base text-txt-primary">How to import from Goodreads:</h3>
-                <ol className="m-0 pl-lg text-txt-secondary text-sm">
-                  <li className="mb-sm">Go to <a href="https://www.goodreads.com/review/import" target="_blank" rel="noopener noreferrer" className="text-primary no-underline hover:underline">Goodreads Export</a></li>
-                  <li className="mb-sm">Click "Export Library" and download your CSV file</li>
-                  <li className="mb-sm">Upload the CSV file below</li>
-                </ol>
+              <div className="rounded-2xl border border-violet-200/70 dark:border-violet-400/20 bg-gradient-to-br from-violet-50 via-white to-indigo-50/70 dark:from-violet-950/20 dark:via-[var(--color-bg-secondary)] dark:to-indigo-950/20 p-4 mb-[var(--spacing-lg)]">
+                <div className="flex items-center gap-2 mb-3 text-[var(--color-text-primary)]">
+                  <Sparkles className="w-4 h-4 text-violet-600" />
+                  <h3 className="m-0 text-base font-semibold">Goodreads Import Assistant</h3>
+                </div>
+                <div className="grid grid-cols-1 min-[600px]:grid-cols-3 gap-2.5 text-sm">
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] dark:bg-black/20 p-3">
+                    <p className="m-0 font-semibold text-[var(--color-text-primary)] mb-1">1. Export CSV</p>
+                    <p className="m-0 text-[var(--color-text-secondary)]">Download your library from Goodreads.</p>
+                  </div>
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] dark:bg-black/20 p-3">
+                    <p className="m-0 font-semibold text-[var(--color-text-primary)] mb-1">2. Upload Here</p>
+                    <p className="m-0 text-[var(--color-text-secondary)]">We preview your first 5 books before import.</p>
+                  </div>
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] dark:bg-black/20 p-3">
+                    <p className="m-0 font-semibold text-[var(--color-text-primary)] mb-1">3. Import Safely</p>
+                    <p className="m-0 text-[var(--color-text-secondary)]">Books are imported one by one for reliability.</p>
+                  </div>
+                </div>
+                <a href="https://www.goodreads.com/review/import" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-sm text-violet-700 dark:text-violet-300 no-underline hover:underline">
+                  Open Goodreads Export Page
+                </a>
               </div>
 
-              <div className="mb-lg">
+              <div className="mb-[var(--spacing-lg)]">
                 <label htmlFor="csv-file" className="block cursor-pointer">
-                  <div className="border-2 border-dashed border-border rounded-md p-xl text-center bg-bg transition-all duration-200 flex flex-col items-center gap-sm hover:border-primary hover:bg-bg-hover">
+                  <div className="border-2 border-dashed border-[var(--color-border)] rounded-2xl p-[var(--spacing-xl)] text-center bg-[var(--color-bg)] transition-all duration-200 flex flex-col items-center gap-[var(--spacing-sm)] hover:border-violet-500 hover:bg-[var(--color-bg-hover)] max-md:px-[var(--spacing-md)] max-[400px]:px-[var(--spacing-md)]">
                     {file ? (
                       <>
-                        <span className="text-5xl">📄</span>
-                        <span className="text-base font-semibold text-txt-primary">{file.name}</span>
-                        <span className="text-sm text-txt-secondary">
+                        <FileText className="w-10 h-10 text-violet-600" />
+                        <span className="text-base font-semibold text-[var(--color-text-primary)] max-md:text-sm break-all">{file.name}</span>
+                        <span className="text-sm text-[var(--color-text-secondary)] inline-flex items-center gap-1">
+                          <Database className="w-3.5 h-3.5" />
                           {(file.size / 1024).toFixed(2)} KB
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Ready to import
                         </span>
                       </>
                     ) : (
                       <>
-                        <span className="text-5xl max-md:text-5xl max-[400px]:text-[40px]">📤</span>
-                        <span className="text-base font-semibold text-txt-primary max-md:text-sm">Click to select Goodreads CSV file</span>
-                        <span className="text-sm text-txt-secondary max-md:text-xs">or drag and drop</span>
+                        <Upload className="w-10 h-10 text-violet-600" />
+                        <span className="text-base font-semibold text-[var(--color-text-primary)] max-md:text-sm">Click to select Goodreads CSV file</span>
+                        <span className="text-sm text-[var(--color-text-secondary)] max-md:text-xs">or drag and drop</span>
                       </>
                     )}
                   </div>
@@ -248,18 +293,18 @@ function ImportModal({ onClose, onImported }) {
               </div>
 
               {preview.length > 0 && (
-                <div className="mb-lg">
-                  <h3 className="text-base m-0 mb-md text-txt-primary">Preview (first 5 books):</h3>
-                  <div className="flex flex-col gap-sm max-h-[300px] overflow-y-auto">
+                <div className="mb-[var(--spacing-lg)]">
+                  <h3 className="text-base m-0 mb-[var(--spacing-md)] text-[var(--color-text-primary)]">Preview (first 5 books)</h3>
+                  <div className="flex flex-col gap-[var(--spacing-sm)] max-h-[300px] overflow-y-auto pr-1">
                     {preview.map((book, index) => (
-                      <div key={index} className="bg-bg-secondary p-md rounded-md border-l-[3px] border-l-primary">
-                        <div className="font-semibold text-txt-primary mb-1">{book.title}</div>
-                        <div className="text-sm text-txt-secondary mb-sm">by {book.author}</div>
-                        <div className="flex flex-wrap gap-xs text-xs">
-                          <span className="py-0.5 px-2 bg-primary text-white rounded-xl font-medium">{book.status}</span>
-                          {book.rating && <span className="text-amber-400">{'★'.repeat(book.rating)}</span>}
+                      <div key={index} className="bg-[var(--color-bg-secondary)] p-[var(--spacing-md)] rounded-[var(--radius-md)] border border-[var(--color-border)]">
+                        <div className="font-semibold text-[var(--color-text-primary)] mb-1 line-clamp-1">{book.title}</div>
+                        <div className="text-sm text-[var(--color-text-secondary)] mb-[var(--spacing-sm)]">by {book.author}</div>
+                        <div className="flex flex-wrap gap-[var(--spacing-xs)] text-xs items-center">
+                          <span className="py-0.5 px-2 bg-[var(--color-primary)] text-white rounded-xl font-medium">{book.status.replaceAll('_', ' ')}</span>
+                          {book.rating && <span className="text-amber-500">{'★'.repeat(book.rating)}</span>}
                           {book.tags.length > 0 && (
-                            <span className="text-txt-secondary italic">{book.tags.join(', ')}</span>
+                            <span className="text-[var(--color-text-secondary)] italic">{book.tags.join(', ')}</span>
                           )}
                         </div>
                       </div>
@@ -268,16 +313,30 @@ function ImportModal({ onClose, onImported }) {
                 </div>
               )}
 
-              <div className="flex gap-md justify-end pt-lg border-t border-border max-md:flex-col-reverse max-md:gap-sm">
+              {isProcessing && (
+                <div className="mb-[var(--spacing-lg)] rounded-xl border border-[var(--color-border)] p-3.5 bg-[var(--color-bg-secondary)]">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="m-0 text-sm font-semibold text-[var(--color-text-primary)] inline-flex items-center gap-1.5">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Importing books...
+                    </p>
+                    <span className="text-xs text-[var(--color-text-secondary)]">{processedCount}/{Math.max(1, totalToImport)} processed</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-violet-600 to-indigo-500 transition-all duration-200" style={{ width: `${progressPercentage}%` }} />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-[var(--spacing-md)] justify-end pt-[var(--spacing-lg)] border-t border-[var(--color-border)] max-md:flex-col-reverse max-md:gap-[var(--spacing-sm)] max-md:*:w-full max-md:*:py-3.5 max-md:*:px-[18px] max-md:*:text-sm">
                 <button
-                  className="py-md px-lg rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 border border-border bg-bg-secondary text-txt-primary hover:bg-bg-hover hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed max-md:w-full max-md:py-3.5 max-md:px-[18px] max-md:text-sm"
+                  className="btn-secondary"
                   onClick={onClose}
                   disabled={isProcessing}
                 >
                   Cancel
                 </button>
                 <button
-                  className="py-md px-lg rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 border-none bg-primary text-white hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)] disabled:opacity-50 disabled:cursor-not-allowed max-md:w-full max-md:py-3.5 max-md:px-[18px] max-md:text-sm"
+                  className="btn-primary"
                   onClick={handleImport}
                   disabled={!file || isProcessing}
                 >
@@ -286,35 +345,33 @@ function ImportModal({ onClose, onImported }) {
               </div>
             </>
           ) : (
-            <div className="text-center p-xl">
-              <div className="text-[64px] mb-md">
-                {importStats.failed === 0 ? '🎉' : '✅'}
+            <div className="text-center p-[var(--spacing-xl)]">
+              <div className="text-[64px] mb-[var(--spacing-md)] inline-flex text-emerald-500">
+                <CheckCircle2 className="w-16 h-16" />
               </div>
-              <h3 className="text-xl m-0 mb-lg text-txt-primary">Import Complete!</h3>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-md mb-xl">
-                <div className="bg-gradient-to-br from-emerald-100 to-emerald-200 p-md rounded-md flex flex-col gap-xs">
-                  <span className="text-2xl font-bold text-txt-primary">{importStats.successful}</span>
-                  <span className="text-sm text-txt-secondary">Successfully Imported</span>
+              <h3 className="text-xl m-0 mb-[var(--spacing-lg)] text-[var(--color-text-primary)]">Import Complete!</h3>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-[var(--spacing-md)] mb-[var(--spacing-xl)]">
+                <div className="bg-gradient-to-br from-green-100 to-green-200 p-[var(--spacing-md)] rounded-[var(--radius-md)] flex flex-col gap-[var(--spacing-xs)]">
+                  <span className="text-2xl font-bold text-[var(--color-text-primary)]">{importStats.successful}</span>
+                  <span className="text-sm text-[var(--color-text-secondary)]">Successfully Imported</span>
                 </div>
                 {importStats.failed > 0 && (
-                  <div className="bg-gradient-to-br from-red-100 to-red-200 p-md rounded-md flex flex-col gap-xs">
-                    <span className="text-2xl font-bold text-txt-primary">{importStats.failed}</span>
-                    <span className="text-sm text-txt-secondary">Failed</span>
+                  <div className="bg-gradient-to-br from-red-100 to-red-200 p-[var(--spacing-md)] rounded-[var(--radius-md)] flex flex-col gap-[var(--spacing-xs)]">
+                    <span className="text-2xl font-bold text-[var(--color-text-primary)]">{importStats.failed}</span>
+                    <span className="text-sm text-[var(--color-text-secondary)]">Failed</span>
                   </div>
                 )}
-                <div className="bg-bg-secondary p-md rounded-md flex flex-col gap-xs">
-                  <span className="text-2xl font-bold text-txt-primary">{importStats.total}</span>
-                  <span className="text-sm text-txt-secondary">Total</span>
+                <div className="bg-[var(--color-bg-secondary)] p-[var(--spacing-md)] rounded-[var(--radius-md)] flex flex-col gap-[var(--spacing-xs)]">
+                  <span className="text-2xl font-bold text-[var(--color-text-primary)]">{importStats.total}</span>
+                  <span className="text-sm text-[var(--color-text-secondary)]">Total</span>
                 </div>
               </div>
-              <button className="py-md px-lg rounded-md text-sm font-semibold cursor-pointer transition-all duration-200 border-none bg-primary text-white hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)]" onClick={onClose}>
+              <button className="btn-primary" onClick={onClose}>
                 Done
               </button>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 }
 
